@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.12)
 
 project(foxy LANGUAGES CXX)
 
 find_package(
-  Boost 1.67
+  Boost 1.68
   REQUIRED
     system
     date_time

@@ -71,7 +71,10 @@ public:
     return boost::asio::get_associated_allocator(p_.handler());
   }
 
+  struct on_resolve_t {};
+
   auto operator()(
+    on_resolve_t,
     boost::system::error_code                    ec,
     boost::asio::ip::tcp::resolver::results_type results) -> void
   {
@@ -105,7 +108,8 @@ public:
         }
       }
 
-      yield s.resolver.async_resolve(s.host, s.service, std::move(*this));
+      yield s.resolver.async_resolve(
+        s.host, s.service, boost::beast::bind_handler(std::move(*this), on_resolve_t{}, std::placeholders::_1, std::placeholders::_2));
       if (ec) { goto upcall; }
 
       yield boost::asio::async_connect(s.session.tcp(), s.results, std::move(*this));
