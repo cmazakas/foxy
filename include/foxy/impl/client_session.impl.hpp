@@ -72,6 +72,7 @@ public:
   }
 
   struct on_resolve_t {};
+  struct on_connect_t {};
 
   auto operator()(
     on_resolve_t,
@@ -83,6 +84,7 @@ public:
   }
 
   auto operator()(
+    on_connect_t,
     boost::system::error_code      ec,
     boost::asio::ip::tcp::endpoint endpoint) -> void
   {
@@ -96,8 +98,10 @@ public:
     std::size_t const         bytes_transferred,
     bool const                is_continuation = true) -> void
   {
-    auto& s = *p_;
+    using namespace std::placeholders;
+    using boost::beast::bind_handler;
 
+    auto& s = *p_;
     reenter(*this)
     {
       if (s.session.is_ssl()) {
@@ -109,10 +113,11 @@ public:
       }
 
       yield s.resolver.async_resolve(
-        s.host, s.service, boost::beast::bind_handler(std::move(*this), on_resolve_t{}, std::placeholders::_1, std::placeholders::_2));
+        s.host, s.service, bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
       if (ec) { goto upcall; }
 
-      yield boost::asio::async_connect(s.session.tcp(), s.results, std::move(*this));
+      yield boost::asio::async_connect(
+        s.session.tcp(), s.results, bind_handler(std::move(*this), on_connect_t{}, _1, _2));
       if (ec) { goto upcall; }
 
       {
