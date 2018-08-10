@@ -1,3 +1,5 @@
 set(FOXY_TESTING ON)
+set(Boost_USE_STATIC_LIBS ON)
+set(BOOST_ROOT "/boosts/168/install")
 add_compile_options("/permissive-")
 include("/vcpkg/scripts/buildsystems/vcpkg.cmake")
