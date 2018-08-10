@@ -1,6 +1,6 @@
 #include "foxy/client_session.hpp"
 
-#include <boost/smart_ptr/make_shared.hpp>
+#include <boost/smart_ptr/make_unique.hpp>
 #include <memory>
 #include <iostream>
 
@@ -16,7 +16,7 @@ TEST_CASE("Our client session class")
   {
     asio::io_context io;
 
-    auto  session_handle = boost::make_shared<foxy::client_session>(io);
+    auto  session_handle = boost::make_unique<foxy::client_session>(io);
     auto& session = *session_handle;
 
     auto connected = false;
