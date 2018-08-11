@@ -11,6 +11,14 @@ namespace detail
 template <class ConnectHandler>
 struct connect_op : boost::asio::coroutine
 {
+public:
+  using executor_type = boost::asio::associated_executor_t<
+    ConnectHandler,
+    decltype(std::declval<::foxy::client_session&>().get_executor())
+  >;
+
+  using allocator_type = boost::asio::associated_allocator_t<ConnectHandler>;
+
 private:
 
   struct state
@@ -22,6 +30,11 @@ private:
     boost::asio::ip::tcp::resolver::results_type results;
     boost::asio::ip::tcp::endpoint               endpoint;
 
+    boost::asio::executor_work_guard<decltype(session.get_executor())> work1;
+    boost::optional<
+      boost::asio::executor_work_guard<typename connect_op::executor_type>
+    > work2;
+
     explicit state(
       ConnectHandler const&   handler,
       ::foxy::client_session& session_,
@@ -31,6 +44,7 @@ private:
     , host(std::move(host_))
     , service(std::move(service_))
     , resolver(session.stream.get_executor().context())
+    , work1(session.get_executor())
     {
     }
   };
@@ -52,19 +66,13 @@ public:
     std::forward<DeducedHandler>(handler),
     session, std::move(host), std::move(service))
   {
+    p_->work2.emplace(this->get_executor());
   }
-
-  using executor_type = boost::asio::associated_executor_t<
-    ConnectHandler,
-    decltype(((std::declval<::foxy::client_session&>()).stream.get_executor()))
-  >;
 
   auto get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(), p_->session.stream.get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
   }
-
-  using allocator_type = boost::asio::associated_allocator_t<ConnectHandler>;
 
   auto get_allocator() const noexcept -> allocator_type
   {
@@ -123,6 +131,8 @@ public:
 
       {
         auto endpoint = std::move(s.endpoint);
+        auto work1    = std::move(s.work1);
+        auto work2    = std::move(s.work2);
         return p_.invoke(boost::system::error_code(), std::move(endpoint));
       }
 
@@ -130,6 +140,8 @@ public:
       if (!is_continuation) {
         yield boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
       }
+      auto work1 = std::move(s.work1);
+      auto work2 = std::move(s.work2);
       p_.invoke(ec, boost::asio::ip::tcp::endpoint());
     }
   }
@@ -168,6 +180,14 @@ namespace detail
 template <class Request, class ResponseParser, class RequestHandler>
 struct request_op : boost::asio::coroutine
 {
+public:
+  using executor_type = boost::asio::associated_executor_t<
+    RequestHandler,
+    decltype((std::declval<::foxy::client_session&>().get_executor()))
+  >;
+
+  using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
+
 private:
 
   struct state
@@ -175,6 +195,11 @@ private:
     ::foxy::client_session& session;
     Request&                request;
     ResponseParser&         parser;
+
+    boost::asio::executor_work_guard<decltype(session.get_executor())> work1;
+    boost::optional<
+      boost::asio::executor_work_guard<typename request_op::executor_type>
+    > work2;
 
     explicit state(
       RequestHandler const&   handler,
@@ -184,6 +209,7 @@ private:
     : session(session_)
     , request(request_)
     , parser(parser_)
+    , work1(session.get_executor())
     {
     }
   };
@@ -205,19 +231,13 @@ public:
     std::forward<DeducedHandler>(handler),
     session, request, parser)
   {
+    p_->work2.emplace(this->get_executor());
   }
-
-  using executor_type = boost::asio::associated_executor_t<
-    RequestHandler,
-    decltype((std::declval<::foxy::client_session&>().stream.get_executor()))
-  >;
 
   auto get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(), p_->session.stream.get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
   }
-
-  using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
 
   auto get_allocator() const noexcept -> allocator_type
   {
@@ -244,12 +264,18 @@ public:
       yield http::async_read(s.session.stream, s.session.buffer, s.parser, std::move(*this));
       if (ec) { goto upcall; }
 
-      return p_.invoke(boost::system::error_code());
+      {
+        auto work1 = std::move(s.work1);
+        auto work2 = std::move(s.work2);
+        return p_.invoke(boost::system::error_code());
+      }
 
     upcall:
       if (!is_continuation) {
         yield boost::asio::post(bind_handler(std::move(*this), ec, 0));
       }
+      auto work1 = std::move(s.work1);
+      auto work2 = std::move(s.work2);
       p_.invoke(ec);
     }
   }

@@ -25,6 +25,10 @@ public:
   session(session&&)      = default;
 
   explicit session(boost::asio::io_context&);
+
+  using executor_type = decltype(stream.get_executor());
+
+  auto get_executor() -> executor_type;
 };
 } // foxy
 

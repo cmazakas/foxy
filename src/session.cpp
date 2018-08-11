@@ -5,3 +5,8 @@ foxy::session::session(boost::asio::io_context& io)
 , timer(io)
 {
 }
+
+auto foxy::session::get_executor() -> executor_type
+{
+  return stream.get_executor();
+}
