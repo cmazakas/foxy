@@ -38,6 +38,15 @@ public:
     ConnectHandler&& handler
   ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
     ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint));
+
+  template <class Request, class ResponseParser, class RequestHandler>
+  auto
+  async_request(
+    Request&         request,
+    ResponseParser&  parse,
+    RequestHandler&& handler
+  ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
+    RequestHandler, void(boost::system::error_code));
 };
 
 } // foxy

@@ -106,8 +106,7 @@ public:
     {
       if (s.session.is_ssl()) {
         if (!SSL_set_tlsext_host_name(s.session.ssl().native_handle(), s.host.c_str())) {
-            ec.assign(
-              static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
+            ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
             goto upcall;
         }
       }
@@ -135,6 +134,87 @@ public:
   #include <boost/asio/unyield.hpp>
 };
 
+template <class Request, class ResponseParser, class RequestHandler>
+struct request_op : boost::asio::coroutine
+{
+private:
+
+  struct state
+  {
+    ::foxy::client_session& session;
+    Request&                request;
+    ResponseParser&         parser;
+
+    explicit state(
+      RequestHandler const&   handler,
+      ::foxy::client_session& session_,
+      Request&                request_,
+      ResponseParser&         parser_)
+    : session(session_)
+    , request(request_)
+    , parser(parser_)
+    {
+    }
+  };
+
+  boost::beast::handler_ptr<state, RequestHandler> p_;
+
+public:
+  request_op()                  = delete;
+  request_op(request_op const&) = default;
+  request_op(request_op&&)      = default;
+
+  template <class DeducedHandler>
+  request_op(
+    ::foxy::client_session& session,
+    Request&                request,
+    ResponseParser&         parser,
+    DeducedHandler&&        handler)
+  : p_(
+    std::forward<DeducedHandler>(handler),
+    session, request, parser)
+  {
+  }
+
+  using executor_type = boost::asio::associated_executor_t<
+    RequestHandler,
+    decltype((std::declval<::foxy::client_session&>().tcp().get_executor()))
+  >;
+
+  auto get_executor() const noexcept -> executor_type
+  {
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.tcp().get_executor());
+  }
+
+  using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
+
+  auto get_allocator() const noexcept -> allocator_type
+  {
+    return boost::asio::get_associated_allocator(p_.handler());
+  }
+
+  #include <boost/asio/yield.hpp>
+  auto operator()(
+    boost::system::error_code ec,
+    std::size_t const         bytes_transferred,
+    bool const                is_continuation = true) -> void
+  {
+    using namespace std::placeholders;
+    using boost::beast::bind_handler;
+
+    auto& s = *p_;
+    reenter(*this)
+    {
+    upcall:
+      if (!is_continuation) {
+        yield boost::asio::post(bind_handler(std::move(*this), ec, 0));
+      }
+      p_.invoke(ec);
+    }
+  }
+  #include <boost/asio/unyield.hpp>
+};
+
 } // detail
 
 template <class ConnectHandler>
@@ -151,12 +231,32 @@ client_session::async_connect(
   >
   init(handler);
 
-  auto op = detail::connect_op<
+  detail::connect_op<
     BOOST_ASIO_HANDLER_TYPE(
       ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
-  >(*this, std::move(host), std::move(service), std::move(init.completion_handler));
+  >(
+    *this, std::move(host), std::move(service), std::move(init.completion_handler)
+  )({}, 0, false);
 
-  op({}, 0, false);
+  return init.result.get();
+}
+
+template <class Request, class ResponseParser, class RequestHandler>
+auto
+client_session::async_request(
+  Request&         request,
+  ResponseParser&  parser,
+  RequestHandler&& handler
+) & -> BOOST_ASIO_INITFN_RESULT_TYPE(RequestHandler, void(boost::system::error_code))
+{
+  boost::asio::async_completion<
+    RequestHandler, void(boost::system::error_code)
+  >
+  init(handler);
+
+  detail::request_op<
+    BOOST_ASIO_HANDLER_TYPE(RequestHandler, void(boost::system::error_code))
+  >()();
 
   return init.result.get();
 }
