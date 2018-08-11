@@ -25,6 +25,11 @@ if (MSVC)
   target_compile_definitions(foxy PUBLIC _WIN32_WINNT=0x0A00)
 endif()
 
+if (UNIX)
+  find_package(Threads REQUIRED)
+  target_link_libraries(foxy PUBLIC Threads::Threads)
+endif()
+
 target_compile_definitions(
   foxy
 

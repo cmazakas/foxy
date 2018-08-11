@@ -8,7 +8,7 @@
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/associated_executor.hpp>
 #include <boost/asio/associated_allocator.hpp>
-#include <boost/asio/executor_work_guard.hpp >
+#include <boost/asio/executor_work_guard.hpp>
 
 #include <boost/asio/post.hpp>
 #include <boost/asio/coroutine.hpp>
