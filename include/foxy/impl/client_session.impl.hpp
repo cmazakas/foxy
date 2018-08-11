@@ -30,7 +30,7 @@ private:
     : session(session_)
     , host(std::move(host_))
     , service(std::move(service_))
-    , resolver(session.tcp().get_executor().context())
+    , resolver(session.stream.get_executor().context())
     {
     }
   };
@@ -56,12 +56,12 @@ public:
 
   using executor_type = boost::asio::associated_executor_t<
     ConnectHandler,
-    decltype(((std::declval<::foxy::client_session&>()).tcp().get_executor()))
+    decltype(((std::declval<::foxy::client_session&>()).stream.get_executor()))
   >;
 
   auto get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(), p_->session.tcp().get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.stream.get_executor());
   }
 
   using allocator_type = boost::asio::associated_allocator_t<ConnectHandler>;
@@ -104,8 +104,8 @@ public:
     auto& s = *p_;
     reenter(*this)
     {
-      if (s.session.is_ssl()) {
-        if (!SSL_set_tlsext_host_name(s.session.ssl().native_handle(), s.host.c_str())) {
+      if (s.session.stream.is_ssl()) {
+        if (!SSL_set_tlsext_host_name(s.session.stream.ssl().native_handle(), s.host.c_str())) {
             ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
             goto upcall;
         }
@@ -116,7 +116,9 @@ public:
       if (ec) { goto upcall; }
 
       yield boost::asio::async_connect(
-        s.session.tcp(), s.results, bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+        s.session.stream.tcp(), s.results,
+        bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+
       if (ec) { goto upcall; }
 
       {
@@ -133,6 +135,35 @@ public:
   }
   #include <boost/asio/unyield.hpp>
 };
+
+} // detail
+
+template <class ConnectHandler>
+auto
+client_session::async_connect(
+  std::string      host,
+  std::string      service,
+  ConnectHandler&& handler
+) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
+  ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
+{
+  boost::asio::async_completion<
+    ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint)
+  >
+  init(handler);
+
+  detail::connect_op<
+    BOOST_ASIO_HANDLER_TYPE(
+      ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
+  >(
+    *this, std::move(host), std::move(service), std::move(init.completion_handler)
+  )({}, 0, false);
+
+  return init.result.get();
+}
+
+namespace detail
+{
 
 template <class Request, class ResponseParser, class RequestHandler>
 struct request_op : boost::asio::coroutine
@@ -178,12 +209,12 @@ public:
 
   using executor_type = boost::asio::associated_executor_t<
     RequestHandler,
-    decltype((std::declval<::foxy::client_session&>().tcp().get_executor()))
+    decltype((std::declval<::foxy::client_session&>().stream.get_executor()))
   >;
 
   auto get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(), p_->session.tcp().get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.stream.get_executor());
   }
 
   using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
@@ -202,9 +233,19 @@ public:
     using namespace std::placeholders;
     using boost::beast::bind_handler;
 
+    namespace http = boost::beast::http;
+
     auto& s = *p_;
     reenter(*this)
     {
+      yield http::async_write(s.session.stream, s.request, std::move(*this));
+      if (ec) { goto upcall; }
+
+      yield http::async_read(s.session.stream, s.session.buffer, s.parser, std::move(*this));
+      if (ec) { goto upcall; }
+
+      return p_.invoke(boost::system::error_code());
+
     upcall:
       if (!is_continuation) {
         yield boost::asio::post(bind_handler(std::move(*this), ec, 0));
@@ -216,30 +257,6 @@ public:
 };
 
 } // detail
-
-template <class ConnectHandler>
-auto
-client_session::async_connect(
-  std::string      host,
-  std::string      service,
-  ConnectHandler&& handler
-) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
-  ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
-{
-  boost::asio::async_completion<
-    ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint)
-  >
-  init(handler);
-
-  detail::connect_op<
-    BOOST_ASIO_HANDLER_TYPE(
-      ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
-  >(
-    *this, std::move(host), std::move(service), std::move(init.completion_handler)
-  )({}, 0, false);
-
-  return init.result.get();
-}
 
 template <class Request, class ResponseParser, class RequestHandler>
 auto
@@ -255,8 +272,9 @@ client_session::async_request(
   init(handler);
 
   detail::request_op<
+    Request, ResponseParser,
     BOOST_ASIO_HANDLER_TYPE(RequestHandler, void(boost::system::error_code))
-  >()();
+  >(*this, request, parser, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();
 }
