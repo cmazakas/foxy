@@ -95,7 +95,6 @@ public:
     (*this)(ec, 0);
   }
 
-  #include <boost/asio/yield.hpp>
   auto operator()(
     boost::system::error_code ec,
     std::size_t const         bytes_transferred,
@@ -105,7 +104,7 @@ public:
     using boost::beast::bind_handler;
 
     auto& s = *p_;
-    reenter(*this)
+    BOOST_ASIO_CORO_REENTER(*this)
     {
       if (s.session.stream.is_ssl()) {
         if (!SSL_set_tlsext_host_name(s.session.stream.ssl().native_handle(), s.host.c_str())) {
@@ -114,11 +113,13 @@ public:
         }
       }
 
-      yield s.resolver.async_resolve(
+      BOOST_ASIO_CORO_YIELD
+      s.resolver.async_resolve(
         s.host, s.service, bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
       if (ec) { goto upcall; }
 
-      yield boost::asio::async_connect(
+      BOOST_ASIO_CORO_YIELD
+      boost::asio::async_connect(
         s.session.stream.tcp(), s.results,
         bind_handler(std::move(*this), on_connect_t{}, _1, _2));
 
@@ -132,13 +133,13 @@ public:
 
     upcall:
       if (!is_continuation) {
-        yield boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
+        BOOST_ASIO_CORO_YIELD
+        boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
       }
       auto work = std::move(s.work);
       p_.invoke(ec, boost::asio::ip::tcp::endpoint());
     }
   }
-  #include <boost/asio/unyield.hpp>
 };
 
 } // detail
@@ -232,7 +233,6 @@ public:
     return boost::asio::get_associated_allocator(p_.handler());
   }
 
-  #include <boost/asio/yield.hpp>
   auto operator()(
     boost::system::error_code ec,
     std::size_t const         bytes_transferred,
@@ -244,12 +244,14 @@ public:
     namespace http = boost::beast::http;
 
     auto& s = *p_;
-    reenter(*this)
+    BOOST_ASIO_CORO_REENTER(*this)
     {
-      yield http::async_write(s.session.stream, s.request, std::move(*this));
+      BOOST_ASIO_CORO_YIELD
+      http::async_write(s.session.stream, s.request, std::move(*this));
       if (ec) { goto upcall; }
 
-      yield http::async_read(s.session.stream, s.session.buffer, s.parser, std::move(*this));
+      BOOST_ASIO_CORO_YIELD
+      http::async_read(s.session.stream, s.session.buffer, s.parser, std::move(*this));
       if (ec) { goto upcall; }
 
       {
@@ -259,13 +261,13 @@ public:
 
     upcall:
       if (!is_continuation) {
-        yield boost::asio::post(bind_handler(std::move(*this), ec, 0));
+        BOOST_ASIO_CORO_YIELD
+        boost::asio::post(bind_handler(std::move(*this), ec, 0));
       }
       auto work = std::move(s.work);
       p_.invoke(ec);
     }
   }
-  #include <boost/asio/unyield.hpp>
 };
 
 } // detail
