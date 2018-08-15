@@ -18,6 +18,7 @@ struct multi_stream
 public:
   using stream_type     = boost::asio::ip::tcp::socket;
   using ssl_stream_type = boost::beast::ssl_stream<stream_type&>;
+  using executor_type   = boost::asio::io_context::executor_type;
 
 private:
   stream_type                      stream_;
@@ -35,7 +36,7 @@ public:
 
   auto is_ssl() const noexcept -> bool;
 
-  auto get_executor() -> boost::asio::io_context::executor_type;
+  auto get_executor() -> executor_type;
 
   template <class MutableBufferSequence, class CompletionToken>
   auto

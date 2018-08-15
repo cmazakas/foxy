@@ -18,6 +18,8 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/multi_stream.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
 )
 
 if (MSVC)
