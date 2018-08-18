@@ -80,67 +80,247 @@ public:
   auto operator()(
     on_resolve_t,
     boost::system::error_code                    ec,
-    boost::asio::ip::tcp::resolver::results_type results) -> void
-  {
-    p_->results = std::move(results);
-    (*this)(ec, 0);
-  }
+    boost::asio::ip::tcp::resolver::results_type results) -> void;
 
   auto operator()(
     on_connect_t,
     boost::system::error_code      ec,
-    boost::asio::ip::tcp::endpoint endpoint) -> void
-  {
-    p_->endpoint = std::move(endpoint);
-    (*this)(ec, 0);
-  }
+    boost::asio::ip::tcp::endpoint endpoint) -> void;
 
   auto operator()(
     boost::system::error_code ec,
     std::size_t const         bytes_transferred,
-    bool const                is_continuation = true) -> void
-  {
-    using namespace std::placeholders;
-    using boost::beast::bind_handler;
-
-    auto& s = *p_;
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      if (s.session.stream.is_ssl()) {
-        if (!SSL_set_tlsext_host_name(s.session.stream.ssl().native_handle(), s.host.c_str())) {
-            ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
-            goto upcall;
-        }
-      }
-
-      BOOST_ASIO_CORO_YIELD
-      s.resolver.async_resolve(
-        s.host, s.service, bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
-      if (ec) { goto upcall; }
-
-      BOOST_ASIO_CORO_YIELD
-      boost::asio::async_connect(
-        s.session.stream.tcp(), s.results,
-        bind_handler(std::move(*this), on_connect_t{}, _1, _2));
-
-      if (ec) { goto upcall; }
-
-      {
-        auto endpoint = std::move(s.endpoint);
-        auto work     = std::move(s.work);
-        return p_.invoke(boost::system::error_code(), std::move(endpoint));
-      }
-
-    upcall:
-      if (!is_continuation) {
-        BOOST_ASIO_CORO_YIELD
-        boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
-      }
-      auto work = std::move(s.work);
-      p_.invoke(ec, boost::asio::ip::tcp::endpoint());
-    }
-  }
+    bool const                is_continuation = true) -> void;
 };
+
+template <class ConnectHandler>
+auto connect_op<ConnectHandler>::operator()(
+  on_resolve_t,
+  boost::system::error_code                    ec,
+  boost::asio::ip::tcp::resolver::results_type results) -> void
+{
+  p_->results = std::move(results);
+  (*this)(ec, 0);
+}
+
+template <class ConnectHandler>
+auto connect_op<ConnectHandler>::operator()(
+  on_connect_t,
+  boost::system::error_code      ec,
+  boost::asio::ip::tcp::endpoint endpoint) -> void
+{
+  p_->endpoint = std::move(endpoint);
+  (*this)(ec, 0);
+}
+
+template <class ConnectHandler>
+auto connect_op<ConnectHandler>::operator()(
+  boost::system::error_code ec,
+  std::size_t const         bytes_transferred,
+  bool const                is_continuation) -> void
+{
+  using namespace std::placeholders;
+  using boost::beast::bind_handler;
+
+  auto& s = *p_;
+  BOOST_ASIO_CORO_REENTER(*this)
+  {
+    if (s.session.stream.is_ssl()) {
+      if (!SSL_set_tlsext_host_name(s.session.stream.ssl().native_handle(), s.host.c_str())) {
+          ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
+          goto upcall;
+      }
+    }
+
+    BOOST_ASIO_CORO_YIELD
+    s.resolver.async_resolve(
+      s.host, s.service, bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
+    if (ec) { goto upcall; }
+
+    BOOST_ASIO_CORO_YIELD
+    boost::asio::async_connect(
+      s.session.stream.tcp(), s.results,
+      bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+
+    if (ec) { goto upcall; }
+
+    {
+      auto endpoint = std::move(s.endpoint);
+      auto work     = std::move(s.work);
+      return p_.invoke(boost::system::error_code(), std::move(endpoint));
+    }
+
+  upcall:
+    if (!is_continuation) {
+      BOOST_ASIO_CORO_YIELD
+      boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
+    }
+    auto work = std::move(s.work);
+    p_.invoke(ec, boost::asio::ip::tcp::endpoint());
+  }
+}
+
+
+template <class ConnectHandler>
+struct connect_op_main
+{
+private:
+
+  struct state
+  {
+    ConnectHandler                 handler;
+    ::foxy::client_session&        session;
+    std::string                    host;
+    std::string                    service;
+    boost::asio::ip::tcp::endpoint endpoint;
+    int                            ops_completed;
+    boost::asio::coroutine         coro;
+
+    boost::asio::executor_work_guard<decltype(session.get_executor())> work;
+
+    explicit state(
+      ConnectHandler          handler_,
+      ::foxy::client_session& session_,
+      std::string             host_,
+      std::string             service_)
+    : handler(std::move(handler_))
+    , session(session_)
+    , host(std::move(host_))
+    , service(std::move(service_))
+    , ops_completed{0}
+    , work(session.get_executor())
+    {
+    }
+  };
+
+  boost::shared_ptr<state> p_;
+
+public:
+  connect_op_main()                       = delete;
+  connect_op_main(connect_op_main const&) = default;
+  connect_op_main(connect_op_main&&)      = default;
+
+  template <class DeducedHandler>
+  connect_op_main(
+    ::foxy::client_session& session,
+    std::string             host,
+    std::string             service,
+    DeducedHandler&&        handler)
+  {
+    typename std::allocator_traits<
+      boost::asio::associated_allocator_t<ConnectHandler>
+    >::template rebind_alloc<state>
+    alloc(boost::asio::get_associated_allocator(handler));
+
+    p_ = boost::allocate_shared<state>(
+      alloc,
+      std::move(handler),
+      session,
+      std::move(host),
+      std::move(service));
+  }
+
+  using executor_type = boost::asio::associated_executor_t<
+    ConnectHandler,
+    decltype(std::declval<::foxy::client_session&>().get_executor())
+  >;
+
+  auto get_executor() const noexcept -> executor_type
+  {
+    return boost::asio::get_associated_executor(p_->handler, p_->session.get_executor());
+  }
+
+  using allocator_type = boost::asio::associated_allocator_t<ConnectHandler>;
+
+  auto get_allocator() const noexcept -> allocator_type
+  {
+    return boost::asio::get_associated_allocator(p_->handler);
+  }
+
+  struct on_connect_t {};
+  struct on_timer_t {};
+
+  auto operator()(
+    on_connect_t,
+    boost::system::error_code ec, boost::asio::ip::tcp::endpoint endpoint
+  ) -> void;
+
+  auto operator()(on_timer_t, boost::system::error_code ec) -> void;
+
+  auto operator()(boost::system::error_code ec, bool is_continuation = true) -> void;
+};
+
+
+template <class ConnectHandler>
+auto connect_op_main<ConnectHandler>::operator()(
+  on_connect_t,
+  boost::system::error_code      ec,
+  boost::asio::ip::tcp::endpoint endpoint) -> void
+{
+  p_->ops_completed++;
+  p_->endpoint = std::move(endpoint);
+  p_->session.timer.cancel();
+  (*this)(ec);
+}
+
+template <class ConnectHandler>
+auto connect_op_main<ConnectHandler>::operator()(
+  on_timer_t, boost::system::error_code ec) -> void
+{
+  p_->ops_completed++;
+  if (ec == boost::asio::error::operation_aborted) {
+    return (*this)(boost::system::error_code());
+  }
+  (*this)(ec);
+}
+
+template <class ConnectHandler>
+auto connect_op_main<ConnectHandler>::operator()(
+  boost::system::error_code ec,
+  bool                      is_continuation) -> void
+{
+  using namespace std::chrono_literals;
+  using namespace std::placeholders;
+  using boost::beast::bind_handler;
+
+  auto& s = *p_;
+  BOOST_ASIO_CORO_REENTER(s.coro)
+  {
+    s.session.timer.expires_after(1s);
+
+    {
+      auto self = *this;
+      auto h = bind_handler(self, on_connect_t{}, _1, _2);
+      connect_op<decltype(h)>(
+        s.session, std::move(s.host), std::move(s.service), std::move(h))({}, 0, false);
+    }
+
+    s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
+
+    while (s.ops_completed < 2) {
+      BOOST_ASIO_CORO_YIELD;
+    }
+    if (ec) { goto upcall; }
+
+    {
+      auto handler  = std::move(s.handler);
+      auto endpoint = std::move(s.endpoint);
+      auto work     = std::move(s.work);
+      p_.reset();
+      return handler(ec, endpoint);
+    }
+
+  upcall:
+    if (!is_continuation) {
+      BOOST_ASIO_CORO_YIELD
+      boost::asio::post(boost::beast::bind_handler(*this, ec, 0));
+    }
+    auto handler = std::move(s.handler);
+    auto work    = std::move(s.work);
+    p_.reset();
+    handler(ec, boost::asio::ip::tcp::endpoint());
+  }
+}
 
 } // detail
 
@@ -158,12 +338,12 @@ client_session::async_connect(
   >
   init(handler);
 
-  detail::connect_op<
+  detail::connect_op_main<
     BOOST_ASIO_HANDLER_TYPE(
       ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
   >(
     *this, std::move(host), std::move(service), std::move(init.completion_handler)
-  )({}, 0, false);
+  )({}, false);
 
   return init.result.get();
 }

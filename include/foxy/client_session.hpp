@@ -21,9 +21,12 @@
 #include <boost/beast/core/bind_handler.hpp>
 
 #include <boost/optional/optional.hpp>
+#include <boost/smart_ptr/make_shared.hpp>
 
+#include <chrono>
 #include <string>
 #include <utility>
+#include <memory>
 #include <functional>
 
 namespace foxy
