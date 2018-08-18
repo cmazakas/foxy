@@ -2,6 +2,7 @@
 #define FOXY_CLIENT_SESSION_HPP_
 
 #include "foxy/session.hpp"
+#include "foxy/shared_handler_ptr.hpp"
 
 #include <boost/system/error_code.hpp>
 

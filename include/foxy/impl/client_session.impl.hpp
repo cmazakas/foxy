@@ -166,25 +166,30 @@ struct connect_op_main
 {
 private:
 
+  // TODO: switch to `std::basic_string<char, get_allocator()>`
+  //
   struct state
   {
-    ConnectHandler                 handler;
     ::foxy::client_session&        session;
+
+    // these can likely be refactored into a:
+    // variant<pair<string, strong>, tcp::endpoint>
+    //
     std::string                    host;
     std::string                    service;
     boost::asio::ip::tcp::endpoint endpoint;
+
     int                            ops_completed;
     boost::asio::coroutine         coro;
 
     boost::asio::executor_work_guard<decltype(session.get_executor())> work;
 
     explicit state(
-      ConnectHandler          handler_,
+      ConnectHandler const&   handler_,
       ::foxy::client_session& session_,
       std::string             host_,
       std::string             service_)
-    : handler(std::move(handler_))
-    , session(session_)
+    : session(session_)
     , host(std::move(host_))
     , service(std::move(service_))
     , ops_completed{0}
@@ -193,7 +198,7 @@ private:
     }
   };
 
-  boost::shared_ptr<state> p_;
+  ::foxy::shared_handler_ptr<state, ConnectHandler> p_;
 
 public:
   connect_op_main()                       = delete;
@@ -206,18 +211,8 @@ public:
     std::string             host,
     std::string             service,
     DeducedHandler&&        handler)
+  : p_(std::forward<DeducedHandler>(handler), session, std::move(host), std::move(service))
   {
-    typename std::allocator_traits<
-      boost::asio::associated_allocator_t<ConnectHandler>
-    >::template rebind_alloc<state>
-    alloc(boost::asio::get_associated_allocator(handler));
-
-    p_ = boost::allocate_shared<state>(
-      alloc,
-      std::move(handler),
-      session,
-      std::move(host),
-      std::move(service));
   }
 
   using executor_type = boost::asio::associated_executor_t<
@@ -227,14 +222,14 @@ public:
 
   auto get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_->handler, p_->session.get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
   }
 
   using allocator_type = boost::asio::associated_allocator_t<ConnectHandler>;
 
   auto get_allocator() const noexcept -> allocator_type
   {
-    return boost::asio::get_associated_allocator(p_->handler);
+    return boost::asio::get_associated_allocator(p_.handler());
   }
 
   struct on_connect_t {};
@@ -303,11 +298,9 @@ auto connect_op_main<ConnectHandler>::operator()(
     if (ec) { goto upcall; }
 
     {
-      auto handler  = std::move(s.handler);
       auto endpoint = std::move(s.endpoint);
       auto work     = std::move(s.work);
-      p_.reset();
-      return handler(ec, endpoint);
+      return p_.invoke(ec, endpoint);
     }
 
   upcall:
@@ -315,10 +308,8 @@ auto connect_op_main<ConnectHandler>::operator()(
       BOOST_ASIO_CORO_YIELD
       boost::asio::post(boost::beast::bind_handler(*this, ec, 0));
     }
-    auto handler = std::move(s.handler);
-    auto work    = std::move(s.work);
-    p_.reset();
-    handler(ec, boost::asio::ip::tcp::endpoint());
+    auto work = std::move(s.work);
+    p_.invoke(ec, boost::asio::ip::tcp::endpoint());
   }
 }
 
