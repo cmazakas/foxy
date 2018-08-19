@@ -193,6 +193,7 @@ private:
     , host(std::move(host_))
     , service(std::move(service_))
     , ops_completed{0}
+    , coro()
     , work(session.get_executor())
     {
     }
@@ -252,6 +253,8 @@ auto connect_op_main<ConnectHandler>::operator()(
   boost::system::error_code      ec,
   boost::asio::ip::tcp::endpoint endpoint) -> void
 {
+  if (!p_.has_value()) { return; }
+
   p_->ops_completed++;
   p_->endpoint = std::move(endpoint);
   p_->session.timer.cancel();
@@ -262,6 +265,8 @@ template <class ConnectHandler>
 auto connect_op_main<ConnectHandler>::operator()(
   on_timer_t, boost::system::error_code ec) -> void
 {
+  if (!p_.has_value()) { return; }
+
   p_->ops_completed++;
   if (ec == boost::asio::error::operation_aborted) {
     return (*this)(boost::system::error_code());
@@ -284,8 +289,7 @@ auto connect_op_main<ConnectHandler>::operator()(
     s.session.timer.expires_after(1s);
 
     {
-      auto self = *this;
-      auto h = bind_handler(self, on_connect_t{}, _1, _2);
+      auto h = bind_handler(*this, on_connect_t{}, _1, _2);
       connect_op<decltype(h)>(
         s.session, std::move(s.host), std::move(s.service), std::move(h))({}, 0, false);
     }
@@ -295,22 +299,26 @@ auto connect_op_main<ConnectHandler>::operator()(
     while (s.ops_completed < 2) {
       BOOST_ASIO_CORO_YIELD;
     }
+
     if (ec) { goto upcall; }
 
-    {
-      auto endpoint = std::move(s.endpoint);
-      auto work     = std::move(s.work);
-      return p_.invoke(ec, endpoint);
-    }
+    BOOST_ASIO_CORO_YIELD break;
 
   upcall:
     if (!is_continuation) {
       BOOST_ASIO_CORO_YIELD
       boost::asio::post(boost::beast::bind_handler(*this, ec, 0));
     }
-    auto work = std::move(s.work);
-    p_.invoke(ec, boost::asio::ip::tcp::endpoint());
+    BOOST_ASIO_CORO_YIELD break;
   }
+
+  if (!s.coro.is_complete()) { return; };
+
+  auto endpoint = std::move(s.endpoint);
+  auto work     = std::move(s.work);
+
+  if (ec) { return p_.invoke(ec, boost::asio::ip::tcp::endpoint()); };
+  return p_.invoke(ec, endpoint);
 }
 
 } // detail

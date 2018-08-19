@@ -24,6 +24,7 @@
 #include <boost/optional/optional.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
 
+#include <iostream>
 #include <chrono>
 #include <string>
 #include <utility>

@@ -212,6 +212,12 @@ public:
     template<class... Args>
     void
     invoke(Args&&... args);
+
+    /// Return `true` if `*this` owns an object
+    auto has_value() const noexcept -> bool
+    {
+        return p_->t != nullptr;
+    }
 };
 
 } // foxy
