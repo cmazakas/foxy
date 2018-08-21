@@ -218,6 +218,8 @@ public:
     {
         return p_->t != nullptr;
     }
+
+    void reset() noexcept;
 };
 
 } // foxy

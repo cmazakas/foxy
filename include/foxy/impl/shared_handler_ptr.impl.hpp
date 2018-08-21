@@ -141,6 +141,25 @@ invoke(Args&&... args)
     p_->handler(std::forward<Args>(args)...);
 }
 
+template<class T, class Handler>
+void
+shared_handler_ptr<T, Handler>::
+reset() noexcept
+{
+    --(p_->n);
+    if (p_->n == 0) {
+        p_->t->~T();
+        typename std::allocator_traits<
+            boost::asio::associated_allocator_t<Handler>>::
+                template rebind_alloc<T> alloc{
+                    boost::asio::get_associated_allocator(
+                        p_->handler)};
+        std::allocator_traits<
+            decltype(alloc)>::deallocate(alloc, p_->t, 1);
+    }
+    p_ = nullptr;
+}
+
 } // foxy
 
 #endif

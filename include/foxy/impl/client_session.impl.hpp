@@ -296,6 +296,7 @@ auto connect_op_main<ConnectHandler>::operator()(
 
     s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
 
+    p_.reset();
     while (s.ops_completed < 2) {
       BOOST_ASIO_CORO_YIELD;
     }
