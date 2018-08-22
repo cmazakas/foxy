@@ -55,7 +55,7 @@ public:
   auto
   async_request(
     Request&         request,
-    ResponseParser&  parse,
+    ResponseParser&  parser,
     RequestHandler&& handler
   ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
     RequestHandler, void(boost::system::error_code));

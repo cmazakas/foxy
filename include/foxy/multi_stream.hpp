@@ -26,7 +26,7 @@ private:
 
 public:
   multi_stream()                    = delete;
-  multi_stream(multi_stream const&) = default;
+  multi_stream(multi_stream const&) = delete;
   multi_stream(multi_stream&&)      = default;
 
   explicit multi_stream(boost::asio::io_context&);

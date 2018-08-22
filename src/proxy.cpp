@@ -34,6 +34,7 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
       // TODO: create server_session object and then make sure it runs
       // asynchronously from there
       //
+      // server_session session(std::move(stream_));
     }
   }
 }

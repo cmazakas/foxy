@@ -21,10 +21,11 @@ public:
   timer_type  timer;
 
   session()               = delete;
-  session(session const&) = default;
+  session(session const&) = delete;
   session(session&&)      = default;
 
-  explicit session(boost::asio::io_context&);
+  explicit session(boost::asio::io_context& io);
+  explicit session(stream_type stream_);
 
   using executor_type = decltype(stream.get_executor());
 
