@@ -106,25 +106,6 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       BOOST_ASIO_CORO_YIELD
       s.session.async_read_header(*s.parser, std::move(*this));
 
-      // a CONNECT must be used to signify tunnel semantics
-      //
-      if (s.parser->get().method() != http::verb::connect) {
-        s.err_response.result(http::status::method_not_allowed);
-        s.err_response.body() = "Invalid request method. Only CONNECT is supported\n\n";
-        s.err_response.prepare_payload();
-
-        BOOST_ASIO_CORO_YIELD
-        s.session.async_write(s.err_response, std::move(*this));
-
-        s.err_response = {};
-        if (ec) {
-          foxy::log_error(ec, "foxy::proxy::async_accept_op::non_connect_verb");
-          break;
-        }
-
-        continue;
-      }
-
       // we can only form a proper tunnel over a persistent connection
       //
       if (!s.parser->get().keep_alive()) {
@@ -144,6 +125,25 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.session.stream.tcp().shutdown(tcp::socket::shutdown_both);
 
         break;
+      }
+
+      // a CONNECT must be used to signify tunnel semantics
+      //
+      if (s.parser->get().method() != http::verb::connect) {
+        s.err_response.result(http::status::method_not_allowed);
+        s.err_response.body() = "Invalid request method. Only CONNECT is supported\n\n";
+        s.err_response.prepare_payload();
+
+        BOOST_ASIO_CORO_YIELD
+        s.session.async_write(s.err_response, std::move(*this));
+
+        s.err_response = {};
+        if (ec) {
+          foxy::log_error(ec, "foxy::proxy::async_accept_op::non_connect_verb");
+          break;
+        }
+
+        continue;
       }
     }
   }
