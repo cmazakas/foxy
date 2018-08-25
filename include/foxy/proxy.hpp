@@ -30,7 +30,7 @@ private:
 
 public:
   proxy()             = delete;
-  proxy(proxy const&) = default;
+  proxy(proxy const&) = delete;
   proxy(proxy&&)      = default;
 
   explicit proxy(

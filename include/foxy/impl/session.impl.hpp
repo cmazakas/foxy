@@ -43,9 +43,8 @@ session::async_write_header(
 {
   return boost::beast::http::async_write_header(
     stream,
-    buffer,
     serializer,
-    std::forward<ReadHandler>(handler));
+    std::forward<WriteHandler>(handler));
 }
 
 template <class Serializer, class WriteHandler>
@@ -57,9 +56,8 @@ session::async_write(
 {
   return boost::beast::http::async_write(
     stream,
-    buffer,
     serializer,
-    std::forward<ReadHandler>(handler));
+    std::forward<WriteHandler>(handler));
 }
 
 } // foxy
