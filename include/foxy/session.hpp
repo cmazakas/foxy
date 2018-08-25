@@ -3,11 +3,16 @@
 
 #include "foxy/multi_stream.hpp"
 
-#include <boost/beast/core/flat_buffer.hpp>
+#include <boost/asio/async_result.hpp>
 #include <boost/asio/steady_timer.hpp>
+
+#include <boost/beast/http/read.hpp>
+#include <boost/beast/http/write.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
 
 namespace foxy
 {
+
 struct session
 {
 public:
@@ -30,7 +35,38 @@ public:
   using executor_type = decltype(stream.get_executor());
 
   auto get_executor() -> executor_type;
+
+  template <class Parser, class ReadHandler>
+  auto
+  async_read_header(
+    Parser&       parser,
+    ReadHandler&& handler
+  ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t));
+
+  template <class Parser, class ReadHandler>
+  auto
+  async_read(
+    Parser&       parser,
+    ReadHandler&& handler
+  ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t));
+
+  template <class Serializer, class WriteHandler>
+  auto
+  async_write_header(
+    Serializer&    serializer,
+    WriteHandler&& handler
+  ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler, void(boost::system::error_code, std::size_t));
+
+  template <class Serializer, class WriteHandler>
+  auto
+  async_write(
+    Serializer&    serializer,
+    WriteHandler&& handler
+  ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler, void(boost::system::error_code, std::size_t));
 };
+
 } // foxy
+
+#include "foxy/impl/session.impl.hpp"
 
 #endif // FOXY_SESSION_HPP

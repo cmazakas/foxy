@@ -33,6 +33,7 @@
 
 namespace foxy
 {
+
 struct client_session : public session
 {
 public:
