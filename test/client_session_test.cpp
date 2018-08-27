@@ -4,7 +4,6 @@
 #include <boost/smart_ptr/make_unique.hpp>
 
 #include <memory>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 

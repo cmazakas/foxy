@@ -8,6 +8,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/coroutine.hpp>
 
+#include <boost/beast/http/error.hpp>
+
 #include <memory>
 #include <functional>
 

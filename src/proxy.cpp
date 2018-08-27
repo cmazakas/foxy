@@ -107,6 +107,8 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       s.session.async_read_header(*s.parser, std::move(*this));
 
       // we can only form a proper tunnel over a persistent connection
+      // because our request contains `Connection: close`, we let them initiate
+      // the shutdown procedure
       //
       if (!s.parser->get().keep_alive()) {
         s.err_response.result(http::status::bad_request);
@@ -122,7 +124,16 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
           break;
         }
 
-        s.session.stream.tcp().shutdown(tcp::socket::shutdown_both);
+        s.session.stream.tcp().shutdown(tcp::socket::shutdown_send);
+
+        BOOST_ASIO_CORO_YIELD
+        s.session.async_read(*s.parser, std::move(*this));
+
+        if (ec != http::error::end_of_stream) {
+          // handle error here
+        }
+        s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive);
+        s.session.stream.tcp().close(ec);
 
         break;
       }

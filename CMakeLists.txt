@@ -68,6 +68,11 @@ endif()
 if (FOXY_TESTING)
 
   find_package(Catch2 CONFIG REQUIRED)
+  find_package(
+    Boost 1.68
+    REQUIRED
+      coroutine
+  )
 
   add_library(test_utils INTERFACE)
   target_include_directories(
@@ -90,6 +95,7 @@ if (FOXY_TESTING)
       foxy
       test_utils
       Catch2::Catch2
+      Boost::coroutine
   )
 
   enable_testing()
