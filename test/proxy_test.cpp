@@ -31,7 +31,7 @@ TEST_CASE("Our forward proxy")
         auto const src_port     = static_cast<unsigned short>(1337);
         auto const src_endpoint = tcp::endpoint(src_addr, src_port);
 
-        auto const reuse_addr = false;
+        auto const reuse_addr = true;
 
         auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
         proxy->async_accept();
@@ -55,8 +55,10 @@ TEST_CASE("Our forward proxy")
         auto const was_valid_body   = response.body() == "Connection must be persistent to allow proper tunneling\n\n";
 
         was_valid_response = was_valid_result && was_valid_body;
+        proxy->acceptor_.cancel();
+        proxy.reset();
 
-        io.stop();
+        // io.stop();
       });
 
     io.run();
@@ -76,7 +78,7 @@ TEST_CASE("Our forward proxy")
         auto const src_port     = static_cast<unsigned short>(1337);
         auto const src_endpoint = tcp::endpoint(src_addr, src_port);
 
-        auto const reuse_addr = false;
+        auto const reuse_addr = true;
 
         auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
         proxy->async_accept();
@@ -100,8 +102,10 @@ TEST_CASE("Our forward proxy")
         client.stream.tcp().close(ec);
 
         was_valid_response = was_valid_result && was_valid_body;
+        proxy->acceptor_.cancel();
+        proxy.reset();
 
-        io.stop();
+        // io.stop();
       });
 
     io.run();
@@ -121,7 +125,7 @@ TEST_CASE("Our forward proxy")
         auto const src_port     = static_cast<unsigned short>(1337);
         auto const src_endpoint = tcp::endpoint(src_addr, src_port);
 
-        auto const reuse_addr = false;
+        auto const reuse_addr = true;
 
         auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
         proxy->async_accept();
@@ -146,8 +150,10 @@ TEST_CASE("Our forward proxy")
         client.stream.tcp().close(ec);
 
         was_valid_response = was_valid_result && was_valid_body;
+        proxy->acceptor_.cancel();
+        proxy.reset();
 
-        io.stop();
+        // io.stop();
       });
 
     io.run();

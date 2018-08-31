@@ -14,6 +14,7 @@
 #include <boost/optional/optional.hpp>
 
 #include <memory>
+#include <iostream>
 
 using boost::optional;
 using boost::asio::ip::tcp;
@@ -73,6 +74,8 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
         stream_.tcp(),
         std::bind(&proxy::async_accept, shared_from_this(), _1));
 
+      if (ec == boost::asio::error::operation_aborted) { break; }
+
       if (ec) {
         log_error(ec, "foxy::proxy::async_accept");
         continue;
@@ -106,8 +109,12 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       }
       s.parser.emplace();
 
+      std::cout << "buffer size before reading: " << s.session.buffer.size() << "\n";
+
       BOOST_ASIO_CORO_YIELD
       s.session.async_read(*s.parser, std::move(*this));
+
+      std::cout << "buffer size after reading: " << s.session.buffer.size() << "\n\n";
 
       if (ec == http::error::unexpected_body) {
         s.err_response.result(http::status::bad_request);
@@ -123,10 +130,13 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
           return;
         }
 
+        s.session.buffer.consume(s.session.buffer.size());
+
         continue;
       }
 
       if (ec == http::error::end_of_stream) {
+        std::cout << "received the end of the stream\n";
         break;
       }
 
@@ -142,8 +152,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.err_response.body() = "Connection must be persistent to allow proper tunneling\n\n";
         s.err_response.prepare_payload();
 
-        BOOST_ASIO_CORO_YIELD
-        s.session.async_write(s.err_response, std::move(*this));
+        BOOST_ASIO_CORO_YIELD s.session.async_write(s.err_response, std::move(*this));
 
         s.err_response = {};
         if (ec) {
@@ -151,6 +160,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
           return;
         }
 
+        std::cout << "going to break now...\n";
         break;
       }
 
@@ -193,15 +203,23 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     // acknowledgement of the packet(s) containing the server's last
     // response.  Finally, the server fully closes the connection.
     //
-    s.session.stream.tcp().shutdown(tcp::socket::shutdown_send);
+    std::cout << "at shutdown portion\n\n";
+    s.session.stream.tcp().shutdown(tcp::socket::shutdown_send, ec);
+
+    if (s.parser) {
+      s.parser = boost::none;
+    }
+    s.parser.emplace();
 
     BOOST_ASIO_CORO_YIELD
     s.session.async_read(*s.parser, std::move(*this));
-    if (ec && ec != http::error::end_of_stream) {
-      // handle error here
-    }
+
+    if (ec) { std::cout << ec << "\n"; }
+
     s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.tcp().close(ec);
+
+    std::cout << "done closing the socket\n\n";
   }
 }
 
