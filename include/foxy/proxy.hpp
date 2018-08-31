@@ -2,16 +2,12 @@
 #define FOXY_PROXY_HPP_
 
 #include "foxy/multi_stream.hpp"
-#include "foxy/log.hpp"
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/coroutine.hpp>
 
-#include <boost/beast/http/error.hpp>
-
 #include <memory>
-#include <functional>
 
 namespace foxy
 {

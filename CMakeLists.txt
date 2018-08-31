@@ -21,6 +21,7 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 )
 
 if (MSVC)
@@ -87,7 +88,12 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
   )
+
+  if (MSVC)
+    target_compile_options(foxy_tests PRIVATE "/bigobj")
+  endif()
 
   target_link_libraries(
     foxy_tests

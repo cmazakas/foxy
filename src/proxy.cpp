@@ -1,6 +1,7 @@
 #include "foxy/proxy.hpp"
 #include "foxy/server_session.hpp"
 #include "foxy/log.hpp"
+#include "foxy/utility.hpp"
 
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/message.hpp>
@@ -8,8 +9,7 @@
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/http/status.hpp>
-
-#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/http/error.hpp>
 
 #include <boost/optional/optional.hpp>
 
@@ -175,6 +175,10 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
       // extract request target and attempt to form the tunnel
       //
+      auto request = s.parser->release();
+      auto target  = request.target();
+
+      auto host_and_port = foxy::parse_authority_form(target);
 
     }
 
