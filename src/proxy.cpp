@@ -91,7 +91,8 @@ async_connect_op::async_connect_op(foxy::multi_stream stream)
 {
 }
 
-void async_connect_op::
+void
+async_connect_op::
 operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 {
   auto& s = *p_;
@@ -174,7 +175,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     if (ec && ec != http::error::end_of_stream) {
       // handle error here
     }
-    s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive);
+    s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.tcp().close(ec);
   }
 }
