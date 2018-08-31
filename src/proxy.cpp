@@ -107,7 +107,24 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       s.parser.emplace();
 
       BOOST_ASIO_CORO_YIELD
-      s.session.async_read_header(*s.parser, std::move(*this));
+      s.session.async_read(*s.parser, std::move(*this));
+
+      if (ec == http::error::unexpected_body) {
+        s.err_response.result(http::status::bad_request);
+        s.err_response.body() = "Messages with bodies are not supported for establishing a tunnel\n\n";
+        s.err_response.prepare_payload();
+
+        BOOST_ASIO_CORO_YIELD
+        s.session.async_write(s.err_response, std::move(*this));
+
+        s.err_response = {};
+        if (ec) {
+          foxy::log_error(ec, "foxy::proxy::async_accept_op::unexpected_body::write_error");
+          return;
+        }
+
+        continue;
+      }
 
       if (ec == http::error::end_of_stream) {
         break;
@@ -155,6 +172,10 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
         continue;
       }
+
+      // extract request target and attempt to form the tunnel
+      //
+
     }
 
     // http rfc 7230 section 6.6 Tear-down
