@@ -98,6 +98,8 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
   BOOST_ASIO_CORO_REENTER(*this)
   {
     while (true) {
+      // A new instance of the parser is required for each message.
+      //
       if (s.parser) {
         s.parser = boost::none;
       }
@@ -106,9 +108,16 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       BOOST_ASIO_CORO_YIELD
       s.session.async_read_header(*s.parser, std::move(*this));
 
+      if (ec == http::error::end_of_stream) {
+        break;
+      }
+
+      if (ec) {
+        foxy::log_error(ec, "foxy::proxy::async_connect_op::read_header::read_error");
+        return;
+      }
+
       // we can only form a proper tunnel over a persistent connection
-      // because our request contains `Connection: close`, we let them initiate
-      // the shutdown procedure
       //
       if (!s.parser->get().keep_alive()) {
         s.err_response.result(http::status::bad_request);
@@ -120,20 +129,9 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
         s.err_response = {};
         if (ec) {
-          foxy::log_error(ec, "foxy::proxy::async_accept_op::non_keepalive_request");
-          break;
+          foxy::log_error(ec, "foxy::proxy::async_accept_op::non_keepalive_request::write_error");
+          return;
         }
-
-        s.session.stream.tcp().shutdown(tcp::socket::shutdown_send);
-
-        BOOST_ASIO_CORO_YIELD
-        s.session.async_read(*s.parser, std::move(*this));
-
-        if (ec != http::error::end_of_stream) {
-          // handle error here
-        }
-        s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive);
-        s.session.stream.tcp().close(ec);
 
         break;
       }
@@ -150,13 +148,34 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
         s.err_response = {};
         if (ec) {
-          foxy::log_error(ec, "foxy::proxy::async_accept_op::non_connect_verb");
-          break;
+          foxy::log_error(ec, "foxy::proxy::async_accept_op::non_connect_verb::write_error");
+          return;
         }
 
         continue;
       }
     }
+
+    // http rfc 7230 section 6.6 Tear-down
+    // -----------------------------------
+    // To avoid the TCP reset problem, servers typically close a connection
+    // in stages.  First, the server performs a half-close by closing only
+    // the write side of the read/write connection.  The server then
+    // continues to read from the connection until it receives a
+    // corresponding close by the client, or until the server is reasonably
+    // certain that its own TCP stack has received the client's
+    // acknowledgement of the packet(s) containing the server's last
+    // response.  Finally, the server fully closes the connection.
+    //
+    s.session.stream.tcp().shutdown(tcp::socket::shutdown_send);
+
+    BOOST_ASIO_CORO_YIELD
+    s.session.async_read(*s.parser, std::move(*this));
+    if (ec && ec != http::error::end_of_stream) {
+      // handle error here
+    }
+    s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive);
+    s.session.stream.tcp().close(ec);
   }
 }
 
