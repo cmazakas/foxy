@@ -84,6 +84,7 @@ TEST_CASE("Our forward proxy")
         client.async_connect("127.0.0.1", "1337", yield);
 
         auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
+        request.keep_alive(true);
 
         http::response_parser<http::string_body> res_parser;
 
@@ -128,7 +129,6 @@ TEST_CASE("Our forward proxy")
         client.async_connect("127.0.0.1", "1337", yield);
 
         auto request = http::request<http::string_body>(http::verb::get, "/", 11);
-        request.keep_alive(true);
         request.body() = "ha ha ha, this is an non-zero length body";
         request.prepare_payload();
 

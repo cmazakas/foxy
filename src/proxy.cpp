@@ -131,7 +131,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       }
 
       if (ec) {
-        foxy::log_error(ec, "foxy::proxy::async_connect_op::read_header::read_error");
+        foxy::log_error(ec, "foxy::proxy::async_connect_op::async_read::read_error");
         return;
       }
 
