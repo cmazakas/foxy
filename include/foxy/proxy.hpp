@@ -7,6 +7,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/coroutine.hpp>
 
+#include <boost/system/error_code.hpp>
+
 #include <memory>
 
 namespace foxy
@@ -22,7 +24,7 @@ public:
   using stream_type   = multi_stream;
   using executor_type = stream_type::executor_type;
 
-public:
+private:
   stream_type   stream_;
   acceptor_type acceptor_;
 
@@ -39,6 +41,7 @@ public:
   auto get_executor() -> executor_type;
 
   auto async_accept(boost::system::error_code ec = {}) -> void;
+  auto cancel(boost::system::error_code& ec) -> void;
 };
 
 } // foxy

@@ -55,7 +55,7 @@ TEST_CASE("Our forward proxy")
         auto const was_valid_body   = response.body() == "Connection must be persistent to allow proper tunneling\n\n";
 
         was_valid_response = was_valid_result && was_valid_body;
-        proxy->acceptor_.cancel();
+        proxy->cancel(ec);
         proxy.reset();
 
         // io.stop();
@@ -102,10 +102,7 @@ TEST_CASE("Our forward proxy")
         client.stream.tcp().close(ec);
 
         was_valid_response = was_valid_result && was_valid_body;
-        proxy->acceptor_.cancel();
-        proxy.reset();
-
-        // io.stop();
+        proxy->cancel(ec);
       });
 
     io.run();
@@ -150,10 +147,7 @@ TEST_CASE("Our forward proxy")
         client.stream.tcp().close(ec);
 
         was_valid_response = was_valid_result && was_valid_body;
-        proxy->acceptor_.cancel();
-        proxy.reset();
-
-        // io.stop();
+        proxy->cancel(ec);
       });
 
     io.run();

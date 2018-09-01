@@ -34,6 +34,11 @@ auto foxy::proxy::get_executor() -> executor_type
   return stream_.get_executor();
 }
 
+auto foxy::proxy::cancel(boost::system::error_code& ec) -> void
+{
+  acceptor_.cancel(ec);
+}
+
 namespace
 {
 struct async_connect_op : boost::asio::coroutine
@@ -74,7 +79,9 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
         stream_.tcp(),
         std::bind(&proxy::async_accept, shared_from_this(), _1));
 
-      if (ec == boost::asio::error::operation_aborted) { break; }
+      if (ec == boost::asio::error::operation_aborted) {
+        break;
+      }
 
       if (ec) {
         log_error(ec, "foxy::proxy::async_accept");
@@ -114,9 +121,11 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       BOOST_ASIO_CORO_YIELD
       s.session.async_read(*s.parser, std::move(*this));
 
-      std::cout << "buffer size after reading: " << s.session.buffer.size() << "\n\n";
+      std::cout << "buffer size after reading: " << s.session.buffer.size() << "\n";
 
       if (ec == http::error::unexpected_body) {
+        std::cout << "encountered unexpected message body\n";
+
         s.err_response.result(http::status::bad_request);
         s.err_response.body() = "Messages with bodies are not supported for establishing a tunnel\n\n";
         s.err_response.prepare_payload();
@@ -160,7 +169,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
           return;
         }
 
-        std::cout << "going to break now...\n";
+        std::cout << "non-persistent connection, going to break session loop now...\n";
         break;
       }
 
@@ -203,7 +212,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     // acknowledgement of the packet(s) containing the server's last
     // response.  Finally, the server fully closes the connection.
     //
-    std::cout << "at shutdown portion\n\n";
+    std::cout << "at shutdown portion\n";
     s.session.stream.tcp().shutdown(tcp::socket::shutdown_send, ec);
 
     if (s.parser) {
@@ -214,7 +223,9 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     BOOST_ASIO_CORO_YIELD
     s.session.async_read(*s.parser, std::move(*this));
 
-    if (ec) { std::cout << ec << "\n"; }
+    if (ec) {
+      std::cout << ec << "\n";
+    }
 
     s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.tcp().close(ec);
