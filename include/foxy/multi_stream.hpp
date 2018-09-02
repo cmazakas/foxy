@@ -4,19 +4,25 @@
 #include <boost/asio/io_context.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core/type_traits.hpp>
 #include <boost/beast/experimental/core/ssl_stream.hpp>
 
 #include <boost/optional/optional.hpp>
 
 #include <utility>
+#include <type_traits>
 
 namespace foxy
 {
 
-struct multi_stream
+template <
+  class Stream,
+  class = std::enable_if_t<boost::beast::is_async_stream<Stream>::value>
+>
+struct basic_multi_stream
 {
 public:
-  using stream_type     = boost::asio::ip::tcp::socket;
+  using stream_type     = Stream;
   using ssl_stream_type = boost::beast::ssl_stream<stream_type&>;
   using executor_type   = boost::asio::io_context::executor_type;
 
@@ -25,11 +31,11 @@ private:
   boost::optional<ssl_stream_type> ssl_stream_;
 
 public:
-  multi_stream()                    = delete;
-  multi_stream(multi_stream const&) = delete;
-  multi_stream(multi_stream&&)      = default;
+  basic_multi_stream()                          = delete;
+  basic_multi_stream(basic_multi_stream const&) = delete;
+  basic_multi_stream(basic_multi_stream&&)      = default;
 
-  explicit multi_stream(boost::asio::io_context&);
+  explicit basic_multi_stream(boost::asio::io_context&);
 
   auto plain() & noexcept -> stream_type&;
   auto ssl()   & noexcept -> ssl_stream_type&;
@@ -58,6 +64,41 @@ public:
     return stream_.async_write_some(buffers, std::forward<CompletionToken>(token));
   }
 };
+
+template <class Stream, class X>
+basic_multi_stream<Stream, X>::basic_multi_stream(boost::asio::io_context& io)
+: stream_(io)
+{
+}
+
+template <class Stream, class X>
+auto basic_multi_stream<Stream, X>::plain() & noexcept -> stream_type&
+{
+  return stream_;
+}
+
+template <class Stream, class X>
+auto basic_multi_stream<Stream, X>::ssl() & noexcept -> ssl_stream_type&
+{
+  return *ssl_stream_;
+}
+
+template <class Stream, class X>
+auto basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
+{
+  return static_cast<bool>(ssl_stream_);
+}
+
+template <class Stream, class X>
+auto basic_multi_stream<Stream, X>::get_executor()
+  -> boost::asio::io_context::executor_type
+{
+  return stream_.get_executor();
+}
+
+extern template basic_multi_stream<boost::asio::ip::tcp::socket>;
+
+using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
 
 } // foxy
 
