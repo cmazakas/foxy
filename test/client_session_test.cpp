@@ -31,7 +31,7 @@ TEST_CASE("Our client session class")
         if (ec) {
           session
             .stream
-            .tcp()
+            .plain()
             .shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
           return;
         }
@@ -61,7 +61,7 @@ TEST_CASE("Our client session class")
 
             session
               .stream
-              .tcp()
+              .plain()
               .shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
           });
       });

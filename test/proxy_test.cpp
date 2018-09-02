@@ -46,8 +46,8 @@ TEST_CASE("Our forward proxy")
         client.async_request(request, res_parser, yield);
 
         auto ec = boost::system::error_code();
-        client.stream.tcp().shutdown(tcp::socket::shutdown_send, ec);
-        client.stream.tcp().close(ec);
+        client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+        client.stream.plain().close(ec);
 
         auto response = res_parser.release();
 
@@ -57,8 +57,6 @@ TEST_CASE("Our forward proxy")
         was_valid_response = was_valid_result && was_valid_body;
         proxy->cancel(ec);
         proxy.reset();
-
-        // io.stop();
       });
 
     io.run();
@@ -98,8 +96,8 @@ TEST_CASE("Our forward proxy")
         auto const was_valid_body   = response.body() == "Invalid request method. Only CONNECT is supported\n\n";
 
         auto ec = boost::system::error_code();
-        client.stream.tcp().shutdown(tcp::socket::shutdown_send, ec);
-        client.stream.tcp().close(ec);
+        client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+        client.stream.plain().close(ec);
 
         was_valid_response = was_valid_result && was_valid_body;
         proxy->cancel(ec);
@@ -143,8 +141,8 @@ TEST_CASE("Our forward proxy")
         auto const was_valid_body   = response.body() == "Messages with bodies are not supported for establishing a tunnel\n\n";
 
         auto ec = boost::system::error_code();
-        client.stream.tcp().shutdown(tcp::socket::shutdown_send, ec);
-        client.stream.tcp().close(ec);
+        client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+        client.stream.plain().close(ec);
 
         was_valid_response = was_valid_result && was_valid_body;
         proxy->cancel(ec);

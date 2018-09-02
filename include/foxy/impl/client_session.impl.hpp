@@ -139,7 +139,7 @@ auto connect_op<ConnectHandler>::operator()(
 
     BOOST_ASIO_CORO_YIELD
     boost::asio::async_connect(
-      s.session.stream.tcp(), s.results,
+      s.session.stream.plain(), s.results,
       bind_handler(std::move(*this), on_connect_t{}, _1, _2));
 
     if (ec) { goto upcall; }

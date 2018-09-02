@@ -31,8 +31,8 @@ public:
 
   explicit multi_stream(boost::asio::io_context&);
 
-  auto tcp() & noexcept -> stream_type&;
-  auto ssl() & noexcept -> ssl_stream_type&;
+  auto plain() & noexcept -> stream_type&;
+  auto ssl()   & noexcept -> ssl_stream_type&;
 
   auto is_ssl() const noexcept -> bool;
 

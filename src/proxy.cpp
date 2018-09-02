@@ -76,7 +76,7 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
     for (;;) {
       BOOST_ASIO_CORO_YIELD
       acceptor_.async_accept(
-        stream_.tcp(),
+        stream_.plain(),
         std::bind(&proxy::async_accept, shared_from_this(), _1));
 
       if (ec == boost::asio::error::operation_aborted) {
@@ -213,7 +213,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     // response.  Finally, the server fully closes the connection.
     //
     std::cout << "at shutdown portion\n";
-    s.session.stream.tcp().shutdown(tcp::socket::shutdown_send, ec);
+    s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
 
     if (s.parser) {
       s.parser = boost::none;
@@ -227,8 +227,8 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       std::cout << ec << "\n";
     }
 
-    s.session.stream.tcp().shutdown(tcp::socket::shutdown_receive, ec);
-    s.session.stream.tcp().close(ec);
+    s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+    s.session.stream.plain().close(ec);
 
     std::cout << "done closing the socket\n\n";
   }

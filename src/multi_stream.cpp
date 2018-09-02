@@ -5,7 +5,7 @@ foxy::multi_stream::multi_stream(boost::asio::io_context& io)
 {
 }
 
-auto foxy::multi_stream::tcp() & noexcept -> stream_type&
+auto foxy::multi_stream::plain() & noexcept -> stream_type&
 {
   return stream_;
 }
