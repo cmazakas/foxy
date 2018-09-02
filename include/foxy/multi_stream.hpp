@@ -96,7 +96,7 @@ auto basic_multi_stream<Stream, X>::get_executor()
   return stream_.get_executor();
 }
 
-extern template basic_multi_stream<boost::asio::ip::tcp::socket>;
+extern template struct basic_multi_stream<boost::asio::ip::tcp::socket>;
 
 using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
 
