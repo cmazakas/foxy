@@ -89,6 +89,7 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/export_non_connect_fields.cpp
   )
 
   if (MSVC)

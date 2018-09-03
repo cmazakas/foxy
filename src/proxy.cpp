@@ -42,7 +42,7 @@ auto foxy::proxy::cancel(boost::system::error_code& ec) -> void
 
 namespace
 {
-struct async_connect_op : boost::asio::coroutine
+struct async_connect_op
 {
   struct state
   {
@@ -55,6 +55,9 @@ struct async_connect_op : boost::asio::coroutine
     //
     optional<http::request_parser<http::empty_body>> parser;
     http::response<http::string_body>                err_response;
+
+    boost::asio::coroutine connect_coro;
+    boost::asio::coroutine tunnel_coro;
 
     state(foxy::multi_stream stream)
     : session(std::move(stream))
@@ -133,22 +136,12 @@ operator()(
 
 void
 async_connect_op::
-operator()(
-  on_tunnel_t,
-  boost::system::error_code ec,
-  std::size_t               bytes_transferred)
-{
-
-}
-
-void
-async_connect_op::
 operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 {
   using namespace std::placeholders;
 
   auto& s = *p_;
-  BOOST_ASIO_CORO_REENTER(*this)
+  BOOST_ASIO_CORO_REENTER(s.connect_coro)
   {
     while (true) {
       // A new instance of the parser is required for each message.
@@ -275,6 +268,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       // at this point, we can safely use our `client_session` object for
       // tunneling requests from the client to the upstream
       //
+      return (*this)(on_tunnel_t{}, {}, 0);
     }
 
     // http rfc 7230 section 6.6 Tear-down
@@ -307,6 +301,20 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     s.session.stream.plain().close(ec);
 
     std::cout << "done closing the socket\n\n";
+  }
+}
+
+void
+async_connect_op::
+operator()(
+  on_tunnel_t,
+  boost::system::error_code ec,
+  std::size_t               bytes_transferred)
+{
+  auto& s = *p_;
+  BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
+  {
+
   }
 }
 
