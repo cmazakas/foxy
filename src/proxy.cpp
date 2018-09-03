@@ -68,12 +68,19 @@ struct async_connect_op : boost::asio::coroutine
   async_connect_op(foxy::multi_stream stream);
 
   struct on_connect_t {};
+  struct on_tunnel_t {};
 
   void
   operator()(
     on_connect_t,
+    boost::system::error_code      ec,
+    boost::asio::ip::tcp::endpoint endpoint);
+
+  void
+  operator()(
+    on_tunnel_t,
     boost::system::error_code ec,
-    boost::asio::ip::tcp::endpoint);
+    std::size_t               bytes_transferred);
 
   void
   operator()(boost::system::error_code ec, std::size_t bytes_transferred);
@@ -118,10 +125,20 @@ void
 async_connect_op::
 operator()(
   on_connect_t,
-  boost::system::error_code ec,
-  boost::asio::ip::tcp::endpoint)
+  boost::system::error_code      ec,
+  boost::asio::ip::tcp::endpoint endpoint)
 {
   (*this)(ec, 0);
+}
+
+void
+async_connect_op::
+operator()(
+  on_tunnel_t,
+  boost::system::error_code ec,
+  std::size_t               bytes_transferred)
+{
+
 }
 
 void
@@ -237,9 +254,9 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
       if (ec) {
         s.err_response.result(http::status::bad_request);
         s.err_response.body() =
-          "Unable to establish connection with the remote\n\n";
+          "Unable to establish connection with the remote\n";
 
-        s.err_response.body() += "Error: " + ec.message();
+        s.err_response.body() += "Error: " + ec.message() + "\n\n";
 
         s.err_response.prepare_payload();
 
@@ -254,6 +271,10 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
         continue;
       }
+
+      // at this point, we can safely use our `client_session` object for
+      // tunneling requests from the client to the upstream
+      //
     }
 
     // http rfc 7230 section 6.6 Tear-down
