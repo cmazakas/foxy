@@ -6,9 +6,10 @@
 namespace foxy
 {
 
+template <class Stream, class X>
 template <class Parser, class ReadHandler>
 auto
-session::async_read_header(
+basic_session<Stream, X>::async_read_header(
   Parser&       parser,
   ReadHandler&& handler
 ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t))
@@ -20,9 +21,10 @@ session::async_read_header(
     std::forward<ReadHandler>(handler));
 }
 
+template <class Stream, class X>
 template <class Parser, class ReadHandler>
 auto
-session::async_read(
+basic_session<Stream, X>::async_read(
   Parser&       parser,
   ReadHandler&& handler
 ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t))
@@ -34,9 +36,10 @@ session::async_read(
     std::forward<ReadHandler>(handler));
 }
 
+template <class Stream, class X>
 template <class Serializer, class WriteHandler>
 auto
-session::async_write_header(
+basic_session<Stream, X>::async_write_header(
   Serializer&    serializer,
   WriteHandler&& handler
 ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler, void(boost::system::error_code, std::size_t))
@@ -47,9 +50,10 @@ session::async_write_header(
     std::forward<WriteHandler>(handler));
 }
 
+template <class Stream, class X>
 template <class Serializer, class WriteHandler>
 auto
-session::async_write(
+basic_session<Stream, X>::async_write(
   Serializer&    serializer,
   WriteHandler&& handler
 ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler, void(boost::system::error_code, std::size_t))

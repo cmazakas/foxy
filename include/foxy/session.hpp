@@ -13,24 +13,27 @@
 namespace foxy
 {
 
-struct session
+template <
+  class Stream,
+  class = std::enable_if_t<boost::beast::is_async_stream<Stream>::value>
+>
+struct basic_session
 {
 public:
-  using stream_type     = ::foxy::multi_stream;
+  using stream_type     = Stream;
   using buffer_type     = boost::beast::flat_buffer;
   using timer_type      = boost::asio::steady_timer;
-  using ssl_stream_type = boost::beast::ssl_stream<stream_type&>;
 
   stream_type stream;
   buffer_type buffer;
   timer_type  timer;
 
-  session()               = delete;
-  session(session const&) = delete;
-  session(session&&)      = default;
+  basic_session()               = delete;
+  basic_session(basic_session const&) = delete;
+  basic_session(basic_session&&)      = default;
 
-  explicit session(boost::asio::io_context& io);
-  explicit session(stream_type stream_);
+  explicit basic_session(boost::asio::io_context& io);
+  explicit basic_session(stream_type stream_);
 
   using executor_type = decltype(stream.get_executor());
 
@@ -64,6 +67,30 @@ public:
     WriteHandler&& handler
   ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler, void(boost::system::error_code, std::size_t));
 };
+
+template <class Stream, class X>
+foxy::basic_session<Stream, X>::basic_session(boost::asio::io_context& io)
+: stream(io)
+, timer(io)
+{
+}
+
+template <class Stream, class X>
+foxy::basic_session<Stream, X>::basic_session(stream_type stream_)
+: stream(std::move(stream_))
+, timer(stream.get_executor().context())
+{
+}
+
+template <class Stream, class X>
+auto foxy::basic_session<Stream, X>::get_executor() -> executor_type
+{
+  return stream.get_executor();
+}
+
+extern template struct basic_session<multi_stream>;
+
+using session = basic_session<multi_stream>;
 
 } // foxy
 
