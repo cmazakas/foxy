@@ -28,7 +28,7 @@ public:
   buffer_type buffer;
   timer_type  timer;
 
-  basic_session()               = delete;
+  basic_session()                     = delete;
   basic_session(basic_session const&) = delete;
   basic_session(basic_session&&)      = default;
 
