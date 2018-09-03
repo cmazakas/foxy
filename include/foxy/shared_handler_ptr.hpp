@@ -7,6 +7,10 @@
 // `shared_handler_ptr` to convey the difference in ownership semantics
 //
 
+// TODO: write unit tests
+// TODO: make pull request for formal inclusion into Beast
+//
+
 
 //
 // Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)

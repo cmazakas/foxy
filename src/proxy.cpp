@@ -1,5 +1,6 @@
 #include "foxy/proxy.hpp"
 #include "foxy/server_session.hpp"
+#include "foxy/client_session.hpp"
 #include "foxy/log.hpp"
 #include "foxy/utility.hpp"
 
@@ -46,6 +47,7 @@ struct async_connect_op : boost::asio::coroutine
   struct state
   {
     foxy::server_session session;
+    foxy::client_session client;
 
     // here we store an optional request parser so that we can recycle storage
     // while also adhering to the constratin that a new parser must be
@@ -56,6 +58,7 @@ struct async_connect_op : boost::asio::coroutine
 
     state(foxy::multi_stream stream)
     : session(std::move(stream))
+    , client(session.get_executor().context())
     {
     }
   };
@@ -63,7 +66,17 @@ struct async_connect_op : boost::asio::coroutine
   std::unique_ptr<state> p_;
 
   async_connect_op(foxy::multi_stream stream);
-  void operator()(boost::system::error_code ec, std::size_t bytes_transferred);
+
+  struct on_connect_t {};
+
+  void
+  operator()(
+    on_connect_t,
+    boost::system::error_code ec,
+    boost::asio::ip::tcp::endpoint);
+
+  void
+  operator()(boost::system::error_code ec, std::size_t bytes_transferred);
 };
 }
 
@@ -103,8 +116,20 @@ async_connect_op::async_connect_op(foxy::multi_stream stream)
 
 void
 async_connect_op::
+operator()(
+  on_connect_t,
+  boost::system::error_code ec,
+  boost::asio::ip::tcp::endpoint)
+{
+  (*this)(ec, 0);
+}
+
+void
+async_connect_op::
 operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 {
+  using namespace std::placeholders;
+
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
@@ -194,11 +219,41 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
       // extract request target and attempt to form the tunnel
       //
-      auto request = s.parser->release();
-      auto target  = request.target();
+      BOOST_ASIO_CORO_YIELD
+      {
+        auto request = s.parser->release();
+        auto target  = request.target();
 
-      auto host_and_port = foxy::parse_authority_form(target);
+        auto host_and_port = foxy::parse_authority_form(target);
 
+        s.client.async_connect(
+          std::move(std::get<0>(host_and_port)),
+          std::move(std::get<1>(host_and_port)),
+          boost::beast::bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+      }
+
+      // TODO: support 504 for `operation_aborted` error code
+      //
+      if (ec) {
+        s.err_response.result(http::status::bad_request);
+        s.err_response.body() =
+          "Unable to establish connection with the remote\n\n";
+
+        s.err_response.body() += "Error: " + ec.message();
+
+        s.err_response.prepare_payload();
+
+        BOOST_ASIO_CORO_YIELD
+        s.session.async_write(s.err_response, std::move(*this));
+
+        s.err_response = {};
+        if (ec) {
+          foxy::log_error(ec, "foxy::proxy::async_accept_op::failed_connect::write_error");
+          return;
+        }
+
+        continue;
+      }
     }
 
     // http rfc 7230 section 6.6 Tear-down
