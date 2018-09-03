@@ -72,25 +72,29 @@ basic_multi_stream<Stream, X>::basic_multi_stream(boost::asio::io_context& io)
 }
 
 template <class Stream, class X>
-auto basic_multi_stream<Stream, X>::plain() & noexcept -> stream_type&
+auto
+basic_multi_stream<Stream, X>::plain() & noexcept -> stream_type&
 {
   return stream_;
 }
 
 template <class Stream, class X>
-auto basic_multi_stream<Stream, X>::ssl() & noexcept -> ssl_stream_type&
+auto
+basic_multi_stream<Stream, X>::ssl() & noexcept -> ssl_stream_type&
 {
   return *ssl_stream_;
 }
 
 template <class Stream, class X>
-auto basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
+auto
+basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
 {
   return static_cast<bool>(ssl_stream_);
 }
 
 template <class Stream, class X>
-auto basic_multi_stream<Stream, X>::get_executor()
+auto
+basic_multi_stream<Stream, X>::get_executor()
   -> boost::asio::io_context::executor_type
 {
   return stream_.get_executor();

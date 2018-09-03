@@ -1,3 +1,5 @@
+#include "foxy/detail/export_non_connect_fields.hpp"
+
 #include <catch2/catch.hpp>
 
 TEST_CASE("Our detail::export_non_connect_fields function")

@@ -20,9 +20,9 @@ template <
 struct basic_session
 {
 public:
-  using stream_type     = Stream;
-  using buffer_type     = boost::beast::flat_buffer;
-  using timer_type      = boost::asio::steady_timer;
+  using stream_type = Stream;
+  using buffer_type = boost::beast::flat_buffer;
+  using timer_type  = boost::asio::steady_timer;
 
   stream_type stream;
   buffer_type buffer;
