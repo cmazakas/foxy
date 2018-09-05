@@ -5,6 +5,7 @@
 
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/asio/ssl/context.hpp>
 
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
@@ -12,6 +13,14 @@
 
 namespace foxy
 {
+
+struct session_opts
+{
+  using duration_type = typename boost::asio::steady_timer::duration;
+
+  boost::optional<boost::asio::ssl::context> ssl_ctx;
+  duration_type                              timeout;
+};
 
 template <
   class Stream,
@@ -28,12 +37,14 @@ public:
   buffer_type buffer;
   timer_type  timer;
 
+  session_opts opts;
+
   basic_session()                     = delete;
   basic_session(basic_session const&) = delete;
   basic_session(basic_session&&)      = default;
 
-  explicit basic_session(boost::asio::io_context& io);
-  explicit basic_session(stream_type stream_);
+  explicit basic_session(boost::asio::io_context& io, boost::optional<session_opts> opts_ = {});
+  explicit basic_session(stream_type stream_, boost::optional<session_opts> opts_ = {});
 
   using executor_type = decltype(stream.get_executor());
 
@@ -69,17 +80,33 @@ public:
 };
 
 template <class Stream, class X>
-foxy::basic_session<Stream, X>::basic_session(boost::asio::io_context& io)
+foxy::basic_session<Stream, X>::basic_session(
+  boost::asio::io_context& io,
+  boost::optional<session_opts> opts_)
 : stream(io)
 , timer(io)
 {
+  if (!opts_) {
+    opts.timeout = session_opts::duration_type::zero();
+    return;
+  }
+
+  opts = std::move(*opts_);
 }
 
 template <class Stream, class X>
-foxy::basic_session<Stream, X>::basic_session(stream_type stream_)
+foxy::basic_session<Stream, X>::basic_session(
+  stream_type stream_,
+  boost::optional<session_opts> opts_)
 : stream(std::move(stream_))
 , timer(stream.get_executor().context())
 {
+  if (!opts_) {
+    opts.timeout = session_opts::duration_type::zero();
+    return;
+  }
+
+  opts = std::move(*opts_);
 }
 
 template <class Stream, class X>

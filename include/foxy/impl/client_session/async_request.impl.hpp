@@ -70,42 +70,130 @@ public:
     return boost::asio::get_associated_allocator(p_.handler());
   }
 
-  auto operator()(
+  auto
+  operator()(
     boost::system::error_code ec,
     std::size_t const         bytes_transferred,
-    bool const                is_continuation = true) -> void
-  {
-    using namespace std::placeholders;
-    using boost::beast::bind_handler;
-
-    namespace http = boost::beast::http;
-
-    auto& s = *p_;
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      BOOST_ASIO_CORO_YIELD
-      http::async_write(s.session.stream, s.request, std::move(*this));
-      if (ec) { goto upcall; }
-
-      BOOST_ASIO_CORO_YIELD
-      http::async_read(s.session.stream, s.session.buffer, s.parser, std::move(*this));
-      if (ec) { goto upcall; }
-
-      {
-        auto work = std::move(s.work);
-        return p_.invoke(boost::system::error_code());
-      }
-
-    upcall:
-      if (!is_continuation) {
-        BOOST_ASIO_CORO_YIELD
-        boost::asio::post(bind_handler(std::move(*this), ec, 0));
-      }
-      auto work = std::move(s.work);
-      p_.invoke(ec);
-    }
-  }
+    bool const                is_continuation = true) -> void;
 };
+
+template <class Request, class ResponseParser, class RequestHandler>
+auto
+request_op<Request, ResponseParser, RequestHandler>::operator()(
+  boost::system::error_code ec,
+  std::size_t const         bytes_transferred,
+  bool const                is_continuation) -> void
+{
+  using namespace std::placeholders;
+  using boost::beast::bind_handler;
+
+  namespace http = boost::beast::http;
+
+  auto& s = *p_;
+  BOOST_ASIO_CORO_REENTER(*this)
+  {
+    BOOST_ASIO_CORO_YIELD
+    http::async_write(s.session.stream, s.request, std::move(*this));
+    if (ec) { goto upcall; }
+
+    BOOST_ASIO_CORO_YIELD
+    http::async_read(s.session.stream, s.session.buffer, s.parser, std::move(*this));
+    if (ec) { goto upcall; }
+
+    {
+      auto work = std::move(s.work);
+      return p_.invoke(boost::system::error_code());
+    }
+
+  upcall:
+    if (!is_continuation) {
+      BOOST_ASIO_CORO_YIELD
+      boost::asio::post(bind_handler(std::move(*this), ec, 0));
+    }
+    auto work = std::move(s.work);
+    p_.invoke(ec);
+  }
+}
+
+template <class Request, class ResponseParser, class RequestHandler>
+struct request_op_main
+{
+private:
+
+  struct state
+  {
+    ::foxy::client_session&        session;
+
+    int                            ops_completed;
+    boost::asio::coroutine         coro;
+
+    boost::asio::executor_work_guard<decltype(session.get_executor())> work;
+
+    explicit state(
+      RequestHandler const&   handler_,
+      ::foxy::client_session& session_)
+    : session(session_)
+    , ops_completed{0}
+    , coro()
+    , work(session.get_executor())
+    {
+    }
+  };
+
+  ::foxy::shared_handler_ptr<state, RequestHandler> p_;
+
+public:
+  request_op_main()                       = delete;
+  request_op_main(request_op_main const&) = default;
+  request_op_main(request_op_main&&)      = default;
+
+  template <class DeducedHandler>
+  request_op_main(
+    ::foxy::client_session& session,
+    DeducedHandler&&        handler)
+  : p_(std::forward<DeducedHandler>(handler), session)
+  {
+  }
+
+  using executor_type = boost::asio::associated_executor_t<
+    RequestHandler,
+    decltype(std::declval<::foxy::client_session&>().get_executor())
+  >;
+
+  auto get_executor() const noexcept -> executor_type
+  {
+    return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
+  }
+
+  using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
+
+  auto get_allocator() const noexcept -> allocator_type
+  {
+    return boost::asio::get_associated_allocator(p_.handler());
+  }
+
+  struct on_timer_t {};
+
+  auto operator()(on_timer_t, boost::system::error_code ec) -> void;
+  auto operator()(boost::system::error_code ec, bool const is_continuation = true) -> void;
+};
+
+
+template <class Request, class ResponseParser, class RequestHandler>
+auto
+request_op_main<Request, ResponseParser, RequestHandler>::operator()(
+  on_timer_t,
+  boost::system::error_code ec) -> void
+{
+}
+
+template <class Request, class ResponseParser, class RequestHandler>
+auto
+request_op_main<Request, ResponseParser, RequestHandler>::operator()(
+  boost::system::error_code ec,
+  bool const                is_continuation) -> void
+{
+}
 
 } // detail
 

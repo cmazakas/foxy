@@ -12,13 +12,20 @@ using boost::asio::ip::tcp;
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
 
+using namespace std::chrono_literals;
+
 TEST_CASE("Our client session class")
 {
   SECTION("should be able to asynchronously connect to a remote")
   {
     asio::io_context io;
 
-    auto  session_handle = boost::make_unique<foxy::client_session>(io);
+    auto opts = boost::make_optional<foxy::session_opts>(foxy::session_opts{});
+    opts->timeout = 1s;
+
+    auto session_handle =
+      boost::make_unique<foxy::client_session>(io, std::move(opts));
+
     auto& session = *session_handle;
 
     auto valid_request = false;

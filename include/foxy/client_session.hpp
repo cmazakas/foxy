@@ -40,7 +40,7 @@ public:
   client_session(client_session const&) = default;
   client_session(client_session&&)      = default;
 
-  explicit client_session(boost::asio::io_context& io);
+  explicit client_session(boost::asio::io_context& io, boost::optional<session_opts> opts = {});
 
   template <class ConnectHandler>
   auto

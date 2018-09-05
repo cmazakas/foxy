@@ -94,7 +94,8 @@ public:
 };
 
 template <class ConnectHandler>
-auto connect_op<ConnectHandler>::operator()(
+auto
+connect_op<ConnectHandler>::operator()(
   on_resolve_t,
   boost::system::error_code                    ec,
   boost::asio::ip::tcp::resolver::results_type results) -> void
@@ -104,7 +105,8 @@ auto connect_op<ConnectHandler>::operator()(
 }
 
 template <class ConnectHandler>
-auto connect_op<ConnectHandler>::operator()(
+auto
+connect_op<ConnectHandler>::operator()(
   on_connect_t,
   boost::system::error_code      ec,
   boost::asio::ip::tcp::endpoint endpoint) -> void
@@ -114,7 +116,8 @@ auto connect_op<ConnectHandler>::operator()(
 }
 
 template <class ConnectHandler>
-auto connect_op<ConnectHandler>::operator()(
+auto
+connect_op<ConnectHandler>::operator()(
   boost::system::error_code ec,
   std::size_t const         bytes_transferred,
   bool const                is_continuation) -> void
@@ -247,7 +250,8 @@ public:
 };
 
 template <class ConnectHandler>
-auto connect_op_main<ConnectHandler>::operator()(
+auto
+connect_op_main<ConnectHandler>::operator()(
   on_connect_t,
   boost::system::error_code      ec,
   boost::asio::ip::tcp::endpoint endpoint) -> void
@@ -261,7 +265,8 @@ auto connect_op_main<ConnectHandler>::operator()(
 }
 
 template <class ConnectHandler>
-auto connect_op_main<ConnectHandler>::operator()(
+auto
+connect_op_main<ConnectHandler>::operator()(
   on_timer_t, boost::system::error_code ec) -> void
 {
   if (!p_.has_value()) { return; }
@@ -274,7 +279,8 @@ auto connect_op_main<ConnectHandler>::operator()(
 }
 
 template <class ConnectHandler>
-auto connect_op_main<ConnectHandler>::operator()(
+auto
+connect_op_main<ConnectHandler>::operator()(
   boost::system::error_code ec,
   bool                      is_continuation) -> void
 {
@@ -285,7 +291,7 @@ auto connect_op_main<ConnectHandler>::operator()(
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(s.coro)
   {
-    s.session.timer.expires_after(1s);
+    s.session.timer.expires_after(s.session.opts.timeout);
 
     {
       auto h = bind_handler(*this, on_connect_t{}, _1, _2);
