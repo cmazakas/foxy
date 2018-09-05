@@ -15,7 +15,6 @@ add_library(
   foxy
 
   STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/log.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/multi_stream.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/proxy.hpp
@@ -24,9 +23,13 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_non_connect_fields.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session.impl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
