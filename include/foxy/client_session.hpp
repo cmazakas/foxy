@@ -63,6 +63,7 @@ public:
 
 } // foxy
 
-#include "foxy/impl/client_session.impl.hpp"
+#include "foxy/impl/client_session/async_connect.impl.hpp"
+#include "foxy/impl/client_session/async_request.impl.hpp"
 
 #endif // FOXY_CLIENT_SESSION_HPP_

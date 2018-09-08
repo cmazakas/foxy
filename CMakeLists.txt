@@ -27,7 +27,6 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session.impl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
 
