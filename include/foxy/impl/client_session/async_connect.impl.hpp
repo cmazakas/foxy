@@ -251,13 +251,12 @@ public:
 
 template <class ConnectHandler>
 auto
-connect_op_main<ConnectHandler>::operator()(
+connect_op_main<ConnectHandler>::
+operator()(
   on_connect_t,
   boost::system::error_code      ec,
   boost::asio::ip::tcp::endpoint endpoint) -> void
 {
-  if (!p_.has_value()) { return; }
-
   p_->ops_completed++;
   p_->endpoint = std::move(endpoint);
   p_->session.timer.cancel();
@@ -266,11 +265,11 @@ connect_op_main<ConnectHandler>::operator()(
 
 template <class ConnectHandler>
 auto
-connect_op_main<ConnectHandler>::operator()(
-  on_timer_t, boost::system::error_code ec) -> void
+connect_op_main<ConnectHandler>::
+operator()(
+  on_timer_t,
+  boost::system::error_code ec) -> void
 {
-  if (!p_.has_value()) { return; }
-
   p_->ops_completed++;
   if (ec == boost::asio::error::operation_aborted) {
     return (*this)(boost::system::error_code());
@@ -280,7 +279,8 @@ connect_op_main<ConnectHandler>::operator()(
 
 template <class ConnectHandler>
 auto
-connect_op_main<ConnectHandler>::operator()(
+connect_op_main<ConnectHandler>::
+operator()(
   boost::system::error_code ec,
   bool                      is_continuation) -> void
 {
@@ -313,12 +313,12 @@ connect_op_main<ConnectHandler>::operator()(
   upcall:
     if (!is_continuation) {
       BOOST_ASIO_CORO_YIELD
-      boost::asio::post(boost::beast::bind_handler(*this, ec, 0));
+      boost::asio::post(boost::beast::bind_handler(*this, ec));
     }
     BOOST_ASIO_CORO_YIELD break;
   }
 
-  if (!s.coro.is_complete()) { return; };
+  if (!s.coro.is_complete()) { return; }
 
   auto endpoint = std::move(s.endpoint);
   auto work     = std::move(s.work);
