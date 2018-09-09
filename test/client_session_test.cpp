@@ -73,4 +73,30 @@ TEST_CASE("Our client session class")
     io.run();
     REQUIRE(valid_request);
   }
+
+  SECTION("should timeout when the host can't be found")
+  {
+    asio::io_context io;
+
+    auto opts    = foxy::session_opts();
+    opts.timeout = std::chrono::milliseconds{250};
+
+    auto session_handle =
+      boost::make_unique<foxy::client_session>(io, std::move(opts));
+
+    auto& session = *session_handle;
+
+    auto timed_out = false;
+
+    session.async_connect(
+      "www.google.com", "1337",
+      [&timed_out, &session, sh = std::move(session_handle)]
+      (error_code ec, tcp::endpoint) mutable -> void
+      {
+        timed_out = (ec == boost::asio::error::operation_aborted);
+      });
+
+    io.run();
+    REQUIRE(timed_out);
+  }
 }

@@ -95,7 +95,8 @@ public:
 
 template <class ConnectHandler>
 auto
-connect_op<ConnectHandler>::operator()(
+connect_op<ConnectHandler>::
+operator()(
   on_resolve_t,
   boost::system::error_code                    ec,
   boost::asio::ip::tcp::resolver::results_type results) -> void
@@ -106,7 +107,8 @@ connect_op<ConnectHandler>::operator()(
 
 template <class ConnectHandler>
 auto
-connect_op<ConnectHandler>::operator()(
+connect_op<ConnectHandler>::
+operator()(
   on_connect_t,
   boost::system::error_code      ec,
   boost::asio::ip::tcp::endpoint endpoint) -> void
@@ -117,7 +119,8 @@ connect_op<ConnectHandler>::operator()(
 
 template <class ConnectHandler>
 auto
-connect_op<ConnectHandler>::operator()(
+connect_op<ConnectHandler>::
+operator()(
   boost::system::error_code ec,
   std::size_t const         bytes_transferred,
   bool const                is_continuation) -> void
@@ -245,7 +248,6 @@ public:
   ) -> void;
 
   auto operator()(on_timer_t, boost::system::error_code ec) -> void;
-
   auto operator()(boost::system::error_code ec, bool is_continuation = true) -> void;
 };
 
@@ -274,6 +276,9 @@ operator()(
   if (ec == boost::asio::error::operation_aborted) {
     return (*this)(boost::system::error_code());
   }
+
+  auto& socket = p_->session.stream.plain();
+  socket.close(ec);
   (*this)(ec);
 }
 
@@ -296,7 +301,8 @@ operator()(
     {
       auto h = bind_handler(*this, on_connect_t{}, _1, _2);
       connect_op<decltype(h)>(
-        s.session, std::move(s.host), std::move(s.service), std::move(h))({}, 0, false);
+        s.session, std::move(s.host), std::move(s.service), std::move(h)
+      )({}, 0, false);
     }
 
     s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
