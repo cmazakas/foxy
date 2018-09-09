@@ -261,7 +261,10 @@ operator()(
 {
   p_->ops_completed++;
   p_->endpoint = std::move(endpoint);
-  p_->session.timer.cancel();
+
+  auto ec2 = ec;
+  p_->session.timer.cancel(ec2);
+
   (*this)(ec);
 }
 
@@ -277,8 +280,7 @@ operator()(
     return (*this)(boost::system::error_code());
   }
 
-  auto& socket = p_->session.stream.plain();
-  socket.close(ec);
+  p_->session.stream.plain().close(ec);
   (*this)(ec);
 }
 
@@ -289,7 +291,6 @@ operator()(
   boost::system::error_code ec,
   bool                      is_continuation) -> void
 {
-  using namespace std::chrono_literals;
   using namespace std::placeholders;
   using boost::beast::bind_handler;
 

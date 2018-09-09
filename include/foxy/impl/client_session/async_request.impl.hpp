@@ -199,6 +199,8 @@ operator()(
   if (ec == boost::asio::error::operation_aborted) {
     return (*this)(boost::system::error_code());
   }
+
+  p_->session.stream.plain().close(ec);
   (*this)(ec);
 }
 
@@ -210,9 +212,10 @@ operator()(
   boost::system::error_code ec) -> void
 {
   p_->ops_completed++;
-  if (ec == boost::asio::error::operation_aborted) {
-    return (*this)(boost::system::error_code());
-  }
+
+  auto ec2 = ec;
+  p_->session.timer.cancel(ec2);
+
   (*this)(ec);
 }
 
