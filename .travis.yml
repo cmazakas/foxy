@@ -18,11 +18,12 @@ before_install:
   - echo "set(VCPKG_CRT_LINKAGE dynamic)" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_CXX_FLAGS \"${VCPKG_CXX_FLAGS} -std=c++14\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_C_FLAGS \"${VCPKG_C_FLAGS}\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
+  - echo "set(VCPKG_BUILD_TYPE debug)" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - ./vcpkg/vcpkg update
-  - ./vcpkg/vcpkg install boost-asio:x64-linux-cxx14
-  - ./vcpkg/vcpkg install boost-beast:x64-linux-cxx14
-  - ./vcpkg/vcpkg install catch2:x64-linux-cxx14
+  - CXX=g++-7 ./vcpkg/vcpkg install boost-asio:x64-linux-cxx14
+  - CXX=g++-7 ./vcpkg/vcpkg install boost-beast:x64-linux-cxx14
+  - CXX=g++-7 ./vcpkg/vcpkg install catch2:x64-linux-cxx14
 
 install:
   - mkdir foxy
