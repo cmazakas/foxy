@@ -1,9 +1,11 @@
-sudo: false
+sudo: enabled
 
 language: cpp
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -q
-  - sudo apt-get install gcc-7 -y
-  - wget https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.tar.gz
+  - sudo apt-get install g++-7 -y
+  - wget https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.tar.gz -O /tmp/cmake.tar.gz
+  - tar -xvf /tmp/cmake.tar.gz
+  - export PATH=$PATH:$PWD/cmake-3.12.2-Linux-x86_64/bin/
