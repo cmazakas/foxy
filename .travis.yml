@@ -19,6 +19,7 @@ before_install:
   - echo "set(VCPKG_CXX_FLAGS \"${VCPKG_CXX_FLAGS} -std=c++14\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_C_FLAGS \"${VCPKG_C_FLAGS}\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "" >> vcpkg/triplets/x64-linux-cxx14.cmake
+  - ./vcpkg/vcpkg update
   - ./vcpkg/vcpkg install boost-asio:x64-linux-cxx14
   - ./vcpkg/vcpkg install boost-beast:x64-linux-cxx14
   - ./vcpkg/vcpkg install catch2:x64-linux-cxx14
