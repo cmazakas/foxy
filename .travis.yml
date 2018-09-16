@@ -7,10 +7,10 @@ before_install:
   - sudo apt-get update -q
   - sudo apt-get install g++-7 -y
   - wget https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.tar.gz -O /tmp/cmake.tar.gz
-  - tar -xvf /tmp/cmake.tar.gz
+  - tar -xzf /tmp/cmake.tar.gz
   - export PATH=$PATH:$PWD/cmake-3.12.2-Linux-x86_64/bin/
   - git clone https://github.com/Microsoft/vcpkg.git
-  - ./vcpkg/bootstrap-vcpkg.sh
+  - CXX=g++-7 ./vcpkg/bootstrap-vcpkg.sh
   - touch vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_TARGET_ARCHITECTURE x64)" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_LIBRARY_LINKAGE static)" >> vcpkg/triplets/x64-linux-cxx14.cmake
