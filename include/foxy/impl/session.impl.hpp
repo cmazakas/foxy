@@ -16,6 +16,32 @@ namespace foxy
 {
 
 template <class Stream, class X>
+foxy::basic_session<Stream, X>::basic_session(
+  boost::asio::io_context& io,
+  session_opts             opts_)
+: stream(io)
+, timer(io)
+, opts(std::move(opts_))
+{
+}
+
+template <class Stream, class X>
+foxy::basic_session<Stream, X>::basic_session(
+  stream_type  stream_,
+  session_opts opts_)
+: stream(std::move(stream_))
+, timer(stream.get_executor().context())
+, opts(std::move(opts_))
+{
+}
+
+template <class Stream, class X>
+auto foxy::basic_session<Stream, X>::get_executor() -> executor_type
+{
+  return stream.get_executor();
+}
+
+template <class Stream, class X>
 template <class Parser, class ReadHandler>
 auto
 basic_session<Stream, X>::async_read_header(
