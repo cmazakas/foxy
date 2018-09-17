@@ -7,7 +7,7 @@
 // Official repository: https://github.com/LeonineKing1199/f3
 //
 
-#include "foxy/detail/export_non_connect_fields.hpp"
+#include <foxy/detail/export_non_connect_fields.hpp>
 
 #include <catch2/catch.hpp>
 

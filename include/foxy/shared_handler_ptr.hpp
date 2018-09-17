@@ -228,6 +228,6 @@ public:
 
 } // foxy
 
-#include "foxy/impl/shared_handler_ptr.impl.hpp"
+#include <foxy/impl/shared_handler_ptr.impl.hpp>
 
 #endif

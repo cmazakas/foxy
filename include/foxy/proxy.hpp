@@ -10,7 +10,7 @@
 #ifndef FOXY_PROXY_HPP_
 #define FOXY_PROXY_HPP_
 
-#include "foxy/multi_stream.hpp"
+#include <foxy/multi_stream.hpp>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>

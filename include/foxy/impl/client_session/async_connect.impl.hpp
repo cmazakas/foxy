@@ -10,7 +10,7 @@
 #ifndef FOXY_IMPL_CLIENT_SESSION_ASYNC_CONNECT_IMPL_HPP_
 #define FOXY_IMPL_CLIENT_SESSION_ASYNC_CONNECT_IMPL_HPP_
 
-#include "foxy/client_session.hpp"
+#include <foxy/client_session.hpp>
 
 namespace foxy
 {

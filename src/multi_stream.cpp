@@ -7,6 +7,6 @@
 // Official repository: https://github.com/LeonineKing1199/f3
 //
 
-#include "foxy/multi_stream.hpp"
+#include <foxy/multi_stream.hpp>
 
 template struct foxy::basic_multi_stream<boost::asio::ip::tcp::socket>;

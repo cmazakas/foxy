@@ -10,7 +10,7 @@
 #ifndef FOXY_SHARED_PTR_IMPL_HPP_
 #define FOXY_SHARED_PTR_IMPL_HPP_
 
-#include "foxy/shared_handler_ptr.hpp"
+#include <foxy/shared_handler_ptr.hpp>
 
 #include <boost/asio/associated_allocator.hpp>
 #include <boost/assert.hpp>
