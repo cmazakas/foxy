@@ -10,7 +10,7 @@
 #ifndef FOXY_SESSION_HPP
 #define FOXY_SESSION_HPP
 
-#include "foxy/multi_stream.hpp"
+#include <foxy/multi_stream.hpp>
 
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -94,6 +94,6 @@ using session = basic_session<multi_stream>;
 
 } // foxy
 
-#include "foxy/impl/session.impl.hpp"
+#include <foxy/impl/session.impl.hpp>
 
 #endif // FOXY_SESSION_HPP

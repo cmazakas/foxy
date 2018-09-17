@@ -10,7 +10,7 @@
 #ifndef FOXY_SESSION_IMPL_HPP_
 #define FOXY_SESSION_IMPL_HPP_
 
-#include "foxy/session.hpp"
+#include <foxy/session.hpp>
 
 namespace foxy
 {
