@@ -25,10 +25,26 @@ export_non_connect_fields(Fields& src, Fields& dst);
 } // detail
 } // foxy
 
+// HTTP RFC 7230: https://tools.ietf.org/html/rfc7230#section-3.2.2
+//
+// A sender MUST NOT generate multiple header fields with the same field
+// name in a message unless either the entire field value for that
+// header field is defined as a comma-separated list [i.e., #(values)]
+// or the header field is a well-known exception (as noted below).
+//
+// Connection ABNF:
+// Connection = *( "," OWS ) connection-option *( OWS "," [ OWS connection-option ] )
+//
 template <class Fields>
 void
 foxy::detail::export_non_connect_fields(Fields& src, Fields& dst)
 {
+  // first collect all the Connection options into one coherent list
+  //
+
+  // iterate the `src` fields, moving any non-connect headers and the
+  // corresponding tokens to the `dst` fields
+  //
 }
 
 #endif // FOXY_DETAIL_EXPORT_NON_CONNECT_FIELDS_HPP_
