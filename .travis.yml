@@ -30,6 +30,7 @@ before_install:
   - cd vcpkg
   - ./vcpkg install boost-asio:x64-linux-cxx14
   - ./vcpkg install boost-beast:x64-linux-cxx14
+  - ./vcpkg install boost-spirit:x64-linux-cxx14
   - ./vcpkg install catch2:x64-linux-cxx14
   - mv installed/x64-linux-cxx14 installed/x64-linux
   - cd ..
