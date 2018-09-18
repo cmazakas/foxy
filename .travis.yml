@@ -7,7 +7,9 @@ branches:
   only:
   - master
 
-install: true
+before_install:
+  - export CXX=g++-7
+  - g++ --version
 
 script:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
@@ -33,9 +35,9 @@ script:
   - ./vcpkg install boost-beast:x64-linux-cxx14
   - ./vcpkg install catch2:x64-linux-cxx14
 
-install:
-  - mkdir foxy
-  - cp -r $TRAVIS_BUILD_DIR/* foxy
+# install:
+#   - mkdir foxy
+#   - cp -r $TRAVIS_BUILD_DIR/* foxy
 
 # script:
 #   - mkdir foxy/build_debug
