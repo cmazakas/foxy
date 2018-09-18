@@ -8,18 +8,17 @@ branches:
   - master
 
 before_install:
-  - export CXX=g++-7
-  - g++ --version
-
-script:
+  - ls
+  - pwd
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -q
   - sudo apt-get install g++-7 -y
+  - export CXX=g++-7
   - wget https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.tar.gz -O /tmp/cmake.tar.gz
   - tar -xzf /tmp/cmake.tar.gz
   - export PATH=$PATH:$PWD/cmake-3.12.2-Linux-x86_64/bin/
   - git clone https://github.com/Microsoft/vcpkg.git
-  - CXX=g++-7 ./vcpkg/bootstrap-vcpkg.sh
+  - ./vcpkg/bootstrap-vcpkg.sh
   - touch vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_TARGET_ARCHITECTURE x64)" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_LIBRARY_LINKAGE static)" >> vcpkg/triplets/x64-linux-cxx14.cmake
@@ -28,23 +27,18 @@ script:
   - echo "set(VCPKG_CXX_FLAGS \"-std=c++14\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - echo "set(VCPKG_C_FLAGS \"\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - cd vcpkg
-  - ./vcpkg install boost-regex:x64-linux-cxx14
-  - cat /home/travis/build/LeonineKing1199/f3/vcpkg/buildtrees/boost-regex/config-x64-linux-cxx14-dbg-out.log
-  - cat /home/travis/build/LeonineKing1199/f3/vcpkg/buildtrees/boost-regex/config-x64-linux-cxx14-dbg-err.log
   - ./vcpkg install boost-asio:x64-linux-cxx14
   - ./vcpkg install boost-beast:x64-linux-cxx14
   - ./vcpkg install catch2:x64-linux-cxx14
 
-# install:
-#   - mkdir foxy
-#   - cp -r $TRAVIS_BUILD_DIR/* foxy
+install:
+  - mkdir build_debug
+  - cd build_debug
+  - cmake -DVCPKG_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
+  - cmake --build . --target all -- -j4
 
-# script:
-#   - mkdir foxy/build_debug
-#   - cd foxy/build_debug
-#   - cmake -DVCPKG_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
-#   - cmake --build . --target all -- -j4
-#   - ctest .
+script:
+  - ctest .
 
 notifications:
   email:
