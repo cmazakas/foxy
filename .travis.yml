@@ -7,7 +7,9 @@ branches:
   only:
   - master
 
-before_install:
+install: true
+
+script:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -q
   - sudo apt-get install g++-7 -y
@@ -25,6 +27,8 @@ before_install:
   - echo "set(VCPKG_C_FLAGS \"\")" >> vcpkg/triplets/x64-linux-cxx14.cmake
   - cd vcpkg
   - ./vcpkg install boost-regex:x64-linux-cxx14
+  - cat /home/travis/build/LeonineKing1199/f3/vcpkg/buildtrees/boost-regex/config-x64-linux-cxx14-dbg-out.log
+  - cat /home/travis/build/LeonineKing1199/f3/vcpkg/buildtrees/boost-regex/config-x64-linux-cxx14-dbg-err.log
   - ./vcpkg install boost-asio:x64-linux-cxx14
   - ./vcpkg install boost-beast:x64-linux-cxx14
   - ./vcpkg install catch2:x64-linux-cxx14
@@ -33,12 +37,12 @@ install:
   - mkdir foxy
   - cp -r $TRAVIS_BUILD_DIR/* foxy
 
-script:
-  - mkdir foxy/build_debug
-  - cd foxy/build_debug
-  - cmake -DVCPKG_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
-  - cmake --build . --target all -- -j4
-  - ctest .
+# script:
+#   - mkdir foxy/build_debug
+#   - cd foxy/build_debug
+#   - cmake -DVCPKG_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
+#   - cmake --build . --target all -- -j4
+#   - ctest .
 
 notifications:
   email:
