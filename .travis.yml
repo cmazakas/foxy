@@ -17,6 +17,7 @@ before_install:
   - wget https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.tar.gz -O /tmp/cmake.tar.gz
   - tar -xzf /tmp/cmake.tar.gz
   - export PATH=$PATH:$PWD/cmake-3.12.2-Linux-x86_64/bin/
+  - cmake-3.12.2-Linux-x86_64/bin/cmake --version
   - git clone https://github.com/Microsoft/vcpkg.git
   - ./vcpkg/bootstrap-vcpkg.sh
   - touch vcpkg/triplets/x64-linux-cxx14.cmake
@@ -35,8 +36,8 @@ before_install:
 install:
   - mkdir build_debug
   - cd build_debug
-  - cmake -DVCPKG_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
-  - cmake --build . --target all -- -j4
+  - ../cmake-3.12.2-Linux-x86_64/bin/cmake -DVCPKG_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
+  - ../cmake-3.12.2-Linux-x86_64/bin/cmake --build . --target all -- -j4
 
 script:
   - ctest .
