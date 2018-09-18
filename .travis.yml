@@ -32,6 +32,7 @@ before_install:
   - ./vcpkg install boost-beast:x64-linux-cxx14
   - ./vcpkg install catch2:x64-linux-cxx14
   - cd ..
+  - ls
 
 install:
   - mkdir build_debug
