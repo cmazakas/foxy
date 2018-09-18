@@ -30,11 +30,12 @@ before_install:
   - ./vcpkg install boost-asio:x64-linux-cxx14
   - ./vcpkg install boost-beast:x64-linux-cxx14
   - ./vcpkg install catch2:x64-linux-cxx14
+  - cd ..
 
 install:
   - mkdir build_debug
   - cd build_debug
-  - cmake -DVCPKG_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
+  - cmake -DVCPKG_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
   - cmake --build . --target all -- -j4
 
 script:
