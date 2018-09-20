@@ -10,10 +10,8 @@ before_install:
   - docker run -it -d -v $(pwd):$(pwd):rw --workdir=$(pwd) --name foxy leonineking1199/foxy:second bash
 
 script:
-  - docker exec foxy mkdir foxy
-  - docker exec foxy cp -r $TRAVIS_BUILD_DIR/* foxy/
-  - docker exec foxy mkdir foxy/build_debug
-  - docker exec foxy bash -c "cd foxy/build_debug && /cmake-3.12.2-Linux-x86_64/bin/cmake && /cmake-3.12.2-Linux-x86_64/bin/cmake --build . && /cmake-3.12.2-Linux-x86_64/bin/ctest ."
+  - docker exec foxy mkdir build_debug
+  - docker exec foxy bash -c "cd build_debug && /cmake-3.12.2-Linux-x86_64/bin/cmake .. && /cmake-3.12.2-Linux-x86_64/bin/cmake --build . && /cmake-3.12.2-Linux-x86_64/bin/ctest ."
 
 notifications:
   email:
