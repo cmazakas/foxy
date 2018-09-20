@@ -7,7 +7,7 @@ services:
 
 before_install:
   - docker pull leonineking1199/foxy:second
-  - docker run -it -d -v $(pwd):$(pwd):ro --workdir=$(pwd) --name foxy leonineking199/foxy:second bash
+  - docker run -it -d -v $(pwd):$(pwd):ro --workdir=$(pwd) --name foxy leonineking1199/foxy:second bash
 
 script:
   - docker exec foxy mkdir foxy
