@@ -43,15 +43,17 @@ TEST_CASE("Our detail::export_non_connect_fields function")
         return field.value() == ex;
       });
 
-    REQUIRE(still_has_connect_headers);
+    CHECK(still_has_connect_headers);
 
     auto const still_has_foo      = (a["foo"] == "ha ha!");
     auto const missing_nonconnect = (a["nonconnectopt"] == "");
 
-    auto const has_nonconnect = (b["nonconnectopt"] == "some random value");
+    auto const has_nonconnect  = (b["nonconnectopt"] == "some random value");
+    auto const missing_connect = (b[http::field::connection] == "");
 
     CHECK(still_has_foo);
     CHECK(missing_nonconnect);
     CHECK(has_nonconnect);
+    CHECK(missing_connect);
   }
 }
