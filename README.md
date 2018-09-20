@@ -11,7 +11,7 @@ The user is given 3 versions of an HTTP session: a `client_session`,
 
 ## Example Usage
 
-```
+```cpp
 asio::io_context io;
 
 auto session_handle =

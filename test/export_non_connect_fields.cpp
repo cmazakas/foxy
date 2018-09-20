@@ -9,8 +9,9 @@
 
 #include <foxy/detail/export_non_connect_fields.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/range/algorithm/equal.hpp>
 #include <boost/range/algorithm/for_each.hpp>
-#include <iostream>
+
 #include <catch2/catch.hpp>
 
 namespace http  = boost::beast::http;
@@ -20,23 +21,37 @@ TEST_CASE("Our detail::export_non_connect_fields function")
 {
   SECTION("should preserve the Connection header fields and export the rest")
   {
+    auto const connect_tokens = { "rawr", "foo, bar, qux,,,     ,,lololol" };
+
     auto a = http::fields();
     auto b = http::fields();
 
-    a.insert(http::field::connection, "rawr");
-    a.insert(http::field::connection, "foo, bar, qux,,,     ,,lololol");
-    a.insert("foo", "ha ha!");
+    range::for_each(
+      connect_tokens,
+      [&](auto const* token) { a.insert(http::field::connection, token); });
 
+    a.insert("foo", "ha ha!");
     a.insert("nonconnectopt", "some random value");
 
     foxy::detail::export_non_connect_fields(a, b);
 
-    range::for_each(
+    auto const still_has_connect_headers = range::equal(
       a.equal_range(http::field::connection),
-      [](auto const& field)
+      connect_tokens,
+      [](auto const& field, auto const ex) -> bool
       {
-        auto const value = field.value();
-        std::cout << "value : " << value << "\n";
+        return field.value() == ex;
       });
+
+    REQUIRE(still_has_connect_headers);
+
+    auto const still_has_foo      = (a["foo"] == "ha ha!");
+    auto const missing_nonconnect = (a["nonconnectopt"] == "");
+
+    auto const has_nonconnect = (b["nonconnectopt"] == "some random value");
+
+    CHECK(still_has_foo);
+    CHECK(missing_nonconnect);
+    CHECK(has_nonconnect);
   }
 }
