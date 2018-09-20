@@ -7,19 +7,16 @@
 // Official repository: https://github.com/LeonineKing1199/f3
 //
 
-#ifndef FOXY_UTILITY_HPP_
-#define FOXY_UTILITY_HPP_
+#ifndef FOXY_HPP_
+#define FOXY_HPP_
 
-#include <boost/utility/string_view.hpp>
-#include <utility>
+#include <foxy/client_session.hpp>
+#include <foxy/log.hpp>
+#include <foxy/multi_stream.hpp>
+#include <foxy/proxy.hpp>
+#include <foxy/server_session.hpp>
+#include <foxy/session.hpp>
+#include <foxy/shared_handler_ptr.hpp>
+#include <foxy/utility.hpp>
 
-namespace foxy
-{
-
-auto
-parse_authority_form(boost::string_view const uri)
--> std::pair<std::string, std::string>;
-
-} // foxy
-
-#endif // FOXY_UTILITY_HPP_
+#endif // FOXY_HPP_

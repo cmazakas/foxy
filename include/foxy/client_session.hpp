@@ -1,8 +1,17 @@
+//
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+// Official repository: https://github.com/LeonineKing1199/f3
+//
+
 #ifndef FOXY_CLIENT_SESSION_HPP_
 #define FOXY_CLIENT_SESSION_HPP_
 
-#include "foxy/session.hpp"
-#include "foxy/shared_handler_ptr.hpp"
+#include <foxy/session.hpp>
+#include <foxy/shared_handler_ptr.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -64,7 +73,7 @@ public:
 
 } // foxy
 
-#include "foxy/impl/client_session/async_connect.impl.hpp"
-#include "foxy/impl/client_session/async_request.impl.hpp"
+#include <foxy/impl/client_session/async_connect.impl.hpp>
+#include <foxy/impl/client_session/async_request.impl.hpp>
 
 #endif // FOXY_CLIENT_SESSION_HPP_
