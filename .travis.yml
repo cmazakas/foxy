@@ -9,7 +9,6 @@ before_install:
   - docker pull leonineking1199/foxy:second
   - docker run -it -d -v $(pwd):$(pwd):ro --workdir=$(pwd) --name foxy leonineking199/foxy:second bash
 
-
 script:
   - docker exec foxy mkdir foxy
   - docker exec foxy cp -r $TRAVIS_BUILD_DIR/* foxy/
