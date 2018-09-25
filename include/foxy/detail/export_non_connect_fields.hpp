@@ -48,7 +48,6 @@ export_non_connect_fields(Fields& src, Fields& dst);
 // header field is defined as a comma-separated list [i.e., #(values)]
 // or the header field is a well-known exception (as noted below).
 //
-
 // Connection ABNF:
 // Connection = *( "," OWS ) connection-option *( OWS "," [ OWS connection-option ] )
 //
