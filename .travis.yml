@@ -2,6 +2,12 @@ sudo: enabled
 
 language: cpp
 
+# safelist
+branches:
+  only:
+  - master
+  - develop
+
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -q
@@ -34,7 +40,7 @@ script:
   - cd foxy/build_debug
   - cmake -DVCPKG_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake ..
   - cmake --build . --target all -- -j4
-  - ctest .
+  - ctest --output-on-failure
 
 notifications:
   email:
