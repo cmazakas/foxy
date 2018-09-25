@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/LeonineKing1199/f3.svg?branch=master)](https://travis-ci.org/LeonineKing1199/f3)
 # Foxy
 Session-based Beast/Asio wrapper requiring C++14
 
