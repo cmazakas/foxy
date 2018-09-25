@@ -2,6 +2,12 @@ sudo: enabled
 
 language: cpp
 
+# safelist
+branches:
+  only:
+  - master
+  - develop
+
 services:
   - docker
 
