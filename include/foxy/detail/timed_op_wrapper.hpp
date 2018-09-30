@@ -81,7 +81,7 @@ public:
     using namespace std::placeholders;
 
     auto& s = *p_;
-    Op<Types..., std::decay<decltype(*this)>::type>(
+    Op<Types..., typename std::decay<decltype(*this)>::type>(
         s.session, std::forward<Args>(args)..., *this
       )({}, 0, false);
 
