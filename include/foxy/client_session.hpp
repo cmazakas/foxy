@@ -12,6 +12,7 @@
 
 #include <foxy/session.hpp>
 #include <foxy/shared_handler_ptr.hpp>
+#include <foxy/detail/timed_op_wrapper.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -32,8 +33,6 @@
 
 #include <boost/optional/optional.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
-#include <boost/callable_traits/args.hpp>
-#include <boost/hof/unpack.hpp>
 
 #include <chrono>
 #include <string>
