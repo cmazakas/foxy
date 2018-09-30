@@ -145,7 +145,7 @@ client_session::async_request(
       RequestHandler,
       void(boost::system::error_code)),
     void()
-  >(*this, std::move(init.completion_handler)).init<Request, ResponseParser>(request, parser);
+  >(*this, std::move(init.completion_handler)).template init<Request, ResponseParser>(request, parser);
 
   return init.result.get();
 }
