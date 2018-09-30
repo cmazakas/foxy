@@ -109,7 +109,7 @@ public:
   auto operator()(boost::system::error_code ec, Args&&... args) -> void
   {
     p_->ops++;
-    p_->args = state::args_t(std::forward<Args>(args)...);
+    p_->args = typename state::args_t(std::forward<Args>(args)...);
 
     auto ec2 = ec;
     p_->session.timer.cancel(ec2);
