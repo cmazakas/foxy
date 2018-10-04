@@ -127,6 +127,7 @@ basic_session<Stream, X>::async_read_header(
   init(handler);
 
   detail::timed_op_wrapper<
+    stream_type,
     detail::read_header_op,
     BOOST_ASIO_HANDLER_TYPE(
       ReadHandler,

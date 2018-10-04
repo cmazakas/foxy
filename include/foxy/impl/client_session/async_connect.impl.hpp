@@ -192,6 +192,7 @@ client_session::async_connect(
   init(handler);
 
   detail::timed_op_wrapper<
+    stream_type,
     detail::connect_op,
     BOOST_ASIO_HANDLER_TYPE(
       ConnectHandler,
