@@ -41,20 +41,20 @@ auto foxy::basic_session<Stream, X>::get_executor() -> executor_type
   return stream.get_executor();
 }
 
-template <class Stream, class X>
-template <class Parser, class ReadHandler>
-auto
-basic_session<Stream, X>::async_read_header(
-  Parser&       parser,
-  ReadHandler&& handler
-) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t))
-{
-  return boost::beast::http::async_read_header(
-    stream,
-    buffer,
-    parser,
-    std::forward<ReadHandler>(handler));
-}
+// template <class Stream, class X>
+// template <class Parser, class ReadHandler>
+// auto
+// basic_session<Stream, X>::async_read_header(
+//   Parser&       parser,
+//   ReadHandler&& handler
+// ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t))
+// {
+//   return boost::beast::http::async_read_header(
+//     stream,
+//     buffer,
+//     parser,
+//     std::forward<ReadHandler>(handler));
+// }
 
 template <class Stream, class X>
 template <class Parser, class ReadHandler>
@@ -100,5 +100,8 @@ basic_session<Stream, X>::async_write(
 }
 
 } // foxy
+
+#include <foxy/detail/timed_op_wrapper.hpp>
+#include <foxy/impl/session/async_read_header.impl.hpp>
 
 #endif // FOXY_SESSION_IMPL_HPP_
