@@ -32,6 +32,7 @@ private:
     ::foxy::basic_session<Stream>& session;
     int                            ops;
     boost::asio::coroutine         coro;
+    bool                           done;
 
     boost::asio::executor_work_guard<decltype(session.get_executor())> work;
 
@@ -41,6 +42,7 @@ private:
     : session(session_)
     , ops{0}
     , coro()
+    , done{false}
     , work(session.get_executor())
     {
     }
@@ -92,6 +94,7 @@ public:
 
     s.session.timer.expires_after(s.session.opts.timeout);
     s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
+    (*this)(on_completion_t{}, {});
 
     p_.reset();
   }
@@ -101,8 +104,17 @@ public:
 
   auto operator()(on_timer_t, boost::system::error_code ec) -> void
   {
+    std::cout << "done timer op!\n";
+
     p_->ops++;
     if (ec == boost::asio::error::operation_aborted) {
+      return (*this)(on_completion_t{}, boost::system::error_code());
+    }
+
+    if (
+      p_->done ||
+      p_->session.timer.expiry() > std::chrono::steady_clock::now()
+    ) {
       return (*this)(on_completion_t{}, boost::system::error_code());
     }
 
@@ -113,8 +125,11 @@ public:
   template <class ...Args>
   auto operator()(boost::system::error_code ec, Args&&... args) -> void
   {
+    std::cout << "done with main op!\n";
+
     p_->ops++;
     p_->args = typename state::args_t(std::forward<Args>(args)...);
+    p_->done = true;
 
     auto ec2 = ec;
     p_->session.timer.cancel(ec2);
@@ -130,11 +145,15 @@ public:
     BOOST_ASIO_CORO_REENTER(s.coro)
     {
       while (s.ops < 2) {
+        std::cout << "yielding for when_all (" << s.ops << ")\n";
         BOOST_ASIO_CORO_YIELD;
+        std::cout << "done with an async op (" << s.ops << ")\n" ;
       }
     }
 
     if (!s.coro.is_complete()) { return; }
+
+    std::cout << "when_all is complete\n";
 
     auto args = std::move(s.args);
     auto work = std::move(s.work);

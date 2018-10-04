@@ -1,5 +1,5 @@
-#ifndef FOXY_IMPL_SESSION_ASYNC_READ_HEADER_IMPL_HPP_
-#define FOXY_IMPL_SESSION_ASYNC_READ_HEADER_IMPL_HPP_
+#ifndef FOXY_IMPL_SESSION_ASYNC_READ_IMPL_HPP_
+#define FOXY_IMPL_SESSION_ASYNC_READ_IMPL_HPP_
 
 #include <foxy/session.hpp>
 
@@ -9,7 +9,7 @@ namespace detail
 {
 
 template <class Stream, class Parser, class ReadHandler>
-struct read_header_op : boost::asio::coroutine
+struct read_op : boost::asio::coroutine
 {
 private:
 
@@ -34,12 +34,12 @@ private:
   boost::beast::handler_ptr<state, ReadHandler> p_;
 
 public:
-  read_header_op()                      = delete;
-  read_header_op(read_header_op const&) = default;
-  read_header_op(read_header_op&&)      = default;
+  read_op()                      = delete;
+  read_op(read_op const&) = default;
+  read_op(read_op&&)      = default;
 
   template <class DeducedHandler>
-  read_header_op(
+  read_op(
     ::foxy::basic_session<Stream>& session,
     Parser&                        parser,
     DeducedHandler&&               handler)
@@ -73,7 +73,7 @@ public:
 
 template <class Stream, class Parser, class ReadHandler>
 auto
-read_header_op<Stream, Parser, ReadHandler>::
+read_op<Stream, Parser, ReadHandler>::
 operator()(
   boost::system::error_code ec,
   std::size_t const         bytes_transferred,
@@ -88,7 +88,7 @@ operator()(
   BOOST_ASIO_CORO_REENTER(*this)
   {
     BOOST_ASIO_CORO_YIELD
-    http::async_read_header(
+    http::async_read(
       s.session.stream,
       s.session.buffer,
       s.parser,
@@ -116,28 +116,33 @@ operator()(
 template <class Stream, class X>
 template <class Parser, class ReadHandler>
 auto
-basic_session<Stream, X>::async_read_header(
+basic_session<Stream, X>::async_read(
   Parser&       parser,
   ReadHandler&& handler
 ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t))
 {
-  boost::asio::async_completion<
-    ReadHandler, void(boost::system::error_code, std::size_t)
-  >
-  init(handler);
+  return http::async_read(
+    stream,
+    buffer,
+    parser,
+    std::forward<ReadHandler>(handler));
+  // boost::asio::async_completion<
+  //   ReadHandler, void(boost::system::error_code, std::size_t)
+  // >
+  // init(handler);
 
-  detail::timed_op_wrapper<
-    stream_type,
-    detail::read_header_op,
-    BOOST_ASIO_HANDLER_TYPE(
-      ReadHandler,
-      void(boost::system::error_code, std::size_t)),
-    void(std::size_t)
-  >(*this, std::move(init.completion_handler)).template init<stream_type, Parser>(parser);
+  // detail::timed_op_wrapper<
+  //   stream_type,
+  //   detail::read_op,
+  //   BOOST_ASIO_HANDLER_TYPE(
+  //     ReadHandler,
+  //     void(boost::system::error_code, std::size_t)),
+  //   void(std::size_t)
+  // >(*this, std::move(init.completion_handler)).template init<stream_type, Parser>(parser);
 
-  return init.result.get();
+  // return init.result.get();
 }
 
 } // foxy
 
-#endif // FOXY_IMPL_SESSION_ASYNC_READ_HEADER_IMPL_HPP_
+#endif // FOXY_IMPL_SESSION_ASYNC_READ_IMPL_HPP_
