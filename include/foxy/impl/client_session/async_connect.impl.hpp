@@ -24,7 +24,7 @@ private:
 
   struct state
   {
-    ::foxy::session&                      session;
+    ::foxy::session&                             session;
     std::string                                  host;
     std::string                                  service;
     boost::asio::ip::tcp::resolver               resolver;
@@ -35,7 +35,7 @@ private:
 
     explicit state(
       ConnectHandler const&   handler,
-      ::foxy::session& session_,
+      ::foxy::session&        session_,
       std::string             host_,
       std::string             service_)
     : session(session_)
@@ -192,7 +192,7 @@ client_session::async_connect(
   init(handler);
 
   detail::timed_op_wrapper<
-    stream_type,
+    boost::asio::ip::tcp::socket,
     detail::connect_op,
     BOOST_ASIO_HANDLER_TYPE(
       ConnectHandler,

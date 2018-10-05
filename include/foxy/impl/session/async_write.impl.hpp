@@ -135,13 +135,13 @@ basic_session<Stream, X>::async_write(
   init(handler);
 
   detail::timed_op_wrapper<
-    stream_type,
+    Stream,
     detail::write_op,
     BOOST_ASIO_HANDLER_TYPE(
       WriteHandler,
       void(boost::system::error_code, std::size_t)),
     void(boost::system::error_code, std::size_t)
-  >(*this, std::move(init.completion_handler)).template init<stream_type, Serializer>(serializer);
+  >(*this, std::move(init.completion_handler)).template init<Stream, Serializer>(serializer);
 
   return init.result.get();
 }

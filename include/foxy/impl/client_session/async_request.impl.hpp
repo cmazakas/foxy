@@ -140,7 +140,7 @@ client_session::async_request(
   init(handler);
 
   detail::timed_op_wrapper<
-    stream_type,
+    boost::asio::ip::tcp::socket,
     detail::request_op,
     BOOST_ASIO_HANDLER_TYPE(
       RequestHandler,

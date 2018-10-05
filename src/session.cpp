@@ -9,4 +9,4 @@
 
 #include <foxy/session.hpp>
 
-template struct foxy::basic_session<foxy::multi_stream>;
+template struct foxy::basic_session<boost::asio::ip::tcp::socket>;

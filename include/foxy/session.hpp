@@ -38,7 +38,7 @@ template <
 struct basic_session
 {
 public:
-  using stream_type = Stream;
+  using stream_type = ::foxy::basic_multi_stream<Stream>;
   using buffer_type = boost::beast::flat_buffer;
   using timer_type  = boost::asio::steady_timer;
 
@@ -88,9 +88,9 @@ public:
   ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler, void(boost::system::error_code, std::size_t));
 };
 
-extern template struct basic_session<multi_stream>;
+extern template struct basic_session<boost::asio::ip::tcp::socket>;
 
-using session = basic_session<multi_stream>;
+using session = basic_session<boost::asio::ip::tcp::socket>;
 
 } // foxy
 
