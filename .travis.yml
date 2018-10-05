@@ -13,7 +13,7 @@ services:
 
 before_install:
   - docker pull leonineking1199/foxy:version3
-  - docker run -it -d -v $(pwd):$(pwd):rw --workdir=$(pwd) --name foxy leonineking1199/foxy:second bash
+  - docker run -it -d -v $(pwd):$(pwd):rw --workdir=$(pwd) --name foxy leonineking1199/foxy:version3 bash
 
 script:
   - docker exec foxy mkdir build_debug
