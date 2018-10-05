@@ -12,6 +12,7 @@
 
 #include <foxy/session.hpp>
 #include <foxy/shared_handler_ptr.hpp>
+#include <foxy/detail/timed_op_wrapper.hpp>
 
 #include <boost/system/error_code.hpp>
 

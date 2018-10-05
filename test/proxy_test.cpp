@@ -27,6 +27,8 @@ namespace http = boost::beast::http;
 
 TEST_CASE("Our forward proxy")
 {
+  std::cout << "starting proxy test suite now\n";
+
   SECTION("should reject all non-persistent connections")
   {
     asio::io_context io;

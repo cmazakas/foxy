@@ -72,6 +72,7 @@ struct async_connect_op
     : session(std::move(stream))
     , client(session.get_executor().context())
     {
+      session.opts.timeout = std::chrono::seconds{5};
     }
   };
 
@@ -120,6 +121,7 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
         continue;
       }
 
+      std::cout << "accepted connection\n";
       async_connect_op(std::move(stream_))({}, 0);
     }
   }
@@ -152,6 +154,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(s.connect_coro)
   {
+    std::cout << "Entering proxy session loop\n";
     while (true) {
       // A new instance of the parser is required for each message.
       //

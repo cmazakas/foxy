@@ -24,7 +24,7 @@ private:
 
   struct state
   {
-    ::foxy::client_session& session;
+    ::foxy::session& session;
     Request&                request;
     ResponseParser&         parser;
 
@@ -32,7 +32,7 @@ private:
 
     explicit state(
       RequestHandler const&   handler,
-      ::foxy::client_session& session_,
+      ::foxy::session& session_,
       Request&                request_,
       ResponseParser&         parser_)
     : session(session_)
@@ -52,7 +52,7 @@ public:
 
   template <class DeducedHandler>
   request_op(
-    ::foxy::client_session& session,
+    ::foxy::session& session,
     Request&                request,
     ResponseParser&         parser,
     DeducedHandler&&        handler)
@@ -64,7 +64,7 @@ public:
 
   using executor_type = boost::asio::associated_executor_t<
     RequestHandler,
-    decltype((std::declval<::foxy::client_session&>().get_executor()))
+    decltype((std::declval<::foxy::session&>().get_executor()))
   >;
 
   using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
@@ -124,162 +124,6 @@ request_op<Request, ResponseParser, RequestHandler>::operator()(
   }
 }
 
-template <class Request, class ResponseParser, class RequestHandler>
-struct request_op_main
-{
-private:
-
-  struct state
-  {
-    ::foxy::client_session&        session;
-    Request&                       request;
-    ResponseParser&                parser;
-
-    int                            ops_completed;
-    boost::asio::coroutine         coro;
-
-    boost::asio::executor_work_guard<decltype(session.get_executor())> work;
-
-    explicit state(
-      RequestHandler const&   handler_,
-      ::foxy::client_session& session_,
-      Request&                request_,
-      ResponseParser&         parser_)
-    : session(session_)
-    , request(request_)
-    , parser(parser_)
-    , ops_completed{0}
-    , coro()
-    , work(session.get_executor())
-    {
-    }
-  };
-
-  ::foxy::shared_handler_ptr<state, RequestHandler> p_;
-
-public:
-  request_op_main()                       = delete;
-  request_op_main(request_op_main const&) = default;
-  request_op_main(request_op_main&&)      = default;
-
-  template <class DeducedHandler>
-  request_op_main(
-    ::foxy::client_session& session,
-    Request&                request,
-    ResponseParser&         parser,
-    DeducedHandler&&        handler)
-  : p_(std::forward<DeducedHandler>(handler), session, request, parser)
-  {
-  }
-
-  using executor_type = boost::asio::associated_executor_t<
-    RequestHandler,
-    decltype(std::declval<::foxy::client_session&>().get_executor())
-  >;
-
-  auto get_executor() const noexcept -> executor_type
-  {
-    return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
-  }
-
-  using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
-
-  auto get_allocator() const noexcept -> allocator_type
-  {
-    return boost::asio::get_associated_allocator(p_.handler());
-  }
-
-  struct on_timer_t {};
-  struct on_request_t {};
-
-  auto operator()(on_timer_t, boost::system::error_code ec) -> void;
-  auto operator()(boost::system::error_code ec, bool const is_continuation = true) -> void;
-  auto operator()(on_request_t, boost::system::error_code ec) -> void;
-};
-
-template <class Request, class ResponseParser, class RequestHandler>
-auto
-request_op_main<Request, ResponseParser, RequestHandler>::
-operator()(
-  on_timer_t,
-  boost::system::error_code ec) -> void
-{
-  p_->ops_completed++;
-  if (ec == boost::asio::error::operation_aborted) {
-    return (*this)(boost::system::error_code());
-  }
-
-  p_->session.stream.plain().close(ec);
-  (*this)(ec);
-}
-
-template <class Request, class ResponseParser, class RequestHandler>
-auto
-request_op_main<Request, ResponseParser, RequestHandler>::
-operator()(
-  on_request_t,
-  boost::system::error_code ec) -> void
-{
-  p_->ops_completed++;
-
-  auto ec2 = ec;
-  p_->session.timer.cancel(ec2);
-
-  (*this)(ec);
-}
-
-template <class Request, class ResponseParser, class RequestHandler>
-auto
-request_op_main<Request, ResponseParser, RequestHandler>::
-operator()(
-  boost::system::error_code ec,
-  bool const                is_continuation) -> void
-{
-  using namespace std::chrono_literals;
-  using namespace std::placeholders;
-  using boost::beast::bind_handler;
-
-  auto& s = *p_;
-
-  BOOST_ASIO_CORO_REENTER(s.coro)
-  {
-    s.session.timer.expires_after(1s);
-
-    {
-      auto h = bind_handler(*this, on_request_t{}, _1);
-
-      request_op<
-        Request, ResponseParser,
-        decltype(h)
-      >(s.session, s.request, s.parser, std::move(h))({}, false);
-    }
-
-    s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
-
-    p_.reset();
-    while (s.opts_completed < 2) {
-      BOOST_ASIO_CORO_YIELD;
-    }
-
-    if (ec) { goto upcall; }
-
-    return;
-
-  upcall:
-    if (!is_continuation) {
-      BOOST_ASIO_CORO_YIELD
-      boost::asio::post(bind_handler(*this, ec));
-    }
-  }
-
-  if (!s.coro.is_complete()) { return; }
-
-  auto work     = std::move(s.work);
-
-  if (ec) { return p_.invoke(ec); };
-  return p_.invoke(ec);
-}
-
 } // detail
 
 template <class Request, class ResponseParser, class RequestHandler>
@@ -295,10 +139,14 @@ client_session::async_request(
   >
   init(handler);
 
-  detail::request_op<
-    Request, ResponseParser,
-    BOOST_ASIO_HANDLER_TYPE(RequestHandler, void(boost::system::error_code))
-  >(*this, request, parser, std::move(init.completion_handler))({}, 0, false);
+  detail::timed_op_wrapper<
+    boost::asio::ip::tcp::socket,
+    detail::request_op,
+    BOOST_ASIO_HANDLER_TYPE(
+      RequestHandler,
+      void(boost::system::error_code)),
+    void(boost::system::error_code)
+  >(*this, std::move(init.completion_handler)).template init<Request, ResponseParser>(request, parser);
 
   return init.result.get();
 }

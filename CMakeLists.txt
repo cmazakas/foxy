@@ -30,11 +30,19 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/multi_stream.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/proxy.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/server_session.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_non_connect_fields.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
