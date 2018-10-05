@@ -38,7 +38,10 @@ add_library(
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
 
