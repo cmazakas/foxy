@@ -132,7 +132,7 @@ basic_session<Stream, X>::async_read_header(
     BOOST_ASIO_HANDLER_TYPE(
       ReadHandler,
       void(boost::system::error_code, std::size_t)),
-    void(std::size_t)
+    void(boost::system::error_code, std::size_t)
   >(*this, std::move(init.completion_handler)).template init<stream_type, Parser>(parser);
 
   return init.result.get();

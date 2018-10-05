@@ -197,7 +197,7 @@ client_session::async_connect(
     BOOST_ASIO_HANDLER_TYPE(
       ConnectHandler,
       void(boost::system::error_code, boost::asio::ip::tcp::endpoint)),
-    void(boost::asio::ip::tcp::endpoint)
+    void(boost::system::error_code, boost::asio::ip::tcp::endpoint)
   >(*this, std::move(init.completion_handler)).init(std::move(host), std::move(service));
 
   return init.result.get();

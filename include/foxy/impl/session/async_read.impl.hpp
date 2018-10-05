@@ -121,26 +121,21 @@ basic_session<Stream, X>::async_read(
   ReadHandler&& handler
 ) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler, void(boost::system::error_code, std::size_t))
 {
-  return http::async_read(
-    stream,
-    buffer,
-    parser,
-    std::forward<ReadHandler>(handler));
-  // boost::asio::async_completion<
-  //   ReadHandler, void(boost::system::error_code, std::size_t)
-  // >
-  // init(handler);
+  boost::asio::async_completion<
+    ReadHandler, void(boost::system::error_code, std::size_t)
+  >
+  init(handler);
 
-  // detail::timed_op_wrapper<
-  //   stream_type,
-  //   detail::read_op,
-  //   BOOST_ASIO_HANDLER_TYPE(
-  //     ReadHandler,
-  //     void(boost::system::error_code, std::size_t)),
-  //   void(std::size_t)
-  // >(*this, std::move(init.completion_handler)).template init<stream_type, Parser>(parser);
+  detail::timed_op_wrapper<
+    stream_type,
+    detail::read_op,
+    BOOST_ASIO_HANDLER_TYPE(
+      ReadHandler,
+      void(boost::system::error_code, std::size_t)),
+    void(boost::system::error_code, std::size_t)
+  >(*this, std::move(init.completion_handler)).template init<stream_type, Parser>(parser);
 
-  // return init.result.get();
+  return init.result.get();
 }
 
 } // foxy
