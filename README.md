@@ -1,5 +1,7 @@
-[![Build Status](https://travis-ci.org/LeonineKing1199/f3.svg?branch=master)](https://travis-ci.org/LeonineKing1199/f3)
 # Foxy
+
+[![Build Status](https://travis-ci.org/LeonineKing1199/f3.svg?branch=master)](https://travis-ci.org/LeonineKing1199/f3)
+
 Session-based Beast/Asio wrapper requiring C++14
 
 ## High-Level Overview
@@ -9,6 +11,10 @@ session-focused API.
 
 The user is given 3 versions of an HTTP session: a `client_session`,
 `server_session` and a generic `session` that is intended to be inherited from.
+
+## Features
+
+* timeouts for all `session` methods (`async_read`, `async_read_header`, ...)
 
 ## Example Usage
 
