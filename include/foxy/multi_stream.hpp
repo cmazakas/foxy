@@ -14,6 +14,8 @@
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core/type_traits.hpp>
+
+#include <boost/asio/ssl/context.hpp>
 #include <boost/beast/experimental/core/ssl_stream.hpp>
 
 #include <boost/optional/optional.hpp>
@@ -49,10 +51,15 @@ public:
   auto plain() & noexcept -> stream_type&;
   auto ssl()   & noexcept -> ssl_stream_type&;
 
+  auto ssl(boost::asio::ssl::context ctx) -> void;
+
   auto is_ssl() const noexcept -> bool;
 
   auto get_executor() -> executor_type;
 
+  // we inline these two method implementations so we don't have to declare
+  // the return type
+  //
   template <class MutableBufferSequence, class CompletionToken>
   auto
   async_read_some(MutableBufferSequence const& buffers, CompletionToken&& token)
@@ -74,6 +81,8 @@ public:
   }
 };
 
+// impl
+//
 template <class Stream, class X>
 basic_multi_stream<Stream, X>::basic_multi_stream(boost::asio::io_context& io)
 : stream_(io)
@@ -96,6 +105,14 @@ basic_multi_stream<Stream, X>::ssl() & noexcept -> ssl_stream_type&
 
 template <class Stream, class X>
 auto
+basic_multi_stream<Stream, X>::
+ssl(boost::asio::ssl::context context) -> void
+{
+
+}
+
+template <class Stream, class X>
+auto
 basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
 {
   return static_cast<bool>(ssl_stream_);
@@ -104,13 +121,12 @@ basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
 template <class Stream, class X>
 auto
 basic_multi_stream<Stream, X>::get_executor()
-  -> boost::asio::io_context::executor_type
+-> boost::asio::io_context::executor_type
 {
   return stream_.get_executor();
 }
 
 extern template struct basic_multi_stream<boost::asio::ip::tcp::socket>;
-
 using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
 
 } // foxy

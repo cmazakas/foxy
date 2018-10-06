@@ -23,6 +23,7 @@ foxy::basic_session<Stream, X>::basic_session(
 , timer(io)
 , opts(std::move(opts_))
 {
+
 }
 
 template <class Stream, class X>
