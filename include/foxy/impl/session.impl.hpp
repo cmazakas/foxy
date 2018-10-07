@@ -23,7 +23,10 @@ foxy::basic_session<Stream, X>::basic_session(
 , timer(io)
 , opts(std::move(opts_))
 {
-
+  if (opts.ssl_ctx) {
+    stream.ssl(std::move(*opts.ssl_ctx));
+    opts.ssl_ctx = boost::none;
+  }
 }
 
 template <class Stream, class X>

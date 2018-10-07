@@ -84,21 +84,24 @@ public:
 // impl
 //
 template <class Stream, class X>
-basic_multi_stream<Stream, X>::basic_multi_stream(boost::asio::io_context& io)
+basic_multi_stream<Stream, X>::
+basic_multi_stream(boost::asio::io_context& io)
 : stream_(io)
 {
 }
 
 template <class Stream, class X>
 auto
-basic_multi_stream<Stream, X>::plain() & noexcept -> stream_type&
+basic_multi_stream<Stream, X>::
+plain() & noexcept -> stream_type&
 {
   return stream_;
 }
 
 template <class Stream, class X>
 auto
-basic_multi_stream<Stream, X>::ssl() & noexcept -> ssl_stream_type&
+basic_multi_stream<Stream, X>::
+ssl() & noexcept -> ssl_stream_type&
 {
   return *ssl_stream_;
 }
@@ -108,19 +111,21 @@ auto
 basic_multi_stream<Stream, X>::
 ssl(boost::asio::ssl::context context) -> void
 {
-
+  ssl_stream_.emplace(stream_, context);
 }
 
 template <class Stream, class X>
 auto
-basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
+basic_multi_stream<Stream, X>::
+is_ssl() const noexcept -> bool
 {
   return static_cast<bool>(ssl_stream_);
 }
 
 template <class Stream, class X>
 auto
-basic_multi_stream<Stream, X>::get_executor()
+basic_multi_stream<Stream, X>::
+get_executor()
 -> boost::asio::io_context::executor_type
 {
   return stream_.get_executor();
