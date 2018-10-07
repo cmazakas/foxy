@@ -99,8 +99,4 @@ TEST_CASE("Our SSL client session class")
     io.run();
     REQUIRE(valid_request);
   }
-
-  // SECTION("should timeout when the host can't be found")
-  // {
-  // }
 }
