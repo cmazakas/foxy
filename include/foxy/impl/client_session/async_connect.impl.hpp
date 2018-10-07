@@ -150,6 +150,7 @@ operator()(
     BOOST_ASIO_CORO_YIELD
     s.resolver.async_resolve(
       s.host, s.service, bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
+
     if (ec) { goto upcall; }
 
     BOOST_ASIO_CORO_YIELD
@@ -158,6 +159,15 @@ operator()(
       bind_handler(std::move(*this), on_connect_t{}, _1, _2));
 
     if (ec) { goto upcall; }
+
+    if (s.session.stream.is_ssl()) {
+      BOOST_ASIO_CORO_YIELD
+      s.session.stream.ssl().async_handshake(
+        boost::asio::ssl::stream_base::client,
+        bind_handler(std::move(*this), _1, 0));
+
+      if (ec) { goto upcall; }
+    }
 
     {
       auto endpoint = std::move(s.endpoint);
