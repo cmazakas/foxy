@@ -18,7 +18,9 @@
 #include <boost/asio/ssl/context.hpp>
 #include <boost/beast/experimental/core/ssl_stream.hpp>
 
-#include <boost/optional/optional.hpp>
+#include <boost/variant/get.hpp>
+#include <boost/variant/variant.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 #include <utility>
 #include <type_traits>
@@ -34,24 +36,25 @@ struct basic_multi_stream
 {
 public:
   using stream_type     = Stream;
-  using ssl_stream_type = boost::beast::ssl_stream<stream_type&>;
+  using ssl_stream_type = boost::beast::ssl_stream<stream_type>;
   using executor_type   = boost::asio::io_context::executor_type;
 
 private:
-  stream_type                      stream_;
-  boost::optional<ssl_stream_type> ssl_stream_;
+  boost::variant<stream_type, ssl_stream_type> stream_;
 
 public:
   basic_multi_stream()                          = delete;
   basic_multi_stream(basic_multi_stream const&) = delete;
   basic_multi_stream(basic_multi_stream&&)      = default;
 
-  explicit basic_multi_stream(boost::asio::io_context&);
+  template <class Arg>
+  basic_multi_stream(Arg&& arg);
+
+  template <class Arg>
+  basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx);
 
   auto plain() & noexcept -> stream_type&;
   auto ssl()   & noexcept -> ssl_stream_type&;
-
-  auto ssl(boost::asio::ssl::context& ctx) -> void;
 
   auto is_ssl() const noexcept -> bool;
 
@@ -64,29 +67,43 @@ public:
   auto
   async_read_some(MutableBufferSequence const& buffers, CompletionToken&& token)
   {
-    if (ssl_stream_) {
-      return ssl_stream_->async_read_some(buffers, std::forward<CompletionToken>(token));
-    }
-    return stream_.async_read_some(buffers, std::forward<CompletionToken>(token));
+    return boost::apply_visitor(
+      [&](auto& stream) mutable
+      {
+        return stream.async_read_some(buffers, std::forward<CompletionToken>(token));
+      },
+      stream_);
   }
 
   template <class ConstBufferSequence, class CompletionToken>
   auto
   async_write_some(ConstBufferSequence const& buffers, CompletionToken&& token)
   {
-    if (ssl_stream_) {
-      return ssl_stream_->async_write_some(buffers, std::forward<CompletionToken>(token));
-    }
-    return stream_.async_write_some(buffers, std::forward<CompletionToken>(token));
+    return boost::apply_visitor(
+      [&](auto& stream) mutable
+      {
+        return stream.async_write_some(buffers, std::forward<CompletionToken>(token));
+      },
+      stream_);
   }
 };
 
 // impl
 //
+
 template <class Stream, class X>
+template <class Arg>
 basic_multi_stream<Stream, X>::
-basic_multi_stream(boost::asio::io_context& io)
-: stream_(io)
+basic_multi_stream(Arg&& arg)
+  : stream_(stream_type(std::forward<Arg>(arg)))
+{
+}
+
+template <class Stream, class X>
+template <class Arg>
+basic_multi_stream<Stream, X>::
+basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx)
+  : stream_(ssl_stream_type(std::forward<Arg>(arg), ctx))
 {
 }
 
@@ -95,7 +112,7 @@ auto
 basic_multi_stream<Stream, X>::
 plain() & noexcept -> stream_type&
 {
-  return stream_;
+  return boost::get<stream_type>(stream_);
 }
 
 template <class Stream, class X>
@@ -103,15 +120,7 @@ auto
 basic_multi_stream<Stream, X>::
 ssl() & noexcept -> ssl_stream_type&
 {
-  return *ssl_stream_;
-}
-
-template <class Stream, class X>
-auto
-basic_multi_stream<Stream, X>::
-ssl(boost::asio::ssl::context& context) -> void
-{
-  ssl_stream_.emplace(stream_, context);
+  return boost::get<ssl_stream_type>(stream_);
 }
 
 template <class Stream, class X>
@@ -119,7 +128,7 @@ auto
 basic_multi_stream<Stream, X>::
 is_ssl() const noexcept -> bool
 {
-  return static_cast<bool>(ssl_stream_);
+  return stream_.which() == 1;
 }
 
 template <class Stream, class X>
@@ -128,7 +137,12 @@ basic_multi_stream<Stream, X>::
 get_executor()
 -> boost::asio::io_context::executor_type
 {
-  return stream_.get_executor();
+  return boost::apply_visitor(
+    [&](auto& stream) mutable
+    {
+      return stream.get_executor();
+    },
+    stream_);
 }
 
 extern template struct basic_multi_stream<boost::asio::ip::tcp::socket>;

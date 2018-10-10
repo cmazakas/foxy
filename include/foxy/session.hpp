@@ -42,11 +42,10 @@ public:
   using buffer_type = boost::beast::flat_buffer;
   using timer_type  = boost::asio::steady_timer;
 
-  stream_type stream;
-  buffer_type buffer;
-  timer_type  timer;
-
   session_opts opts;
+  stream_type  stream;
+  buffer_type  buffer;
+  timer_type   timer;
 
   basic_session()                     = delete;
   basic_session(basic_session const&) = delete;
@@ -60,8 +59,7 @@ public:
   //
   explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
 
-  // create a session using the supplied stream_
-  // any SSL context supplied in `opts_` will not be used
+  // move construct a session
   //
   explicit basic_session(stream_type stream_, session_opts opts_ = {});
 

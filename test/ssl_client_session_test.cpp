@@ -37,8 +37,10 @@ TEST_CASE("Our SSL client session class")
     auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
     auto opts = foxy::session_opts{ctx, 30s};
 
-    auto session_handle = boost::make_unique<foxy::client_session>(io, opts);
-    auto& session       = *session_handle;
+    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto& session        = *session_handle;
+
+    REQUIRE(session.stream.is_ssl());
 
     auto valid_request = false;
 
@@ -70,15 +72,19 @@ TEST_CASE("Our SSL client session class")
 
             valid_request = is_valid_body && is_valid_status;
 
-            session
+            // do this to prove that the TLS session is stable after a move
+            //
+            auto new_handler =
+              boost::make_unique<foxy::client_session>(std::move(session));
+
+            auto& other_session = *new_handler;
+
+            other_session
               .stream
               .ssl()
               .async_shutdown(
                 [
-                  &valid_request, &session, &parser, &request,
-                  ph = std::move(ph),
-                  rh = std::move(rh),
-                  sh = std::move(sh)
+                  nh = std::move(new_handler)
                 ]
                 (error_code ec) -> void
                 {

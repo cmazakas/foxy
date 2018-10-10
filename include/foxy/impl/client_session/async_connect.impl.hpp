@@ -153,10 +153,14 @@ operator()(
 
     if (ec) { goto upcall; }
 
+
     BOOST_ASIO_CORO_YIELD
-    boost::asio::async_connect(
-      s.session.stream.plain(), s.results,
-      bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+    {
+      auto& socket = s.session.stream.is_ssl() ? s.session.stream.ssl().next_layer() : s.session.stream.plain();
+      boost::asio::async_connect(
+        socket, s.results,
+        bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+    }
 
     if (ec) { goto upcall; }
 
