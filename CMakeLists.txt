@@ -125,6 +125,7 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/export_non_connect_fields_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
   )
 
   if (MSVC)

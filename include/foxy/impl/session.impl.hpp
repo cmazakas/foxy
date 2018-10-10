@@ -16,7 +16,8 @@ namespace foxy
 {
 
 template <class Stream, class X>
-foxy::basic_session<Stream, X>::basic_session(
+foxy::basic_session<Stream, X>::
+basic_session(
   boost::asio::io_context& io,
   session_opts             opts_)
 : stream(io)
@@ -24,13 +25,13 @@ foxy::basic_session<Stream, X>::basic_session(
 , opts(std::move(opts_))
 {
   if (opts.ssl_ctx) {
-    stream.ssl(std::move(*opts.ssl_ctx));
-    opts.ssl_ctx = boost::none;
+    stream.ssl(*opts.ssl_ctx);
   }
 }
 
 template <class Stream, class X>
-foxy::basic_session<Stream, X>::basic_session(
+foxy::basic_session<Stream, X>::
+basic_session(
   stream_type  stream_,
   session_opts opts_)
 : stream(std::move(stream_))
@@ -40,7 +41,9 @@ foxy::basic_session<Stream, X>::basic_session(
 }
 
 template <class Stream, class X>
-auto foxy::basic_session<Stream, X>::get_executor() -> executor_type
+auto
+foxy::basic_session<Stream, X>::
+get_executor() -> executor_type
 {
   return stream.get_executor();
 }

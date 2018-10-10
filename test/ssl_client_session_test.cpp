@@ -34,14 +34,11 @@ TEST_CASE("Our SSL client session class")
 
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
-    auto opts = foxy::session_opts{
-      ssl::context(ssl::context::method::tlsv12_client),
-      30s};
+    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto opts = foxy::session_opts{ctx, 30s};
 
-    auto session_handle =
-      boost::make_unique<foxy::client_session>(io, std::move(opts));
-
-    auto& session = *session_handle;
+    auto session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto& session       = *session_handle;
 
     auto valid_request = false;
 

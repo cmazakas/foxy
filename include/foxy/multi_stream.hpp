@@ -51,7 +51,7 @@ public:
   auto plain() & noexcept -> stream_type&;
   auto ssl()   & noexcept -> ssl_stream_type&;
 
-  auto ssl(boost::asio::ssl::context ctx) -> void;
+  auto ssl(boost::asio::ssl::context& ctx) -> void;
 
   auto is_ssl() const noexcept -> bool;
 
@@ -109,7 +109,7 @@ ssl() & noexcept -> ssl_stream_type&
 template <class Stream, class X>
 auto
 basic_multi_stream<Stream, X>::
-ssl(boost::asio::ssl::context context) -> void
+ssl(boost::asio::ssl::context& context) -> void
 {
   ssl_stream_.emplace(stream_, context);
 }

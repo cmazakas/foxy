@@ -27,8 +27,8 @@ struct session_opts
 {
   using duration_type = typename boost::asio::steady_timer::duration;
 
-  boost::optional<boost::asio::ssl::context> ssl_ctx = {};
-  duration_type                              timeout = std::chrono::seconds{1};
+  boost::optional<boost::asio::ssl::context&> ssl_ctx = {};
+  duration_type                               timeout = std::chrono::seconds{1};
 };
 
 template <
@@ -52,7 +52,17 @@ public:
   basic_session(basic_session const&) = delete;
   basic_session(basic_session&&)      = default;
 
+  // default construct the plain Stream using the supplied `io_context`
+  // if an `asio::ssl::context` is supplied to the input `opts_`, the
+  // constructor will move the context into the construction of the SSL
+  // portion of the `basic_multi_stream` and will put the session into
+  // SSL mode (i.e. sesion.stream.ssl() == true)
+  //
   explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
+
+  // create a session using the supplied stream_
+  // any SSL context supplied in `opts_` will not be used
+  //
   explicit basic_session(stream_type stream_, session_opts opts_ = {});
 
   using executor_type = decltype(stream.get_executor());
