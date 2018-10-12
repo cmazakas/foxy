@@ -140,7 +140,11 @@ public:
         return (*this)(on_completion_t{}, {});
       }
 
-      s.session.stream.plain().close(ec);
+      auto& stream = s.session.stream.is_ssl()
+        ? s.session.stream.ssl().next_layer()
+        : s.session.stream.plain();
+
+      stream.close(ec);
       (*this)(on_completion_t{}, {});
     }
   }
