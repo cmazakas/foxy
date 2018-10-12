@@ -51,16 +51,7 @@ public:
   basic_session(basic_session const&) = delete;
   basic_session(basic_session&&)      = default;
 
-  // default construct the plain Stream using the supplied `io_context`
-  // if an `asio::ssl::context` is supplied to the input `opts_`, the
-  // constructor will move the context into the construction of the SSL
-  // portion of the `basic_multi_stream` and will put the session into
-  // SSL mode (i.e. sesion.stream.ssl() == true)
-  //
   explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
-
-  // move construct a session
-  //
   explicit basic_session(stream_type stream_, session_opts opts_ = {});
 
   using executor_type = decltype(stream.get_executor());

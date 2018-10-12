@@ -32,6 +32,7 @@ private:
     ::foxy::basic_session<Stream>& session;
     int                            ops;
     boost::asio::coroutine         coro;
+    boost::asio::coroutine         timer_coro;
     bool                           done;
 
     boost::asio::executor_work_guard<decltype(session.get_executor())> work;
@@ -88,8 +89,8 @@ public:
 
     auto& s = *p_;
     Op<Types..., typename std::decay<decltype(*this)>::type>(
-        s.session, std::forward<Args>(args)..., *this
-      )({}, 0, false);
+      s.session, std::forward<Args>(args)..., *this
+    )({}, 0, false);
 
     s.session.timer.expires_after(s.session.opts.timeout);
     s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
@@ -103,20 +104,45 @@ public:
 
   auto operator()(on_timer_t, boost::system::error_code ec) -> void
   {
-    p_->ops++;
-    if (ec == boost::asio::error::operation_aborted) {
-      return (*this)(on_completion_t{}, boost::system::error_code());
-    }
+    using namespace std::placeholders;
 
-    if (
-      p_->done ||
-      p_->session.timer.expiry() > std::chrono::steady_clock::now()
-    ) {
-      return (*this)(on_completion_t{}, boost::system::error_code());
-    }
+    auto& s = *p_;
+    BOOST_ASIO_CORO_REENTER(s.timer_coro)
+    {
+      while (true) {
+        // this means the user called `expires_after` _or_ our timer was cancelled
+        //
+        if (ec == boost::asio::error::operation_aborted) {
+          // we know that we were cancelled if `p_->done` is true
+          // note that this implies a precondition that no one  else will be calling
+          // cancel on the timer
+          //
+          if (s.done) {
+            s.ops++;
+            return (*this)(on_completion_t{}, boost::system::error_code());
+          }
 
-    p_->session.stream.plain().close(ec);
-    (*this)(on_completion_t{}, ec);
+          // otherwise, the user likely updated the timer's expiration so we need
+          // to prolong the async operation accordingly
+          //
+          BOOST_ASIO_CORO_YIELD
+          s.session.timer.async_wait(
+            boost::beast::bind_handler(*this, on_timer_t{}, _1));
+
+          continue;
+        }
+
+        break;
+      }
+
+      s.ops++;
+      if (ec || s.done) {
+        return (*this)(on_completion_t{}, {});
+      }
+
+      s.session.stream.plain().close(ec);
+      (*this)(on_completion_t{}, {});
+    }
   }
 
   template <class ...Args>
