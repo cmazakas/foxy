@@ -40,34 +40,34 @@ TEST_CASE("Our basic_session class...")
 {
   SECTION("should be able to read a header")
   {
-    // asio::io_context io;
+    asio::io_context io;
 
-    // auto req = http::request<http::empty_body>(http::verb::get, "/", 11);
-    // req.set(http::field::host, "www.google.com");
+    auto req = http::request<http::empty_body>(http::verb::get, "/", 11);
+    req.set(http::field::host, "www.google.com");
 
-    // auto test_stream = boost::beast::test::stream(io);
+    auto test_stream = boost::beast::test::stream(io);
 
-    // boost::beast::ostream(test_stream.buffer()) << req;
+    boost::beast::ostream(test_stream.buffer()) << req;
 
-    // auto valid_parse = false;
+    auto valid_parse = false;
 
-    // asio::spawn(
-    //   [&](asio::yield_context yield) mutable
-    //   {
-    //     auto session =
-    //       foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+    asio::spawn(
+      [&](asio::yield_context yield) mutable
+      {
+        auto session =
+          foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
 
-    //     http::request_parser<http::empty_body> parser;
+        http::request_parser<http::empty_body> parser;
 
-    //     session.async_read_header(parser, yield);
+        session.async_read_header(parser, yield);
 
-    //     auto const is_header_done = parser.is_header_done();
-    //     auto const is_done        = parser.is_done();
+        auto const is_header_done = parser.is_header_done();
+        auto const is_done        = parser.is_done();
 
-    //     valid_parse = is_header_done && is_done;
-    //   });
+        valid_parse = is_header_done && is_done;
+      });
 
-    // io.run();
-    // REQUIRE(valid_parse);
+    io.run();
+    REQUIRE(valid_parse);
   }
 }

@@ -3,6 +3,7 @@
 
 #include <foxy/session.hpp>
 #include <foxy/shared_handler_ptr.hpp>
+#include <foxy/detail/close_stream.hpp>
 
 #include <boost/callable_traits/args.hpp>
 #include <boost/hof/unpack.hpp>
@@ -138,7 +139,7 @@ public:
       ? s.session.stream.ssl().next_layer()
       : s.session.stream.plain();
 
-    stream.close(ec);
+    close(stream);
     (*this)(on_completion_t{}, {});
   }
 
