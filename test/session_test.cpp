@@ -19,6 +19,8 @@
 #include <boost/beast/experimental/test/stream.hpp>
 #include <boost/beast/experimental/test/fail_count.hpp>
 
+#include <iostream>
+
 #include <catch2/catch.hpp>
 
 namespace asio = boost::asio;
@@ -118,5 +120,45 @@ TEST_CASE("Our basic_session class...")
     io.run();
     CHECK(valid_parse);
     CHECK(valid_body);
+  }
+
+  SECTION("should be able to write a response")
+  {
+    asio::io_context io;
+
+    auto test_stream = boost::beast::test::stream(io);
+    auto peer_stream = boost::beast::test::stream(io);
+    test_stream.connect(peer_stream);
+
+    auto valid_serialization = false;
+
+    asio::spawn(
+      [&](asio::yield_context yield) mutable
+      {
+        auto ec = boost::system::error_code();
+
+        auto session =
+          foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+
+        auto res = http::response<http::empty_body>(http::status::ok, 11);
+        http::response_serializer<http::empty_body> serializer(res);
+
+        session.async_write_header(serializer, yield[ec]);
+        if (ec) { std::cout << ec.message() << "\n"; return; }
+
+        auto const is_serialization_done = peer_stream.buffer().size() > 0;
+        auto const is_header_done        = serializer.is_header_done();
+
+        session.async_write(serializer, yield[ec]);
+        if (ec) { std::cout << ec.message() << "\n"; return; }
+
+        auto const is_done      = serializer.is_done();
+        auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
+
+        valid_serialization = is_serialization_done && is_header_done && is_done && valid_output;
+      });
+
+    io.run();
+    CHECK(valid_serialization);
   }
 }
