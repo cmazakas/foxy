@@ -49,7 +49,9 @@ TEST_CASE("Our basic_session class...")
 
     boost::beast::ostream(test_stream.buffer()) << req;
 
-    auto valid_parse = false;
+    auto valid_parse  = false;
+    auto valid_verb   = false;
+    auto valid_target = false;
 
     asio::spawn(
       [&](asio::yield_context yield) mutable
@@ -64,10 +66,57 @@ TEST_CASE("Our basic_session class...")
         auto const is_header_done = parser.is_header_done();
         auto const is_done        = parser.is_done();
 
-        valid_parse = is_header_done && is_done;
+        auto msg = parser.release();
+
+        valid_parse  = is_header_done && is_done;
+        valid_verb   = msg.method() == http::verb::get;
+        valid_target = msg.target() == "/";
       });
 
     io.run();
-    REQUIRE(valid_parse);
+    CHECK(valid_parse);
+    CHECK(valid_verb);
+    CHECK(valid_target);
+  }
+
+  SECTION("should be able to read a complete message with a body")
+  {
+    asio::io_context io;
+
+    auto req = http::request<http::string_body>(http::verb::get, "/", 11);
+    req.set(http::field::host, "www.google.com");
+
+    req.body() = "I bestow the heads of virgins and the first-born sons!!!";
+    req.prepare_payload();
+
+    auto test_stream = boost::beast::test::stream(io);
+
+    boost::beast::ostream(test_stream.buffer()) << req;
+
+    auto valid_parse = false;
+    auto valid_body  = false;
+
+    asio::spawn(
+      [&](asio::yield_context yield) mutable
+      {
+        auto session =
+          foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+
+        http::request_parser<http::string_body> parser;
+
+        session.async_read(parser, yield);
+
+        auto const is_header_done = parser.is_header_done();
+        auto const is_done        = parser.is_done();
+
+        auto msg = parser.release();
+
+        valid_parse = is_header_done && is_done;
+        valid_body  = msg.body().size() > 0;
+      });
+
+    io.run();
+    CHECK(valid_parse);
+    CHECK(valid_body);
   }
 }
