@@ -109,44 +109,37 @@ public:
     auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(s.timer_coro)
     {
-      while (true) {
-        // this means the user called `expires_after` _or_ our timer was cancelled
+      // this means the user called `expires_after` _or_ our timer was cancelled
+      //
+      while (ec == boost::asio::error::operation_aborted) {
+        // we know that we were cancelled if `p_->done` is true
+        // note that this implies a precondition that no one  else will be calling
+        // cancel on the timer
         //
-        if (ec == boost::asio::error::operation_aborted) {
-          // we know that we were cancelled if `p_->done` is true
-          // note that this implies a precondition that no one  else will be calling
-          // cancel on the timer
-          //
-          if (s.done) {
-            s.ops++;
-            return (*this)(on_completion_t{}, boost::system::error_code());
-          }
+        if (s.done) { break; }
 
-          // otherwise, the user likely updated the timer's expiration so we need
-          // to prolong the async operation accordingly
-          //
-          BOOST_ASIO_CORO_YIELD
-          s.session.timer.async_wait(
-            boost::beast::bind_handler(*this, on_timer_t{}, _1));
-
-          continue;
-        }
-
-        break;
+        // otherwise, the user likely updated the timer's expiration so we need
+        // to prolong the async operation accordingly
+        //
+        BOOST_ASIO_CORO_YIELD
+        s.session.timer.async_wait(
+          boost::beast::bind_handler(*this, on_timer_t{}, _1));
       }
-
-      s.ops++;
-      if (ec || s.done) {
-        return (*this)(on_completion_t{}, {});
-      }
-
-      auto& stream = s.session.stream.is_ssl()
-        ? s.session.stream.ssl().next_layer()
-        : s.session.stream.plain();
-
-      stream.close(ec);
-      (*this)(on_completion_t{}, {});
     }
+
+    if (!s.timer_coro.is_complete()) { return; }
+
+    s.ops++;
+    if (ec || s.done) {
+      return (*this)(on_completion_t{}, {});
+    }
+
+    auto& stream = s.session.stream.is_ssl()
+      ? s.session.stream.ssl().next_layer()
+      : s.session.stream.plain();
+
+    stream.close(ec);
+    (*this)(on_completion_t{}, {});
   }
 
   template <class ...Args>
