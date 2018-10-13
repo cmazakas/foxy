@@ -8,6 +8,7 @@
 //
 
 #include <foxy/session.hpp>
+#include <foxy/type_traits.hpp>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
@@ -22,6 +23,18 @@
 
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
+
+static_assert(
+  foxy::detail::is_closable_stream_throw<boost::beast::test::stream>::value,
+  "Incorrect implementation of foxy::detail::is_closable_stream_throw");
+
+static_assert(
+  foxy::detail::is_closable_stream_throw<asio::ip::tcp::socket>::value,
+  "Incorrect implementation of foxy::detail::is_closable_stream_throw");
+
+static_assert(
+  foxy::detail::is_closable_stream_nothrow<asio::ip::tcp::socket>::value,
+  "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
 TEST_CASE("Our basic_session class...")
 {

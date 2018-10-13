@@ -32,6 +32,7 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/server_session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_non_connect_fields.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
