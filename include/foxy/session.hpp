@@ -27,8 +27,8 @@ struct session_opts
 {
   using duration_type = typename boost::asio::steady_timer::duration;
 
-  boost::optional<boost::asio::ssl::context> ssl_ctx = {};
-  duration_type                              timeout = std::chrono::seconds{1};
+  boost::optional<boost::asio::ssl::context&> ssl_ctx = {};
+  duration_type                               timeout = std::chrono::seconds{1};
 };
 
 template <
@@ -42,11 +42,10 @@ public:
   using buffer_type = boost::beast::flat_buffer;
   using timer_type  = boost::asio::steady_timer;
 
-  stream_type stream;
-  buffer_type buffer;
-  timer_type  timer;
-
   session_opts opts;
+  stream_type  stream;
+  buffer_type  buffer;
+  timer_type   timer;
 
   basic_session()                     = delete;
   basic_session(basic_session const&) = delete;

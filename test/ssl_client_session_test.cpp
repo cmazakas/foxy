@@ -34,14 +34,13 @@ TEST_CASE("Our SSL client session class")
 
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
-    auto opts = foxy::session_opts{
-      ssl::context(ssl::context::method::tlsv12_client),
-      30s};
+    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto opts = foxy::session_opts{ctx, 30s};
 
-    auto session_handle =
-      boost::make_unique<foxy::client_session>(io, std::move(opts));
+    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto& session        = *session_handle;
 
-    auto& session = *session_handle;
+    REQUIRE(session.stream.is_ssl());
 
     auto valid_request = false;
 
@@ -73,15 +72,19 @@ TEST_CASE("Our SSL client session class")
 
             valid_request = is_valid_body && is_valid_status;
 
-            session
+            // do this to prove that the TLS session is stable after a move
+            //
+            auto new_handler =
+              boost::make_unique<foxy::client_session>(std::move(session));
+
+            auto& other_session = *new_handler;
+
+            other_session
               .stream
               .ssl()
               .async_shutdown(
                 [
-                  &valid_request, &session, &parser, &request,
-                  ph = std::move(ph),
-                  rh = std::move(rh),
-                  sh = std::move(sh)
+                  nh = std::move(new_handler)
                 ]
                 (error_code ec) -> void
                 {
@@ -98,5 +101,29 @@ TEST_CASE("Our SSL client session class")
 
     io.run();
     REQUIRE(valid_request);
+  }
+
+  SECTION("should timeout when the host can't be found")
+  {
+    asio::io_context io;
+
+    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto opts = foxy::session_opts{ctx, 250ms};
+
+    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto& session        = *session_handle;
+
+    auto timed_out = false;
+
+    session.async_connect(
+      "www.google.com", "1337",
+      [&timed_out, &session, sh = std::move(session_handle)]
+      (error_code ec, tcp::endpoint) mutable -> void
+      {
+        timed_out = (ec == boost::asio::error::operation_aborted);
+      });
+
+    io.run();
+    REQUIRE(timed_out);
   }
 }

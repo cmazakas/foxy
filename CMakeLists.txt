@@ -24,37 +24,39 @@ add_library(
   foxy
 
   STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_non_connect_fields.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/log.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/multi_stream.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/proxy.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/server_session.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_non_connect_fields.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/multi_stream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 )
 
@@ -123,8 +125,9 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/export_non_connect_fields.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/export_non_connect_fields_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
   )
 
   if (MSVC)

@@ -306,7 +306,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
     s.session.async_read(*s.parser, std::move(*this));
 
     if (ec) {
-      std::cout << ec << "\n";
+      std::cout << ec.message() << "\n";
     }
 
     s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
