@@ -62,6 +62,7 @@ add_library(
 if (MSVC)
   # Win10
   target_compile_definitions(foxy PUBLIC _WIN32_WINNT=0x0A00)
+  target_compile_options(foxy PUBLIC "/bigobj")
 endif()
 
 if (UNIX)
@@ -128,10 +129,6 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
   )
-
-  if (MSVC)
-    target_compile_options(foxy_tests PRIVATE "/bigobj")
-  endif()
 
   target_link_libraries(
     foxy_tests

@@ -12,6 +12,10 @@
 
 #include <foxy/multi_stream.hpp>
 
+#include <boost/beast/http/serializer.hpp>
+#include <boost/beast/http/buffer_body.hpp>
+#include <boost/beast/http/error.hpp>
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/coroutine.hpp>
@@ -19,6 +23,7 @@
 #include <boost/system/error_code.hpp>
 
 #include <memory>
+#include <array>
 
 namespace foxy
 {
