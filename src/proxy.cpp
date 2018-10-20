@@ -55,7 +55,12 @@ struct async_connect_op
 {
   struct state
   {
+    // our session with the current client
+    //
     foxy::server_session session;
+
+    // our session with the client's intended remote
+    //
     foxy::client_session client;
 
     // here we store an optional request parser so that we can recycle storage
@@ -64,27 +69,42 @@ struct async_connect_op
     //
     optional<http::request_parser<http::empty_body>> parser;
 
+    // used by our initial session handling to let the client know what errors
+    // occurred in establishing a connection with the intended remoted
+    //
     http::response<http::string_body> err_response;
 
+    // used by our initial session handling to let the client know that the
+    // tunnel has been successfully established
+    //
+    http::response<http::empty_body> tunnel_res;
+
+    // finite-sized buffer used for chunk-by-chunk transfer of the message from
+    // the client to the remote
+    //
     std::array<char, 2048>                                 buf;
 
+    // optional parsers and serializers that we can use to forward the client's
+    // messages
+    //
     optional<http::request_parser<http::buffer_body>>      request_buf_parser;
     optional<http::request_serializer<http::buffer_body>>  request_buf_sr;
-
     optional<http::response_parser<http::buffer_body>>     response_buf_parser;
     optional<http::response_serializer<http::buffer_body>> response_buf_sr;
 
+    // the two main async operations that form our proxy server
+    //
     boost::asio::coroutine connect_coro;
     boost::asio::coroutine tunnel_coro;
 
     state(foxy::multi_stream stream)
-    : session(std::move(stream))
-    , client(session.get_executor().context())
-    , buf{ 0 }
-    , request_buf_parser(boost::in_place_init)
-    , request_buf_sr(request_buf_parser->get())
-    , response_buf_parser(boost::in_place_init)
-    , response_buf_sr(response_buf_parser->get())
+      : session(std::move(stream))
+      , client(session.get_executor().context())
+      , buf{ 0 }
+      , request_buf_parser(boost::in_place_init)
+      , request_buf_sr(request_buf_parser->get())
+      , response_buf_parser(boost::in_place_init)
+      , response_buf_sr(response_buf_parser->get())
     {
     }
   };
@@ -109,7 +129,9 @@ struct async_connect_op
     std::size_t               bytes_transferred);
 
   void
-  operator()(boost::system::error_code ec, std::size_t bytes_transferred);
+  operator()(
+    boost::system::error_code ec,
+    std::size_t               bytes_transferred);
 };
 }
 
@@ -130,7 +152,7 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
       }
 
       if (ec) {
-        log_error(ec, "foxy::proxy::async_accept");
+        foxy::log_error(ec, "foxy::proxy::async_accept");
         continue;
       }
 
@@ -160,17 +182,21 @@ operator()(
 
 void
 async_connect_op::
-operator()(boost::system::error_code ec, std::size_t bytes_transferred)
+operator()(
+  boost::system::error_code ec,
+  std::size_t               bytes_transferred)
 {
   using namespace std::placeholders;
+  namespace beast = boost::beast;
 
   auto should_tunnel = false;
 
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(s.connect_coro)
   {
-    std::cout << "Entering proxy session loop\n";
     while (true) {
+      std::cout << "Entering proxy session loop\n";
+
       // A new instance of the parser is required for each message.
       //
       if (s.parser) {
@@ -198,11 +224,10 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.err_response = {};
         if (ec) {
           foxy::log_error(ec, "foxy::proxy::async_accept_op::unexpected_body::write_error");
-          return;
+          BOOST_ASIO_CORO_YIELD break;
         }
 
         s.session.buffer.consume(s.session.buffer.size());
-
         continue;
       }
 
@@ -213,7 +238,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
 
       if (ec) {
         foxy::log_error(ec, "foxy::proxy::async_connect_op::async_read::read_error");
-        return;
+        BOOST_ASIO_CORO_YIELD break;
       }
 
       // we can only form a proper tunnel over a persistent connection
@@ -223,12 +248,13 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.err_response.body() = "Connection must be persistent to allow proper tunneling\n\n";
         s.err_response.prepare_payload();
 
-        BOOST_ASIO_CORO_YIELD s.session.async_write(s.err_response, std::move(*this));
+        BOOST_ASIO_CORO_YIELD
+        s.session.async_write(s.err_response, std::move(*this));
 
         s.err_response = {};
         if (ec) {
           foxy::log_error(ec, "foxy::proxy::async_accept_op::non_keepalive_request::write_error");
-          return;
+          BOOST_ASIO_CORO_YIELD break;
         }
 
         std::cout << "non-persistent connection, going to break session loop now...\n";
@@ -248,7 +274,7 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.err_response = {};
         if (ec) {
           foxy::log_error(ec, "foxy::proxy::async_accept_op::non_connect_verb::write_error");
-          return;
+          BOOST_ASIO_CORO_YIELD break;
         }
 
         continue;
@@ -266,10 +292,8 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.client.async_connect(
           std::move(std::get<0>(host_and_port)),
           std::move(std::get<1>(host_and_port)),
-          boost::beast::bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+          beast::bind_handler(std::move(*this), on_connect_t{}, _1, _2));
       }
-
-      std::cout << "client successfully connected to remote\n";
 
       // TODO: support 504 for `operation_aborted` error code
       //
@@ -279,7 +303,6 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
           "Unable to establish connection with the remote\n";
 
         s.err_response.body() += "Error: " + ec.message() + "\n\n";
-
         s.err_response.prepare_payload();
 
         BOOST_ASIO_CORO_YIELD
@@ -288,10 +311,21 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
         s.err_response = {};
         if (ec) {
           foxy::log_error(ec, "foxy::proxy::async_accept_op::failed_connect::write_error");
-          return;
+          BOOST_ASIO_CORO_YIELD break;
         }
 
         continue;
+      }
+
+      std::cout << "client successfully connected to remote\n";
+
+      s.tunnel_res.prepare_payload();
+
+      BOOST_ASIO_CORO_YIELD
+      s.session.async_write(s.tunnel_res, std::move(*this));
+      if (ec) {
+        foxy::log_error(ec, "foxy::proxy::async_connect_op::failed_write_back_successful_tunnel_res");
+        BOOST_ASIO_CORO_YIELD break;
       }
 
       // at this point, we can safely use our `client_session` object for
@@ -334,7 +368,6 @@ operator()(boost::system::error_code ec, std::size_t bytes_transferred)
   }
 
   if (!s.connect_coro.is_complete() || ec || !should_tunnel) { return; }
-
   (*this)(on_tunnel_t{}, {}, 0);
 }
 

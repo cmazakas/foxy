@@ -46,6 +46,7 @@ TEST_CASE("Our forward proxy")
 
         auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
         proxy->async_accept();
+
         auto client = foxy::client_session(io);
         client.async_connect("127.0.0.1", "1337", yield);
 
@@ -91,6 +92,7 @@ TEST_CASE("Our forward proxy")
 
         auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
         proxy->async_accept();
+
         auto client = foxy::client_session(io);
         client.async_connect("127.0.0.1", "1337", yield);
 
@@ -184,22 +186,26 @@ TEST_CASE("Our forward proxy")
         client.async_connect("127.0.0.1", "1337", yield);
 
         auto request = http::request<http::empty_body>(http::verb::connect, "www.google.com:80", 11);
+        request.prepare_payload();
 
         auto request2 = http::request<http::empty_body>(http::verb::get, "/", 11);
+        request2.prepare_payload();
 
         http::response_parser<http::string_body> res_parser;
         http::response_parser<http::string_body> res_parser2;
 
 try {
         client.async_request(request, res_parser, yield);
+
+        std::cout << "writing message to proxy now...\n";
         client.async_request(request2, res_parser2, yield);
 
         auto response = res_parser2.release();
 
         std::cout << response << "\n\n";
 
-        auto const was_valid_result = response.result() == http::status::bad_request;
-        auto const was_valid_body   = response.body() == "Messages with bodies are not supported for establishing a tunnel\n\n";
+        auto const was_valid_result = (response.result() == http::status::ok);
+        auto const was_valid_body   = (response.body().size() > 0);
 
         auto ec = boost::system::error_code();
         client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
