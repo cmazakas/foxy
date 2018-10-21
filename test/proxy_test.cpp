@@ -188,10 +188,12 @@ TEST_CASE("Our forward proxy")
         auto request = http::request<http::empty_body>(http::verb::connect, "www.google.com:80", 11);
         request.prepare_payload();
 
+        http::response_parser<http::string_body> res_parser;
+        res_parser.skip(true);
+
         auto request2 = http::request<http::empty_body>(http::verb::get, "/", 11);
         request2.prepare_payload();
 
-        http::response_parser<http::string_body> res_parser;
         http::response_parser<http::string_body> res_parser2;
 
 try {

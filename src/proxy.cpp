@@ -319,8 +319,6 @@ operator()(
 
       std::cout << "client successfully connected to remote\n";
 
-      s.tunnel_res.prepare_payload();
-
       BOOST_ASIO_CORO_YIELD
       s.session.async_write(s.tunnel_res, std::move(*this));
       if (ec) {
@@ -379,6 +377,7 @@ operator()(
   std::size_t               bytes_transferred)
 {
   using namespace std::placeholders;
+  namespace beast = boost::beast;
 
   std::cout << "starting tunnel operation now...\n";
 try {
@@ -390,14 +389,16 @@ try {
     BOOST_ASIO_CORO_YIELD
     s.session.async_read_header(
       *s.request_buf_parser,
-      boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+      beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
     if (ec) { }
+
+    std::cout << s.request_buf_parser->get().version() << "\n";
 
     std::cout << "writing client header to remote...\n";
     BOOST_ASIO_CORO_YIELD
     s.client.async_write_header(
       *s.request_buf_sr,
-      boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+      beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
     if (ec) {
       std::cout << ec.message() << "\n";
      }
@@ -415,7 +416,7 @@ try {
         BOOST_ASIO_CORO_YIELD
         s.session.async_read(
           *s.request_buf_parser,
-          boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+          beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
         // This error is returned when buffer_body uses up the buffer
         //
@@ -443,7 +444,7 @@ try {
       // Write everything in the buffer (which might be empty)
       s.client.async_write(
         *s.request_buf_sr,
-        boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+        beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
       // This error is returned when buffer_body uses up the buffer
       if (ec == boost::beast::http::error::need_buffer) {
@@ -459,14 +460,16 @@ try {
     BOOST_ASIO_CORO_YIELD
     s.client.async_read_header(
       *s.response_buf_parser,
-      boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+      beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
     if (ec) { }
+
+    std::cout << static_cast<http::response_header<>&>(s.response_buf_parser->get()) << "\n";
 
     std::cout << "write response header from remote back to client...\n";
     BOOST_ASIO_CORO_YIELD
     s.session.async_write_header(
       *s.response_buf_sr,
-      boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+      beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
     if (ec) { }
 
     do
@@ -477,12 +480,14 @@ try {
         (*s.response_buf_parser).get().body().data = s.buf.data();
         (*s.response_buf_parser).get().body().size = s.buf.size();
 
+
+        std::cout << "reading a body chunk...\n";
         // Read as much as we can
         //
         BOOST_ASIO_CORO_YIELD
         s.client.async_read(
           *s.response_buf_parser,
-          boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+          beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
         // This error is returned when buffer_body uses up the buffer
         //
@@ -490,10 +495,14 @@ try {
           ec = {};
         }
 
+        // ERROR: getting a bad version error message for some reason
+        //
         if (ec) {
+          std::cout << ec.message() << "\n";
           return;
         }
 
+        std::cout << "setting up body stuff for next read...\n";
         // Set up the body for reading.
         // This is how much was parsed:
         //
@@ -507,11 +516,11 @@ try {
         (*s.response_buf_parser).get().body().size = 0;
       }
 
-      std::cout << "writing back forward body chunk...\n";
+      std::cout << "writing back body chunk...\n";
       // Write everything in the buffer (which might be empty)
       s.session.async_write(
         *s.response_buf_sr,
-        boost::beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+        beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
       // This error is returned when buffer_body uses up the buffer
       if (ec == boost::beast::http::error::need_buffer) {
