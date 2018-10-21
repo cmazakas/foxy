@@ -11,6 +11,18 @@ cmake_minimum_required(VERSION 3.12)
 
 project(foxy LANGUAGES CXX)
 
+if (MSVC)
+
+  STRING(
+    REPLACE "INCREMENTAL:YES" "INCREMENTAL:NO"
+    CMAKE_EXE_LINKER_FLAGS_DEBUG
+    ${CMAKE_EXE_LINKER_FLAGS_DEBUG}
+  )
+
+  SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "/INCREMENTAL:NO")
+
+endif()
+
 find_package(
   Boost 1.68
   REQUIRED
