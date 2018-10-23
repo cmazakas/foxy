@@ -398,6 +398,7 @@ try {
     }
 
     std::cout << s.request_buf_parser->get().version() << "\n";
+    std::cout << s.request_buf_parser->is_header_done() << ", " << s.request_buf_parser->is_done() << "\n";
     std::cout << "writing client header to remote...\n";
 
     BOOST_ASIO_CORO_YIELD
@@ -409,66 +410,67 @@ try {
       std::cout << ec.message() << "\n";
     }
 
-    s.client.buffer.consume(bytes_transferred);
+    std::cout << s.request_buf_sr->is_header_done() << ", " << s.request_buf_sr->is_done() << "\n";
 
-    // do
-    // {
-    //   if (!(*s.request_buf_parser).is_done()) {
-    //     // Set up the body for writing into our small buffer
-    //     //
-    //     (*s.request_buf_parser).get().body().data = s.buf.data();
-    //     (*s.request_buf_parser).get().body().size = s.buf.size();
+    do
+    {
+      if (!s.request_buf_parser->is_done()) {
+        // Set up the body for writing into our small buffer
+        //
+        s.request_buf_parser->get().body().data = s.buf.data();
+        s.request_buf_parser->get().body().size = s.buf.size();
 
-    //     // Read as much as we can
-    //     //
-    //     BOOST_ASIO_CORO_YIELD
-    //     s.session.async_read(
-    //       *s.request_buf_parser,
-    //       beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+        // Read as much as we can
+        //
+        BOOST_ASIO_CORO_YIELD
+        s.session.async_read(
+          *s.request_buf_parser,
+          beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
-    //     // This error is returned when buffer_body uses up the buffer
-    //     //
-    //     if (ec == boost::beast::http::error::need_buffer) {
-    //       ec = {};
-    //     }
+        // This error is returned when buffer_body uses up the buffer
+        //
+        if (ec == boost::beast::http::error::need_buffer) {
+          ec = {};
+        }
 
-    //     if (ec) {
-    //       return;
-    //     }
+        if (ec) {
+          return;
+        }
 
-    //     // Set up the body for reading.
-    //     // This is how much was parsed:
-    //     //
-    //     (*s.request_buf_parser).get().body().size = s.buf.size() - (*s.request_buf_parser).get().body().size;
-    //     (*s.request_buf_parser).get().body().data = s.buf.data();
-    //     (*s.request_buf_parser).get().body().more = !(*s.request_buf_parser).is_done();
+        // Set up the body for reading.
+        // This is how much was parsed:
+        //
+        s.request_buf_parser->get().body().size = s.buf.size() - s.request_buf_parser->get().body().size;
+        s.request_buf_parser->get().body().data = s.buf.data();
+        s.request_buf_parser->get().body().more = !s.request_buf_parser->is_done();
 
-    //   } else {
+      } else {
 
-    //     (*s.request_buf_parser).get().body().data = nullptr;
-    //     (*s.request_buf_parser).get().body().size = 0;
-    //   }
+        s.request_buf_parser->get().body().data = nullptr;
+        s.request_buf_parser->get().body().size = 0;
+      }
 
-    //   // Write everything in the buffer (which might be empty)
-    //   s.client.async_write(
-    //     *s.request_buf_sr,
-    //     beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+      // Write everything in the buffer (which might be empty)
+      BOOST_ASIO_CORO_YIELD
+      s.client.async_write(
+        *s.request_buf_sr,
+        beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
-    //   // This error is returned when buffer_body uses up the buffer
-    //   if (ec == boost::beast::http::error::need_buffer) {
-    //       ec = {};
-    //   }
+      // This error is returned when buffer_body uses up the buffer
+      if (ec == boost::beast::http::error::need_buffer) {
+          ec = {};
+      }
 
-    //   if (ec) {
-    //     return;
-    //   }
-    // } while(!(*s.request_buf_parser).is_done() && !(*s.request_buf_sr).is_done());
+      if (ec) {
+        return;
+      }
+    } while(!s.request_buf_parser->is_done() && !s.request_buf_sr->is_done());
+
+    std::cout << s.request_buf_sr->is_header_done() << ", " << s.request_buf_sr->is_done() << "\n";
 
     std::cout << "reading response header from remote...\n";
-    // Set up the body for writing into our small buffer
-    //
-    s.response_buf_parser->get().body().size = 2048;
-    s.response_buf_parser->get().body().data = s.buf.data();
+
+    for (auto& x : s.buf) { x = 0; }
 
     BOOST_ASIO_CORO_YIELD
     s.client.async_read_header(
@@ -537,6 +539,7 @@ try {
 
       std::cout << "writing back body chunk...\n";
       // Write everything in the buffer (which might be empty)
+      BOOST_ASIO_CORO_YIELD
       s.session.async_write(
         *s.response_buf_sr,
         beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
