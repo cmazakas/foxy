@@ -115,7 +115,8 @@ struct async_connect_op
   async_connect_op(foxy::multi_stream stream);
 
   struct on_connect_t {};
-  struct on_tunnel_t {};
+  struct on_tunnel_t  {};
+  struct on_relay_t   {};
 
   void
   operator()(
@@ -133,6 +134,9 @@ struct async_connect_op
   operator()(
     boost::system::error_code ec,
     std::size_t               bytes_transferred);
+
+  void
+  write_error(boost::beast::http::status const status, std::string what);
 };
 }
 
@@ -173,6 +177,20 @@ async_connect_op::async_connect_op(foxy::multi_stream stream)
 
 void
 async_connect_op::
+write_error(boost::beast::http::status const status, std::string what)
+{
+  auto& s = *p_;
+
+  s.err_response.result(status);
+
+  s.err_response.body() = std::move(what);
+  s.err_response.prepare_payload();
+
+  s.session.async_write(s.err_response, std::move(*this));
+}
+
+void
+async_connect_op::
 operator()(
   on_connect_t,
   boost::system::error_code      ec,
@@ -196,31 +214,19 @@ operator()(
   BOOST_ASIO_CORO_REENTER(s.connect_coro)
   {
     while (true) {
-      std::cout << "Entering proxy session loop\n";
-
-      // A new instance of the parser is required for each message.
-      //
-      if (s.parser) {
-        s.parser = boost::none;
-      }
+      if (s.parser) { s.parser = boost::none; }
       s.parser.emplace();
-
-      std::cout << "buffer size before reading: " << s.session.buffer.size() << "\n";
 
       BOOST_ASIO_CORO_YIELD
       s.session.async_read(*s.parser, std::move(*this));
 
-      std::cout << "buffer size after reading: " << s.session.buffer.size() << "\n";
+      if (ec == http::error::end_of_stream) { break; }
 
       if (ec == http::error::unexpected_body) {
-        std::cout << "encountered unexpected message body\n";
-
-        s.err_response.result(http::status::bad_request);
-        s.err_response.body() = "Messages with bodies are not supported for establishing a tunnel\n\n";
-        s.err_response.prepare_payload();
-
         BOOST_ASIO_CORO_YIELD
-        s.session.async_write(s.err_response, std::move(*this));
+        write_error(
+          http::status::bad_request,
+          "Messages with bodies are not supported for establishing a tunnel\n\n");
 
         s.err_response = {};
         if (ec) {
@@ -232,11 +238,6 @@ operator()(
         continue;
       }
 
-      if (ec == http::error::end_of_stream) {
-        std::cout << "received the end of the stream\n";
-        break;
-      }
-
       if (ec) {
         foxy::log_error(ec, "foxy::proxy::async_connect_op::async_read::read_error");
         BOOST_ASIO_CORO_YIELD break;
@@ -245,12 +246,10 @@ operator()(
       // we can only form a proper tunnel over a persistent connection
       //
       if (!s.parser->get().keep_alive()) {
-        s.err_response.result(http::status::bad_request);
-        s.err_response.body() = "Connection must be persistent to allow proper tunneling\n\n";
-        s.err_response.prepare_payload();
-
         BOOST_ASIO_CORO_YIELD
-        s.session.async_write(s.err_response, std::move(*this));
+        write_error(
+          http::status::bad_request,
+          "Connection must be persistent to allow proper tunneling\n\n");
 
         s.err_response = {};
         if (ec) {
@@ -258,19 +257,16 @@ operator()(
           BOOST_ASIO_CORO_YIELD break;
         }
 
-        std::cout << "non-persistent connection, going to break session loop now...\n";
         break;
       }
 
       // a CONNECT must be used to signify tunnel semantics
       //
       if (s.parser->get().method() != http::verb::connect) {
-        s.err_response.result(http::status::method_not_allowed);
-        s.err_response.body() = "Invalid request method. Only CONNECT is supported\n\n";
-        s.err_response.prepare_payload();
-
         BOOST_ASIO_CORO_YIELD
-        s.session.async_write(s.err_response, std::move(*this));
+        write_error(
+          http::status::method_not_allowed,
+          "Invalid request method. Only CONNECT is supported\n\n");
 
         s.err_response = {};
         if (ec) {
@@ -299,15 +295,12 @@ operator()(
       // TODO: support 504 for `operation_aborted` error code
       //
       if (ec) {
-        s.err_response.result(http::status::bad_request);
-        s.err_response.body() =
-          "Unable to establish connection with the remote\n";
-
-        s.err_response.body() += "Error: " + ec.message() + "\n\n";
-        s.err_response.prepare_payload();
-
         BOOST_ASIO_CORO_YIELD
-        s.session.async_write(s.err_response, std::move(*this));
+        write_error(
+          http::status::bad_request,
+          std::string("Unable to establish connection with the remote\n") +
+          "Error: " +
+          ec.message() + "\n\n");
 
         s.err_response = {};
         if (ec) {
@@ -317,8 +310,6 @@ operator()(
 
         continue;
       }
-
-      std::cout << "client successfully connected to remote\n";
 
       BOOST_ASIO_CORO_YIELD
       s.session.async_write(s.tunnel_res, std::move(*this));
@@ -345,30 +336,27 @@ operator()(
     // acknowledgement of the packet(s) containing the server's last
     // response.  Finally, the server fully closes the connection.
     //
-    std::cout << "at shutdown portion\n";
     s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
 
-    if (s.parser) {
-      s.parser = boost::none;
-    }
+    if (s.parser) { s.parser = boost::none; }
     s.parser.emplace();
 
     BOOST_ASIO_CORO_YIELD
     s.session.async_read(*s.parser, std::move(*this));
 
     if (ec) {
-      std::cout << ec.message() << "\n";
+      foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
     }
 
     s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.plain().close(ec);
-
-    std::cout << "done closing the socket\n\n";
   }
 
   if (!s.connect_coro.is_complete() || ec || !should_tunnel) { return; }
   (*this)(on_tunnel_t{}, {}, 0);
 }
+
+
 
 void
 async_connect_op::
@@ -380,66 +368,55 @@ operator()(
   using namespace std::placeholders;
   namespace beast = boost::beast;
 
-  std::cout << "starting tunnel operation now...\n";
-try {
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
   {
-    std::cout << "reading in client header...\n";
-    std::cout << std::boolalpha << static_cast<bool>(s.request_buf_parser) << "\n";
-
     BOOST_ASIO_CORO_YIELD
     s.session.async_read_header(
       *s.request_buf_parser,
       beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
+    // TODO: close connection with end server here
+    //
     if (ec) {
-      std::cout << ec.message() << "\n";
+      foxy::log_error(ec, "foxy::proxy::tunnel::reading_client_header");
+      return;
     }
-
-    std::cout << s.request_buf_parser->get().version() << "\n";
-    std::cout << s.request_buf_parser->is_header_done() << ", " << s.request_buf_parser->is_done() << "\n";
-    std::cout << "writing client header to remote...\n";
 
     BOOST_ASIO_CORO_YIELD
     s.client.async_write_header(
       *s.request_buf_sr,
       beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
+    // TODO: make sure that we terminate the connection with our `session` here
+    //
     if (ec) {
-      std::cout << ec.message() << "\n";
+      foxy::log_error(ec, "foxy::proxy::tunnel:writing_client_request_header");
+      return;
     }
-
-    std::cout << s.request_buf_sr->is_header_done() << ", " << s.request_buf_sr->is_done() << "\n";
 
     do
     {
       if (!s.request_buf_parser->is_done()) {
-        // Set up the body for writing into our small buffer
-        //
         s.request_buf_parser->get().body().data = s.buf.data();
         s.request_buf_parser->get().body().size = s.buf.size();
 
-        // Read as much as we can
-        //
         BOOST_ASIO_CORO_YIELD
         s.session.async_read(
           *s.request_buf_parser,
           beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
-        // This error is returned when buffer_body uses up the buffer
-        //
         if (ec == boost::beast::http::error::need_buffer) {
           ec = {};
         }
 
+        // TODO: close connection with end server here
+        //
         if (ec) {
+          foxy::log_error(ec, "foxy::proxy::tunnel::read_session_body_chunk");
           return;
         }
 
-        // Set up the body for reading.
-        // This is how much was parsed:
-        //
         s.request_buf_parser->get().body().size = s.buf.size() - s.request_buf_parser->get().body().size;
         s.request_buf_parser->get().body().data = s.buf.data();
         s.request_buf_parser->get().body().more = !s.request_buf_parser->is_done();
@@ -450,27 +427,20 @@ try {
         s.request_buf_parser->get().body().size = 0;
       }
 
-      // Write everything in the buffer (which might be empty)
       BOOST_ASIO_CORO_YIELD
       s.client.async_write(
         *s.request_buf_sr,
         beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
-      // This error is returned when buffer_body uses up the buffer
       if (ec == boost::beast::http::error::need_buffer) {
           ec = {};
       }
 
+      // TODO: close connection with the main session here
       if (ec) {
         return;
       }
     } while(!s.request_buf_parser->is_done() && !s.request_buf_sr->is_done());
-
-    std::cout << s.request_buf_sr->is_header_done() << ", " << s.request_buf_sr->is_done() << "\n";
-
-    std::cout << "reading response header from remote...\n";
-
-    for (auto& x : s.buf) { x = 0; }
 
     BOOST_ASIO_CORO_YIELD
     s.client.async_read_header(
@@ -481,9 +451,6 @@ try {
       std::cout << ec.message() << "\n";
     }
 
-    std::cout << static_cast<http::response_header<>&>(s.response_buf_parser->get()) << "\n";
-
-    std::cout << "write response header from remote back to client...\n";
     BOOST_ASIO_CORO_YIELD
     s.session.async_write_header(
       *s.response_buf_sr,
@@ -496,37 +463,23 @@ try {
     do
     {
       if (!(*s.response_buf_parser).is_done()) {
-        // Set up the body for writing into our small buffer
-        //
         (*s.response_buf_parser).get().body().data = s.buf.data();
         (*s.response_buf_parser).get().body().size = s.buf.size();
 
-
-        std::cout << "reading a body chunk...\n";
-        // Read as much as we can
-        //
         BOOST_ASIO_CORO_YIELD
         s.client.async_read(
           *s.response_buf_parser,
           beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
 
-        // This error is returned when buffer_body uses up the buffer
-        //
         if (ec == boost::beast::http::error::need_buffer) {
           ec = {};
         }
 
-        // ERROR: getting a bad version error message for some reason
-        //
         if (ec) {
           std::cout << ec.message() << "\n";
           return;
         }
 
-        std::cout << "setting up body stuff for next read...\n";
-        // Set up the body for reading.
-        // This is how much was parsed:
-        //
         (*s.response_buf_parser).get().body().size = s.buf.size() - (*s.response_buf_parser).get().body().size;
         (*s.response_buf_parser).get().body().data = s.buf.data();
         (*s.response_buf_parser).get().body().more = !(*s.response_buf_parser).is_done();
@@ -554,11 +507,6 @@ try {
       }
     } while(!(*s.response_buf_parser).is_done() && !(*s.response_buf_sr).is_done());
   }
-} catch(boost::system::error_code const& ec) {
-  std::cout << ec.message() << "\n";
-} catch(std::exception const& ec) {
-  std::cout << ec.what() << "\n";
-}
 }
 
 }
