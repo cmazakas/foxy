@@ -161,7 +161,6 @@ auto foxy::proxy::async_accept(boost::system::error_code ec) -> void
         continue;
       }
 
-      std::cout << "accepted connection\n";
       async_connect_op(std::move(stream_))({}, 0);
     }
   }
@@ -344,7 +343,7 @@ operator()(
     BOOST_ASIO_CORO_YIELD
     s.session.async_read(*s.parser, std::move(*this));
 
-    if (ec) {
+    if (ec && ec != http::error::end_of_stream) {
       foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
     }
 
