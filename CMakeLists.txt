@@ -11,7 +11,9 @@ cmake_minimum_required(VERSION 3.12)
 
 project(foxy LANGUAGES CXX)
 
-if (MSVC)
+# set this via a toolchain file (foxy.cmake for example)
+#
+if (MSVC AND MSVC_INCREMENTAL_DEFAULT)
 
   STRING(
     REPLACE "INCREMENTAL:YES" "INCREMENTAL:NO"
@@ -37,6 +39,7 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_non_connect_fields.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
@@ -133,13 +136,14 @@ if (FOXY_TESTING)
   add_executable(
     foxy_tests
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/client_session_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/export_non_connect_fields_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
   )
 
   target_link_libraries(
