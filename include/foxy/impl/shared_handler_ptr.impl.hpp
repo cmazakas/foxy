@@ -147,8 +147,8 @@ void
 shared_handler_ptr<T, Handler>::
 reset() noexcept
 {
-    --(p_->n);
-    if (p_->n == 0) {
+    auto const old = --(p_->n);
+    if (old == 0) {
         p_->t->~T();
         typename std::allocator_traits<
             boost::asio::associated_allocator_t<Handler>>::
