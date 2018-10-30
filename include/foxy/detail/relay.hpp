@@ -12,6 +12,10 @@
 
 #include <foxy/session.hpp>
 
+#include <boost/optional/optional.hpp>
+
+#include <boost/beast/http/parser.hpp>
+
 namespace foxy
 {
 namespace detail
@@ -26,6 +30,8 @@ private:
   {
     ::foxy::basic_session<Stream>& server;
     ::foxy::basic_session<Stream>& client;
+
+    // boost::optional<boost::beast::http::request_parser<>>
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
 
@@ -96,6 +102,9 @@ operator()(
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
+    BOOST_ASIO_CORO_YIELD
+    s.server.async_read_header(std::move(*this));
+
     {
       auto work = std::move(s.work);
       return p_.invoke(boost::system::error_code(), bytes_transferred);
