@@ -20,6 +20,7 @@
 #include <boost/beast/http/error.hpp>
 
 #include <array>
+#include <iostream>
 
 namespace foxy
 {
@@ -120,6 +121,8 @@ operator()(
 
   namespace http = boost::beast::http;
 
+  std::cout << "relay_op::operator()\n";
+
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
@@ -134,13 +137,19 @@ operator()(
     s.res_parser.emplace();
     s.res_sr.emplace(s.res_parser->get());
 
+    std::cout << "going to read in the header now\n";
+
     BOOST_ASIO_CORO_YIELD
     s.server.async_read_header(*s.req_parser, std::move(*this));
     if (ec) { goto upcall; }
 
+    std::cout << "read in header\n";
+
     BOOST_ASIO_CORO_YIELD
     s.client.async_write_header(*s.req_sr, std::move(*this));
     if (ec) { goto upcall; }
+
+    std::cout << "wrote header\n";
 
     do {
       if (!s.req_parser->is_done()) {
@@ -152,6 +161,8 @@ operator()(
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 
+        std::cout << "read in a body chunk\n";
+
         s.req_parser->get().body().size = s.buffer.size() - s.req_parser->get().body().size;
         s.req_parser->get().body().data = s.buffer.data();
         s.req_parser->get().body().more = !s.req_parser->is_done();
@@ -161,12 +172,16 @@ operator()(
         s.req_parser->get().body().size = 0;
       }
 
+      std::cout << "wrote a body chunk\n";
+
       BOOST_ASIO_CORO_YIELD
       s.client.async_write(*s.req_sr, std::move(*this));
       if (ec == http::error::need_buffer) { ec = {}; }
       if (ec) { goto upcall; }
     }
     while (!s.req_parser->is_done() && !s.req_sr->is_done());
+
+    std::cout << "invoking final handler now\n";
 
     {
       auto work = std::move(s.work);
@@ -178,6 +193,7 @@ operator()(
       BOOST_ASIO_CORO_YIELD
       boost::asio::post(bind_handler(std::move(*this), ec, 0));
     }
+    std::cout << "hit error with: " << ec.message() << "\n";
     auto work = std::move(s.work);
     p_.invoke(ec, 0);
   }

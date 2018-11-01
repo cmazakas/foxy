@@ -41,22 +41,30 @@ TEST_CASE("Our async HTTP relay")
     auto server = foxy::basic_session<stream_type>(std::move(server_stream));
     auto client = foxy::basic_session<stream_type>(std::move(client_stream));
 
+    server.opts.timeout = std::chrono::seconds{5};
+    client.opts.timeout = std::chrono::seconds{5};
+
     req_stream.connect(server.stream.plain());
     client.stream.plain().connect(res_stream);
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
-    beast::ostream(req_stream.buffer()) << request;
+    request.prepare_payload();
+
+    beast::ostream(server.stream.plain().buffer()) << request;
 
     auto response = http::response<http::string_body>(
       http::status::ok, 11,
       "I bestow the heads of virgins and the first-born sons!!!!\n");
+    response.prepare_payload();
 
     beast::ostream(res_stream.buffer()) << response;
 
     asio::spawn(
       [&](asio::yield_context yield) mutable
       {
-        foxy::detail::async_relay(server, client, yield);
+        std::cout << "starting relay\n";
+        auto const bytes_transferred = foxy::detail::async_relay(server, client, yield);
+        std::cout << "ending relay\n";
       });
 
     io.run();
