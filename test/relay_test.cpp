@@ -41,34 +41,34 @@ TEST_CASE("Our async HTTP relay")
     auto server = foxy::basic_session<stream_type>(std::move(server_stream));
     auto client = foxy::basic_session<stream_type>(std::move(client_stream));
 
-    server.opts.timeout = std::chrono::seconds{5};
-    client.opts.timeout = std::chrono::seconds{5};
-
-    req_stream.connect(server.stream.plain());
-    client.stream.plain().connect(res_stream);
-
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
     request.prepare_payload();
-
-    beast::ostream(server.stream.plain().buffer()) << request;
 
     auto response = http::response<http::string_body>(
       http::status::ok, 11,
       "I bestow the heads of virgins and the first-born sons!!!!\n");
+
     response.prepare_payload();
 
-    beast::ostream(res_stream.buffer()) << response;
+    beast::ostream(server.stream.plain().buffer()) << request;
+    beast::ostream(client.stream.plain().buffer()) << response;
+
+    server.stream.plain().connect(res_stream);
+    client.stream.plain().connect(req_stream);
 
     asio::spawn(
       [&](asio::yield_context yield) mutable
       {
-        std::cout << "starting relay\n";
-        auto const bytes_transferred = foxy::detail::async_relay(server, client, yield);
-        std::cout << "ending relay\n";
+        foxy::detail::async_relay(server, client, yield);
       });
 
     io.run();
 
-    CHECK(req_stream.str() == "I bestow the heads of virgins and the first-born sons!!!!\n");
+    CHECK(req_stream.str() == "GET / HTTP/1.1\r\n\r\n");
+    CHECK(
+      res_stream.str() == "HTTP/1.1 200 OK\r\n"
+                          "Content-Length: 58\r\n\r\n"
+                          "I bestow the heads of virgins and the first-born sons!!!!\n"
+    );
   }
 }

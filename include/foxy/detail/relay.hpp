@@ -121,8 +121,6 @@ operator()(
 
   namespace http = boost::beast::http;
 
-  std::cout << "relay_op::operator()\n";
-
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
@@ -137,19 +135,13 @@ operator()(
     s.res_parser.emplace();
     s.res_sr.emplace(s.res_parser->get());
 
-    std::cout << "going to read in the header now\n";
-
     BOOST_ASIO_CORO_YIELD
     s.server.async_read_header(*s.req_parser, std::move(*this));
     if (ec) { goto upcall; }
 
-    std::cout << "read in header\n";
-
     BOOST_ASIO_CORO_YIELD
     s.client.async_write_header(*s.req_sr, std::move(*this));
     if (ec) { goto upcall; }
-
-    std::cout << "wrote header\n";
 
     do {
       if (!s.req_parser->is_done()) {
@@ -161,8 +153,6 @@ operator()(
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 
-        std::cout << "read in a body chunk\n";
-
         s.req_parser->get().body().size = s.buffer.size() - s.req_parser->get().body().size;
         s.req_parser->get().body().data = s.buffer.data();
         s.req_parser->get().body().more = !s.req_parser->is_done();
@@ -172,8 +162,6 @@ operator()(
         s.req_parser->get().body().size = 0;
       }
 
-      std::cout << "wrote a body chunk\n";
-
       BOOST_ASIO_CORO_YIELD
       s.client.async_write(*s.req_sr, std::move(*this));
       if (ec == http::error::need_buffer) { ec = {}; }
@@ -181,7 +169,39 @@ operator()(
     }
     while (!s.req_parser->is_done() && !s.req_sr->is_done());
 
-    std::cout << "invoking final handler now\n";
+    BOOST_ASIO_CORO_YIELD
+    s.client.async_read_header(*s.res_parser, std::move(*this));
+    if (ec) { goto upcall; }
+
+    BOOST_ASIO_CORO_YIELD
+    s.server.async_write_header(*s.res_sr, std::move(*this));
+    if (ec) { goto upcall; }
+
+    do {
+      if (!s.res_parser->is_done()) {
+        s.res_parser->get().body().data = s.buffer.data();
+        s.res_parser->get().body().size = s.buffer.size();
+
+        BOOST_ASIO_CORO_YIELD
+        s.client.async_read(*s.res_parser, std::move(*this));
+        if (ec == http::error::need_buffer) { ec = {}; }
+        if (ec) { goto upcall; }
+
+        s.res_parser->get().body().size = s.buffer.size() - s.res_parser->get().body().size;
+        s.res_parser->get().body().data = s.buffer.data();
+        s.res_parser->get().body().more = !s.res_parser->is_done();
+
+      } else {
+        s.res_parser->get().body().data = nullptr;
+        s.res_parser->get().body().size = 0;
+      }
+
+      BOOST_ASIO_CORO_YIELD
+      s.server.async_write(*s.res_sr, std::move(*this));
+      if (ec == http::error::need_buffer) { ec = {}; }
+      if (ec) { goto upcall; }
+    }
+    while (!s.res_parser->is_done() && !s.res_sr->is_done());
 
     {
       auto work = std::move(s.work);
@@ -193,7 +213,6 @@ operator()(
       BOOST_ASIO_CORO_YIELD
       boost::asio::post(bind_handler(std::move(*this), ec, 0));
     }
-    std::cout << "hit error with: " << ec.message() << "\n";
     auto work = std::move(s.work);
     p_.invoke(ec, 0);
   }
