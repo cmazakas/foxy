@@ -1,5 +1,6 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
+// com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -55,25 +56,23 @@ TEST_CASE("Our basic_session class...")
     auto valid_verb   = false;
     auto valid_target = false;
 
-    asio::spawn(
-      [&](asio::yield_context yield) mutable
-      {
-        auto session =
-          foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+    asio::spawn([&](asio::yield_context yield) mutable {
+      auto session =
+        foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
 
-        http::request_parser<http::empty_body> parser;
+      http::request_parser<http::empty_body> parser;
 
-        session.async_read_header(parser, yield);
+      session.async_read_header(parser, yield);
 
-        auto const is_header_done = parser.is_header_done();
-        auto const is_done        = parser.is_done();
+      auto const is_header_done = parser.is_header_done();
+      auto const is_done        = parser.is_done();
 
-        auto msg = parser.release();
+      auto msg = parser.release();
 
-        valid_parse  = is_header_done && is_done;
-        valid_verb   = msg.method() == http::verb::get;
-        valid_target = msg.target() == "/";
-      });
+      valid_parse  = is_header_done && is_done;
+      valid_verb   = msg.method() == http::verb::get;
+      valid_target = msg.target() == "/";
+    });
 
     io.run();
     CHECK(valid_parse);
@@ -98,24 +97,22 @@ TEST_CASE("Our basic_session class...")
     auto valid_parse = false;
     auto valid_body  = false;
 
-    asio::spawn(
-      [&](asio::yield_context yield) mutable
-      {
-        auto session =
-          foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+    asio::spawn([&](asio::yield_context yield) mutable {
+      auto session =
+        foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
 
-        http::request_parser<http::string_body> parser;
+      http::request_parser<http::string_body> parser;
 
-        session.async_read(parser, yield);
+      session.async_read(parser, yield);
 
-        auto const is_header_done = parser.is_header_done();
-        auto const is_done        = parser.is_done();
+      auto const is_header_done = parser.is_header_done();
+      auto const is_done        = parser.is_done();
 
-        auto msg = parser.release();
+      auto msg = parser.release();
 
-        valid_parse = is_header_done && is_done;
-        valid_body  = msg.body().size() > 0;
-      });
+      valid_parse = is_header_done && is_done;
+      valid_body  = msg.body().size() > 0;
+    });
 
     io.run();
     CHECK(valid_parse);
@@ -132,31 +129,37 @@ TEST_CASE("Our basic_session class...")
 
     auto valid_serialization = false;
 
-    asio::spawn(
-      [&](asio::yield_context yield) mutable
-      {
-        auto ec = boost::system::error_code();
+    asio::spawn([&](asio::yield_context yield) mutable {
+      auto ec = boost::system::error_code();
 
-        auto session =
-          foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+      auto session =
+        foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
 
-        auto res = http::response<http::empty_body>(http::status::ok, 11);
-        http::response_serializer<http::empty_body> serializer(res);
+      auto res = http::response<http::empty_body>(http::status::ok, 11);
+      http::response_serializer<http::empty_body> serializer(res);
 
-        session.async_write_header(serializer, yield[ec]);
-        if (ec) { std::cout << ec.message() << "\n"; return; }
+      session.async_write_header(serializer, yield[ec]);
+      if (ec) {
+        std::cout << ec.message() << "\n";
+        return;
+      }
 
-        auto const is_serialization_done = peer_stream.buffer().size() > 0;
-        auto const is_header_done        = serializer.is_header_done();
+      auto const is_serialization_done = peer_stream.buffer().size() > 0;
+      auto const is_header_done        = serializer.is_header_done();
 
-        session.async_write(serializer, yield[ec]);
-        if (ec) { std::cout << ec.message() << "\n"; return; }
+      session.async_write(serializer, yield[ec]);
+      if (ec) {
+        std::cout << ec.message() << "\n";
+        return;
+      }
 
-        auto const is_done      = serializer.is_done();
-        auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
+      auto const is_done = serializer.is_done();
+      auto const valid_output =
+        (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
 
-        valid_serialization = is_serialization_done && is_header_done && is_done && valid_output;
-      });
+      valid_serialization =
+        is_serialization_done && is_header_done && is_done && valid_output;
+    });
 
     io.run();
     CHECK(valid_serialization);
