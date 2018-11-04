@@ -44,7 +44,6 @@ TEST_CASE("Our async HTTP relay")
     auto client = foxy::basic_session<stream_type>(std::move(client_stream));
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
-    request.keep_alive(false);
 
     auto response = http::response<http::string_body>(
       http::status::ok, 11,
@@ -90,6 +89,55 @@ TEST_CASE("Our async HTTP relay")
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n\r\n"
+          "I bestow the heads of virgins and the first-born sons!!!!\n");
+  }
+
+  SECTION("should relay while respecting Connection header semantics")
+  {
+    asio::io_context io;
+
+    auto req_stream = stream_type(io);
+    auto res_stream = stream_type(io);
+
+    auto server_stream = stream_type(io);
+    auto client_stream = stream_type(io);
+
+    auto server = foxy::basic_session<stream_type>(std::move(server_stream));
+    auto client = foxy::basic_session<stream_type>(std::move(client_stream));
+
+    // in this test, it's our proxy client that initiates the teardown of the
+    // Connection
+    //
+    auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
+    request.keep_alive(false);
+
+    auto response = http::response<http::string_body>(
+      http::status::ok, 11,
+      "I bestow the heads of virgins and the first-born sons!!!!\n");
+
+    response.prepare_payload();
+
+    beast::ostream(server.stream.plain().buffer()) << request;
+    beast::ostream(client.stream.plain().buffer()) << response;
+
+    server.stream.plain().connect(res_stream);
+    client.stream.plain().connect(req_stream);
+
+    REQUIRE(req_stream.str() == "");
+    REQUIRE(res_stream.str() == "");
+
+    asio::spawn([&](asio::yield_context yield) mutable {
+      foxy::detail::async_relay(server, client, yield);
+    });
+
+    io.run();
+
+    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nConnection: close\r\n\r\n");
+    CHECK(res_stream.str() ==
+          "HTTP/1.1 200 OK\r\n"
+          "Connection: close\r\n"
+          "Content-Length: 58\r\n"
+          "\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n");
   }
 }
