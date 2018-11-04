@@ -56,6 +56,7 @@ how this should be done.
 
 * timeouts for all `session` methods (`async_read`, `async_read_header`, ...)
 * transparent support for encrypted/non-encrypted streams
+* supports Asio's universal async model
 
 ## Example Usage
 
