@@ -143,14 +143,26 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     s.server.async_read_header(s.frame->req_parser, std::move(*this));
     if (ec) { goto upcall; }
 
-    // remove hop-by-hop headers here and then store them externally
+    // remove hop-by-hop headers here and then store them externally...
+    // however, if the user is writing a Connection: close, they are
+    // communicating to our proxy that they wish to terminate the connection and
+    // we want to empower users to gracefully close their server sessions so we
+    // propagate the Connection: close field to convey to the remote that we
+    // won't be needing to persist the connection beyond this current response
+    // cycle
     //
-    ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
-      s.frame->req_parser.get(), s.frame->res_fields);
-
     BOOST_ASIO_CORO_YIELD
-    s.client.async_write_header(s.frame->req_sr, std::move(*this));
-    if (ec) { goto upcall; }
+    {
+      auto const is_req_keep_alive = s.frame->req_parser.get().keep_alive();
+
+      ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
+        s.frame->req_parser.get(), s.frame->req_fields);
+
+      if (!is_req_keep_alive) { s.frame->req_parser.get().keep_alive(false); }
+
+      s.client.async_write_header(s.frame->req_sr, std::move(*this));
+      if (ec) { goto upcall; }
+    }
 
     do {
       if (!s.frame->req_parser.is_done()) {

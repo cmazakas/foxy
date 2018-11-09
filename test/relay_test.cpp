@@ -132,7 +132,7 @@ TEST_CASE("Our async HTTP relay")
 
     io.run();
 
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\n\r\n");
+    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nConnection: close\r\n\r\n");
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
