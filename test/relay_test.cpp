@@ -136,6 +136,7 @@ TEST_CASE("Our async HTTP relay")
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
+          "Connection: close\r\n"
           "\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n");
   }

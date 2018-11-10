@@ -52,9 +52,12 @@ private:
     serializer_type<false, body_type> res_sr;
     fields_type                       res_fields;
 
+    bool close_tunnel;
+
     frame_type()
       : req_sr(req_parser.get())
       , res_sr(res_parser.get())
+      , close_tunnel{false}
     {
     }
 
@@ -153,16 +156,18 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     //
     BOOST_ASIO_CORO_YIELD
     {
-      auto const is_req_keep_alive = s.frame->req_parser.get().keep_alive();
+      auto& req = s.frame->req_parser.get();
+
+      s.frame->close_tunnel = !req.keep_alive();
 
       ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
-        s.frame->req_parser.get(), s.frame->req_fields);
+        req, s.frame->req_fields);
 
-      if (!is_req_keep_alive) { s.frame->req_parser.get().keep_alive(false); }
+      if (s.frame->close_tunnel) { req.keep_alive(false); }
 
       s.client.async_write_header(s.frame->req_sr, std::move(*this));
-      if (ec) { goto upcall; }
     }
+    if (ec) { goto upcall; }
 
     do {
       if (!s.frame->req_parser.is_done()) {
@@ -194,8 +199,25 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     s.client.async_read_header(s.frame->res_parser, std::move(*this));
     if (ec) { goto upcall; }
 
+    // HTTP RFC 7230 - Section 6.6 - Tear-down
+    // https://tools.ietf.org/html/rfc7230#section-6.6
+    // A server that receives a "close" connection option MUST initiate a
+    // close of the connection (see below) after it sends the final response
+    // to the request that contained "close".  The server SHOULD send a
+    // "close" connection option in its final response on that connection.
+    // The server MUST NOT process any further requests received on that
+    // connection.
+    //
     BOOST_ASIO_CORO_YIELD
-    s.server.async_write_header(s.frame->res_sr, std::move(*this));
+    {
+      auto& res = s.frame->res_parser.get();
+
+      ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
+        res, s.frame->res_fields);
+
+      if (s.frame->close_tunnel) { res.keep_alive(false); }
+      s.server.async_write_header(s.frame->res_sr, std::move(*this));
+    }
     if (ec) { goto upcall; }
 
     do {
