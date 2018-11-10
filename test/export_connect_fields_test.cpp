@@ -36,6 +36,7 @@ TEST_CASE("Our detail::export_connect_fields function")
     });
 
     a.insert(http::field::transfer_encoding, "gzip");
+    a.insert(http::field::transfer_encoding, "chunked");
 
     // because "foo" appears in the Connection field, it's now a hop-by-hop
     //
@@ -66,6 +67,11 @@ TEST_CASE("Our detail::export_connect_fields function")
     CHECK(b["foo"] == "ha ha!");
     CHECK(b["nonconnectopt"] == "");
     CHECK(a[http::field::transfer_encoding] == "");
-    CHECK(b[http::field::transfer_encoding] == "gzip");
+
+    auto transfer_encoding_iter = b.find(http::field::transfer_encoding);
+    CHECK(transfer_encoding_iter->value() == "gzip");
+
+    ++transfer_encoding_iter;
+    CHECK(transfer_encoding_iter->value() == "chunked");
   }
 }
