@@ -142,4 +142,71 @@ TEST_CASE("Our async HTTP relay")
           "\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n");
   }
+
+  SECTION("should support requests with payloads")
+  {
+    asio::io_context io;
+
+    auto req_stream = stream_type(io);
+    auto res_stream = stream_type(io);
+
+    auto server_stream = stream_type(io);
+    auto client_stream = stream_type(io);
+
+    auto server = foxy::basic_session<stream_type>(std::move(server_stream));
+    auto client = foxy::basic_session<stream_type>(std::move(client_stream));
+
+    auto request = http::request<http::string_body>(
+      http::verb::post, "/", 11,
+      "Unholy Gravebirth is a good song but it can be a little off-putting "
+      "when used in a test data\n");
+
+    request.chunked(true);
+
+    auto response = http::response<http::string_body>(
+      http::status::ok, 11,
+      "I bestow the heads of virgins and the first-born sons!!!!\n");
+
+    response.chunked(true);
+
+    beast::ostream(server.stream.plain().buffer()) << request;
+    beast::ostream(client.stream.plain().buffer()) << response;
+
+    server.stream.plain().connect(res_stream);
+    client.stream.plain().connect(req_stream);
+
+    REQUIRE(req_stream.str() == "");
+    REQUIRE(res_stream.str() == "");
+
+    asio::spawn([&](asio::yield_context yield) mutable {
+      foxy::detail::async_relay(server, client, yield);
+    });
+
+    io.run();
+
+    // this proves that our client instance successfully wrote the request to
+    // the remote
+    //
+    CHECK(req_stream.str() ==
+          "POST / HTTP/1.1\r\n"
+          "Transfer-Encoding: chunked\r\n"
+          "\r\n"
+          "5d\r\n"
+          "Unholy Gravebirth is a good song but it can be a little off-putting "
+          "when used in a test data\n"
+          "\r\n"
+          "0\r\n\r\n");
+
+    // this proves that our internal server instance successfully writes the
+    // response back to the proxy client
+    //
+    CHECK(res_stream.str() ==
+          "HTTP/1.1 200 OK\r\n"
+          "Transfer-Encoding: chunked\r\n"
+          "\r\n"
+          "3a\r\n"
+          "I bestow the heads of virgins and the first-born sons!!!!\n"
+          "\r\n"
+          "0\r\n\r\n");
+  }
 }

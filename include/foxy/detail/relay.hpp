@@ -160,10 +160,13 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       s.frame->close_tunnel = !req.keep_alive();
 
+      auto const is_chunked = req.chunked();
+
       ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
         req, s.frame->req_fields);
 
       if (s.frame->close_tunnel) { req.keep_alive(false); }
+      if (is_chunked) { req.chunked(true); }
 
       s.client.async_write_header(s.frame->req_sr, std::move(*this));
     }
@@ -212,10 +215,15 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     {
       auto& res = s.frame->res_parser.get();
 
+      auto const is_close   = !res.keep_alive();
+      auto const is_chunked = res.chunked();
+
       ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
         res, s.frame->res_fields);
 
-      if (s.frame->close_tunnel) { res.keep_alive(false); }
+      if (s.frame->close_tunnel || is_close) { res.keep_alive(false); }
+      if (is_chunked) { res.chunked(true); }
+
       s.server.async_write_header(s.frame->res_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
