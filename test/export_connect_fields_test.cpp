@@ -35,6 +35,8 @@ TEST_CASE("Our detail::export_connect_fields function")
       a.insert(http::field::connection, token);
     });
 
+    a.insert(http::field::transfer_encoding, "gzip");
+
     // because "foo" appears in the Connection field, it's now a hop-by-hop
     //
     a.insert("foo", "ha ha!");
@@ -51,22 +53,19 @@ TEST_CASE("Our detail::export_connect_fields function")
 
     CHECK(missing_connect_fields);
 
-    auto const missing_foo    = (a["foo"] == "");
-    auto const has_nonconnect = (a["nonconnectopt"] == "some random value");
-
-    auto const lacks_nonconnect = (b["nonconnectopt"] == "");
-    auto const has_foo          = (b["foo"] == "ha ha!");
-
     auto const has_connect =
       range::equal(b.equal_range(http::field::connection), connect_tokens,
                    [](auto const& field, auto const ex) -> bool {
                      return field.value() == ex;
                    });
 
-    CHECK(missing_foo);
-    CHECK(has_nonconnect);
-    CHECK(lacks_nonconnect);
-    CHECK(has_foo);
     CHECK(has_connect);
+
+    CHECK(a["foo"] == "");
+    CHECK(a["nonconnectopt"] == "some random value");
+    CHECK(b["foo"] == "ha ha!");
+    CHECK(b["nonconnectopt"] == "");
+    CHECK(a[http::field::transfer_encoding] == "");
+    CHECK(b[http::field::transfer_encoding] == "gzip");
   }
 }
