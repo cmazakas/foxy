@@ -14,8 +14,6 @@
 #include <foxy/session.hpp>
 #include <foxy/detail/export_connect_fields.hpp>
 
-#include <boost/optional/optional.hpp>
-
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/serializer.hpp>
 #include <boost/beast/http/buffer_body.hpp>
@@ -31,18 +29,24 @@ namespace detail
 template <class Stream, class RelayHandler>
 struct relay_op : boost::asio::coroutine
 {
+public:
+  using body_type = boost::beast::http::buffer_body;
+
+  template <bool isRequest, class Body>
+  using parser_type = boost::beast::http::parser<isRequest, Body>;
+
+  template <bool isRequest, class Body>
+  using serializer_type = boost::beast::http::serializer<isRequest, Body>;
+
+  using fields_type = boost::beast::http::fields;
+
 private:
-  struct frame_type
+  struct state
   {
-    using body_type = boost::beast::http::buffer_body;
+    std::array<char, 2048> buffer;
 
-    template <bool isRequest, class Body>
-    using parser_type = boost::beast::http::parser<isRequest, Body>;
-
-    template <bool isRequest, class Body>
-    using serializer_type = boost::beast::http::serializer<isRequest, Body>;
-
-    using fields_type = boost::beast::http::fields;
+    ::foxy::basic_session<Stream>& server;
+    ::foxy::basic_session<Stream>& client;
 
     parser_type<true, body_type>     req_parser;
     serializer_type<true, body_type> req_sr;
@@ -54,25 +58,6 @@ private:
 
     bool close_tunnel;
 
-    frame_type()
-      : req_sr(req_parser.get())
-      , res_sr(res_parser.get())
-      , close_tunnel{false}
-    {
-    }
-
-    frame_type(frame_type const&) = default;
-    frame_type(frame_type&&)      = default;
-  };
-
-  struct state
-  {
-    boost::optional<frame_type> frame;
-    std::array<char, 2048>      buffer;
-
-    ::foxy::basic_session<Stream>& server;
-    ::foxy::basic_session<Stream>& client;
-
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
 
     explicit state(RelayHandler const&            handler,
@@ -80,6 +65,9 @@ private:
                    ::foxy::basic_session<Stream>& client_)
       : server(server_)
       , client(client_)
+      , req_sr(req_parser.get())
+      , res_sr(res_parser.get())
+      , close_tunnel{false}
       , work(server.get_executor())
     {
     }
@@ -139,67 +127,63 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
-    s.frame = boost::none;
-    s.frame.emplace();
-
     BOOST_ASIO_CORO_YIELD
-    s.server.async_read_header(s.frame->req_parser, std::move(*this));
+    s.server.async_read_header(s.req_parser, std::move(*this));
     if (ec) { goto upcall; }
 
     // remove hop-by-hop headers here and then store them externally...
     // however, if the user is writing a Connection: close, they are
-    // communicating to our proxy that they wish to terminate the connection and
-    // we want to empower users to gracefully close their server sessions so we
-    // propagate the Connection: close field to convey to the remote that we
-    // won't be needing to persist the connection beyond this current response
-    // cycle
+    // communicating to our proxy that they wish to terminate the connection
+    // and we want to empower users to gracefully close their server sessions
+    // so we propagate the Connection: close field to convey to the remote
+    // that we won't be needing to persist the connection beyond this current
+    // response cycle
     //
     BOOST_ASIO_CORO_YIELD
     {
-      auto& req = s.frame->req_parser.get();
+      auto& req = s.req_parser.get();
 
-      s.frame->close_tunnel = !req.keep_alive();
+      s.close_tunnel = !req.keep_alive();
 
       auto const is_chunked = req.chunked();
 
-      ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
-        req, s.frame->req_fields);
+      ::foxy::detail::export_connect_fields<fields_type>(req, s.req_fields);
 
-      if (s.frame->close_tunnel) { req.keep_alive(false); }
+      if (s.close_tunnel) { req.keep_alive(false); }
       if (is_chunked) { req.chunked(true); }
 
-      s.client.async_write_header(s.frame->req_sr, std::move(*this));
+      s.client.async_write_header(s.req_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
 
     do {
-      if (!s.frame->req_parser.is_done()) {
-        s.frame->req_parser.get().body().data = s.buffer.data();
-        s.frame->req_parser.get().body().size = s.buffer.size();
+      if (!s.req_parser.is_done()) {
+        s.req_parser.get().body().data = s.buffer.data();
+        s.req_parser.get().body().size = s.buffer.size();
 
         BOOST_ASIO_CORO_YIELD
-        s.server.async_read(s.frame->req_parser, std::move(*this));
+        s.server.async_read(s.req_parser, std::move(*this));
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 
-        s.frame->req_parser.get().body().size =
-          s.buffer.size() - s.frame->req_parser.get().body().size;
-        s.frame->req_parser.get().body().data = s.buffer.data();
-        s.frame->req_parser.get().body().more = !s.frame->req_parser.is_done();
+        s.req_parser.get().body().size =
+          s.buffer.size() - s.req_parser.get().body().size;
+        s.req_parser.get().body().data = s.buffer.data();
+        s.req_parser.get().body().more = !s.req_parser.is_done();
 
       } else {
-        s.frame->req_parser.get().body().data = nullptr;
-        s.frame->req_parser.get().body().size = 0;
+        s.req_parser.get().body().data = nullptr;
+        s.req_parser.get().body().size = 0;
       }
 
       BOOST_ASIO_CORO_YIELD
-      s.client.async_write(s.frame->req_sr, std::move(*this));
+      s.client.async_write(s.req_sr, std::move(*this));
       if (ec == http::error::need_buffer) { ec = {}; }
       if (ec) { goto upcall; }
-    } while (!s.frame->req_parser.is_done() && !s.frame->req_sr.is_done());
+    } while (!s.req_parser.is_done() && !s.req_sr.is_done());
 
     BOOST_ASIO_CORO_YIELD
-    s.client.async_read_header(s.frame->res_parser, std::move(*this));
+    s.client.async_read_header(s.res_parser, std::move(*this));
     if (ec) { goto upcall; }
 
     // HTTP RFC 7230 - Section 6.6 - Tear-down
@@ -213,46 +197,45 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     //
     BOOST_ASIO_CORO_YIELD
     {
-      auto& res = s.frame->res_parser.get();
+      auto& res = s.res_parser.get();
 
       auto const is_close   = !res.keep_alive();
       auto const is_chunked = res.chunked();
 
-      ::foxy::detail::export_connect_fields<typename frame_type::fields_type>(
-        res, s.frame->res_fields);
+      ::foxy::detail::export_connect_fields<fields_type>(res, s.res_fields);
 
-      if (s.frame->close_tunnel || is_close) { res.keep_alive(false); }
+      if (s.close_tunnel || is_close) { res.keep_alive(false); }
       if (is_chunked) { res.chunked(true); }
 
-      s.server.async_write_header(s.frame->res_sr, std::move(*this));
+      s.server.async_write_header(s.res_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
 
     do {
-      if (!s.frame->res_parser.is_done()) {
-        s.frame->res_parser.get().body().data = s.buffer.data();
-        s.frame->res_parser.get().body().size = s.buffer.size();
+      if (!s.res_parser.is_done()) {
+        s.res_parser.get().body().data = s.buffer.data();
+        s.res_parser.get().body().size = s.buffer.size();
 
         BOOST_ASIO_CORO_YIELD
-        s.client.async_read(s.frame->res_parser, std::move(*this));
+        s.client.async_read(s.res_parser, std::move(*this));
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 
-        s.frame->res_parser.get().body().size =
-          s.buffer.size() - s.frame->res_parser.get().body().size;
-        s.frame->res_parser.get().body().data = s.buffer.data();
-        s.frame->res_parser.get().body().more = !s.frame->res_parser.is_done();
+        s.res_parser.get().body().size =
+          s.buffer.size() - s.res_parser.get().body().size;
+        s.res_parser.get().body().data = s.buffer.data();
+        s.res_parser.get().body().more = !s.res_parser.is_done();
 
       } else {
-        s.frame->res_parser.get().body().data = nullptr;
-        s.frame->res_parser.get().body().size = 0;
+        s.res_parser.get().body().data = nullptr;
+        s.res_parser.get().body().size = 0;
       }
 
       BOOST_ASIO_CORO_YIELD
-      s.server.async_write(s.frame->res_sr, std::move(*this));
+      s.server.async_write(s.res_sr, std::move(*this));
       if (ec == http::error::need_buffer) { ec = {}; }
       if (ec) { goto upcall; }
-    } while (!s.frame->res_parser.is_done() && !s.frame->res_sr.is_done());
+    } while (!s.res_parser.is_done() && !s.res_sr.is_done());
 
     {
       auto work = std::move(s.work);
