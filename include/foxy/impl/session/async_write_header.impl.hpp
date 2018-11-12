@@ -4,7 +4,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-// Official repository: https://github.com/LeonineKing1199/f3
+// Official repository: https://github.com/LeonineKing1199/foxy
 //
 
 #ifndef FOXY_IMPL_SESSION_ASYNC_WRITE_HEADER_IMPL_HPP_

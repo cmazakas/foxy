@@ -4,7 +4,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-// Official repository: https://github.com/LeonineKing1199/f3
+// Official repository: https://github.com/LeonineKing1199/foxy
 //
 
 #include <foxy/client_session.hpp>
@@ -37,7 +37,7 @@ TEST_CASE("Our client session class")
     auto valid_request = false;
 
     session.async_connect(
-      "www.google.com", "http",
+      "www.google.com", "80",
       [&valid_request, &session, sh = std::move(session_handle)]
       (error_code ec, tcp::endpoint) mutable -> void
       {

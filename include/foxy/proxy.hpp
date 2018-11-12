@@ -4,13 +4,17 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-// Official repository: https://github.com/LeonineKing1199/f3
+// Official repository: https://github.com/LeonineKing1199/foxy
 //
 
 #ifndef FOXY_PROXY_HPP_
 #define FOXY_PROXY_HPP_
 
 #include <foxy/multi_stream.hpp>
+
+#include <boost/beast/http/serializer.hpp>
+#include <boost/beast/http/buffer_body.hpp>
+#include <boost/beast/http/error.hpp>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -19,6 +23,7 @@
 #include <boost/system/error_code.hpp>
 
 #include <memory>
+#include <array>
 
 namespace foxy
 {
