@@ -199,12 +199,13 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     {
       auto& res = s.res_parser.get();
 
-      auto const is_close   = !res.keep_alive();
+      s.close_tunnel = s.close_tunnel || !res.keep_alive();
+
       auto const is_chunked = res.chunked();
 
       ::foxy::detail::export_connect_fields<fields_type>(res, s.res_fields);
 
-      if (s.close_tunnel || is_close) { res.keep_alive(false); }
+      if (s.close_tunnel) { res.keep_alive(false); }
       if (is_chunked) { res.chunked(true); }
 
       s.server.async_write_header(s.res_sr, std::move(*this));
@@ -238,8 +239,9 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     } while (!s.res_parser.is_done() && !s.res_sr.is_done());
 
     {
-      auto work = std::move(s.work);
-      return p_.invoke(boost::system::error_code(), bytes_transferred);
+      auto       work         = std::move(s.work);
+      auto const close_tunnel = s.close_tunnel;
+      return p_.invoke(boost::system::error_code(), close_tunnel);
     }
 
   upcall:
@@ -248,7 +250,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
       boost::asio::post(bind_handler(std::move(*this), ec, 0));
     }
     auto work = std::move(s.work);
-    p_.invoke(ec, 0);
+    p_.invoke(ec, false);
   }
 }
 
@@ -258,15 +260,14 @@ async_relay(::foxy::basic_session<Stream>& server,
             ::foxy::basic_session<Stream>& client,
             RelayHandler&&                 handler)
   -> BOOST_ASIO_INITFN_RESULT_TYPE(RelayHandler,
-                                   void(boost::system::error_code, std::size_t))
+                                   void(boost::system::error_code, bool))
 {
   boost::asio::async_completion<RelayHandler,
-                                void(boost::system::error_code, std::size_t)>
+                                void(boost::system::error_code, bool)>
     init(handler);
 
-  relay_op<Stream,
-           BOOST_ASIO_HANDLER_TYPE(
-             RelayHandler, void(boost::system::error_code, std::size_t))>(
+  relay_op<Stream, BOOST_ASIO_HANDLER_TYPE(
+                     RelayHandler, void(boost::system::error_code, bool))>(
     server, client, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();

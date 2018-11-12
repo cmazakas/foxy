@@ -123,7 +123,7 @@ struct async_connect_op
   struct on_tunnel_t
   {
   };
-  struct on_relay_t
+  struct on_close_read_t
   {
   };
 
@@ -135,7 +135,12 @@ struct async_connect_op
   void
   operator()(on_tunnel_t,
              boost::system::error_code ec,
-             std::size_t               bytes_transferred);
+             bool const                should_close);
+
+  void
+  operator()(on_close_read_t,
+             boost::system::error_code ec,
+             std::size_t const         bytes_transferred);
 
   void
   operator()(boost::system::error_code ec, std::size_t bytes_transferred);
@@ -357,19 +362,70 @@ async_connect_op::operator()(boost::system::error_code ec,
   }
 
   if (!s.connect_coro.is_complete() || ec || !should_tunnel) { return; }
-  (*this)(on_tunnel_t{}, {}, 0);
+  (*this)(on_tunnel_t{}, {}, false);
 }
 
 void
-async_connect_op::operator()(on_tunnel_t,
+async_connect_op::operator()(on_close_read_t,
                              boost::system::error_code ec,
-                             std::size_t               bytes_transferred)
+                             std::size_t const         bytes_transferred)
+{
+  (*this)(on_tunnel_t{}, ec, true);
+}
+
+void
+async_connect_op::
+operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
 {
   using namespace std::placeholders;
   namespace beast = boost::beast;
 
   auto& s = *p_;
-  BOOST_ASIO_CORO_REENTER(s.tunnel_coro) {}
+  BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
+  {
+    while (!should_close && !ec) {
+      BOOST_ASIO_CORO_YIELD
+      ::foxy::detail::async_relay(
+        s.session, s.client,
+        beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, _2));
+    }
+
+    // if we close one connection, we close the other as well
+    //
+    s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+
+    if (s.parser) { s.parser = boost::none; }
+    s.parser.emplace();
+
+    BOOST_ASIO_CORO_YIELD
+    s.session.async_read(
+      *s.parser,
+      beast::bind_handler(std::move(*this), on_close_read_t{}, _1, _2));
+
+    if (ec && ec != http::error::end_of_stream) {
+      foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
+    }
+
+    s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+    s.session.stream.plain().close(ec);
+
+    s.client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+
+    if (s.parser) { s.parser = boost::none; }
+    s.parser.emplace();
+
+    BOOST_ASIO_CORO_YIELD
+    s.client.async_read(
+      *s.parser,
+      beast::bind_handler(std::move(*this), on_close_read_t{}, _1, _2));
+
+    if (ec && ec != http::error::end_of_stream) {
+      foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
+    }
+
+    s.client.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+    s.client.stream.plain().close(ec);
+  }
 }
 
 } // namespace
