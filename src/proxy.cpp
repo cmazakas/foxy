@@ -1,4 +1,4 @@
-// // github.com/LeonineKing1199/foxy
+//
 // Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
 // com)
 //
@@ -30,7 +30,11 @@
 
 using boost::optional;
 using boost::asio::ip::tcp;
-namespace http = boost::beast::http;
+
+namespace http  = boost::beast::http;
+namespace beast = boost::beast;
+
+using namespace std::placeholders;
 
 foxy::proxy::proxy(boost::asio::io_context& io,
                    endpoint_type const&     endpoint,
@@ -151,17 +155,24 @@ struct async_connect_op
 } // namespace
 
 auto
-foxy::proxy::async_accept(boost::system::error_code ec) -> void
+foxy::proxy::async_accept() -> void
 {
-  using namespace std::placeholders;
+  if (!acceptor_.is_open()) {
+    std::cout << "foxy::proxy cannot accept on a closed ip::tcp::acceptor\n";
+    return;
+  }
+  loop({});
+}
 
+auto
+foxy::proxy::loop(boost::system::error_code ec) -> void
+{
   BOOST_ASIO_CORO_REENTER(*this)
   {
     for (;;) {
       BOOST_ASIO_CORO_YIELD
-      acceptor_.async_accept(
-        stream_.plain(),
-        std::bind(&proxy::async_accept, shared_from_this(), _1));
+      acceptor_.async_accept(stream_.plain(),
+                             std::bind(&proxy::loop, shared_from_this(), _1));
 
       if (ec == boost::asio::error::operation_aborted) { break; }
 
@@ -208,9 +219,6 @@ void
 async_connect_op::operator()(boost::system::error_code ec,
                              std::size_t               bytes_transferred)
 {
-  using namespace std::placeholders;
-  namespace beast = boost::beast;
-
   auto should_tunnel = false;
 
   auto& s = *p_;
@@ -377,9 +385,6 @@ void
 async_connect_op::
 operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
 {
-  using namespace std::placeholders;
-  namespace beast = boost::beast;
-
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
   {

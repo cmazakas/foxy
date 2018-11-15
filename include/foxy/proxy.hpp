@@ -1,5 +1,6 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
+// com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -27,10 +28,8 @@
 
 namespace foxy
 {
-
-struct proxy
-  : boost::asio::coroutine
-  , public std::enable_shared_from_this<proxy>
+struct proxy : boost::asio::coroutine,
+               public std::enable_shared_from_this<proxy>
 {
 public:
   using acceptor_type = boost::asio::ip::tcp::acceptor;
@@ -42,22 +41,28 @@ private:
   stream_type   stream_;
   acceptor_type acceptor_;
 
+  auto
+  loop(boost::system::error_code) -> void;
+
 public:
   proxy()             = delete;
   proxy(proxy const&) = delete;
   proxy(proxy&&)      = default;
 
-  explicit proxy(
-    boost::asio::io_context& io,
-    endpoint_type const&     endpoint,
-    bool                     reuse_addr = false);
+  explicit proxy(boost::asio::io_context& io,
+                 endpoint_type const&     endpoint,
+                 bool                     reuse_addr = false);
 
-  auto get_executor() -> executor_type;
+  auto
+  get_executor() -> executor_type;
 
-  auto async_accept(boost::system::error_code ec = {}) -> void;
-  auto cancel(boost::system::error_code& ec) -> void;
+  auto
+  async_accept() -> void;
+
+  auto
+  cancel(boost::system::error_code& ec) -> void;
 };
 
-} // foxy
+} // namespace foxy
 
 #endif // FOXY_PROXY_HPP_
