@@ -11,6 +11,7 @@
 #ifndef FOXY_PROXY_HPP_
 #define FOXY_PROXY_HPP_
 
+#include <foxy/session.hpp>
 #include <foxy/multi_stream.hpp>
 
 #include <boost/beast/http/serializer.hpp>
@@ -41,8 +42,9 @@ public:
   using executor_type = stream_type::executor_type;
 
 private:
-  stream_type   stream_;
-  acceptor_type acceptor_;
+  stream_type          stream_;
+  acceptor_type        acceptor_;
+  ::foxy::session_opts client_opts_;
 
   boost::asio::coroutine accept_coro_;
 
@@ -55,7 +57,8 @@ public:
 
   proxy(boost::asio::io_context& io,
         endpoint_type const&     endpoint,
-        bool                     reuse_addr = false);
+        bool                     reuse_addr  = false,
+        session_opts             client_opts = {});
 
   auto
   get_executor() -> executor_type;

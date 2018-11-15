@@ -38,9 +38,11 @@ using namespace std::placeholders;
 
 foxy::proxy::proxy(boost::asio::io_context& io,
                    endpoint_type const&     endpoint,
-                   bool                     reuse_addr)
+                   bool                     reuse_addr,
+                   foxy::session_opts       client_opts)
   : stream_(io)
   , acceptor_(io, endpoint, reuse_addr)
+  , client_opts_(std::move(client_opts))
 {
 }
 
@@ -105,9 +107,9 @@ struct async_connect_op
     boost::asio::coroutine connect_coro;
     boost::asio::coroutine tunnel_coro;
 
-    state(foxy::multi_stream stream)
+    state(foxy::multi_stream stream, foxy::session_opts const& client_opts)
       : session(std::move(stream))
-      , client(session.get_executor().context())
+      , client(session.get_executor().context(), client_opts)
       , buf{0}
       , request_buf_parser(boost::in_place_init)
       , request_buf_sr(request_buf_parser->get())
@@ -119,7 +121,8 @@ struct async_connect_op
 
   std::unique_ptr<state> p_;
 
-  async_connect_op(foxy::multi_stream stream);
+  async_connect_op(foxy::multi_stream        stream,
+                   foxy::session_opts const& client_opts);
 
   struct on_connect_t
   {
@@ -181,15 +184,15 @@ foxy::proxy::loop(boost::system::error_code ec) -> void
         continue;
       }
 
-      async_connect_op(std::move(stream_))({}, 0);
+      async_connect_op(std::move(stream_), client_opts_)({}, 0);
     }
   }
 }
 
 namespace
 {
-async_connect_op::async_connect_op(foxy::multi_stream stream)
-  : p_(std::make_unique<state>(std::move(stream)))
+async_connect_op::async_connect_op(foxy::multi_stream stream, foxy::session_opts const& client_opts)
+  : p_(std::make_unique<state>(std::move(stream), client_opts))
 {
 }
 
@@ -200,7 +203,7 @@ async_connect_op::write_error(boost::beast::http::status const status,
   auto& s = *p_;
 
   s.err_response.result(status);
-
+  s.err_response.version(11);
   s.err_response.body() = std::move(what);
   s.err_response.prepare_payload();
 
@@ -414,21 +417,7 @@ operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
     s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.plain().close(ec);
 
-    s.client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
-
-    if (s.parser) { s.parser = boost::none; }
-    s.parser.emplace();
-
-    BOOST_ASIO_CORO_YIELD
-    s.client.async_read(
-      *s.parser,
-      beast::bind_handler(std::move(*this), on_close_read_t{}, _1, _2));
-
-    if (ec && ec != http::error::end_of_stream) {
-      foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
-    }
-
-    s.client.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+    s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
     s.client.stream.plain().close(ec);
   }
 }
