@@ -167,7 +167,7 @@ foxy::proxy::async_accept() -> void
 auto
 foxy::proxy::loop(boost::system::error_code ec) -> void
 {
-  BOOST_ASIO_CORO_REENTER(*this)
+  BOOST_ASIO_CORO_REENTER(accept_coro_)
   {
     for (;;) {
       BOOST_ASIO_CORO_YIELD

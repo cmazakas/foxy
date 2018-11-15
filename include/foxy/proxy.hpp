@@ -28,8 +28,11 @@
 
 namespace foxy
 {
-struct proxy : boost::asio::coroutine,
-               public std::enable_shared_from_this<proxy>
+// proxy is a simple TLS forward proxy
+// It's intended to forward localhost traffic and then relay it for the client,
+// performing any encryption along the way
+//
+struct proxy : public std::enable_shared_from_this<proxy>
 {
 public:
   using acceptor_type = boost::asio::ip::tcp::acceptor;
@@ -41,17 +44,18 @@ private:
   stream_type   stream_;
   acceptor_type acceptor_;
 
-  auto
-  loop(boost::system::error_code) -> void;
+  boost::asio::coroutine accept_coro_;
+
+  auto loop(boost::system::error_code) -> void;
 
 public:
   proxy()             = delete;
   proxy(proxy const&) = delete;
   proxy(proxy&&)      = default;
 
-  explicit proxy(boost::asio::io_context& io,
-                 endpoint_type const&     endpoint,
-                 bool                     reuse_addr = false);
+  proxy(boost::asio::io_context& io,
+        endpoint_type const&     endpoint,
+        bool                     reuse_addr = false);
 
   auto
   get_executor() -> executor_type;
