@@ -1,5 +1,6 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
+// com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -27,11 +28,9 @@
 
 namespace foxy
 {
-
-template <
-  class Stream,
-  class = std::enable_if_t<boost::beast::is_async_stream<Stream>::value>
->
+template <class Stream,
+          class =
+            std::enable_if_t<boost::beast::is_async_stream<Stream>::value>>
 struct basic_multi_stream
 {
 public:
@@ -53,12 +52,18 @@ public:
   template <class Arg>
   basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx);
 
-  auto plain() & noexcept -> stream_type&;
-  auto ssl()   & noexcept -> ssl_stream_type&;
+  auto
+    plain() &
+    noexcept -> stream_type&;
+  auto
+    ssl() &
+    noexcept -> ssl_stream_type&;
 
-  auto is_ssl() const noexcept -> bool;
+  auto
+  is_ssl() const noexcept -> bool;
 
-  auto get_executor() -> executor_type;
+  auto
+  get_executor() -> executor_type;
 
   // we inline these two method implementations so we don't have to declare
   // the return type
@@ -68,9 +73,9 @@ public:
   async_read_some(MutableBufferSequence const& buffers, CompletionToken&& token)
   {
     return boost::apply_visitor(
-      [&](auto& stream) mutable
-      {
-        return stream.async_read_some(buffers, std::forward<CompletionToken>(token));
+      [&](auto& stream) mutable {
+        return stream.async_read_some(buffers,
+                                      std::forward<CompletionToken>(token));
       },
       stream_);
   }
@@ -80,9 +85,9 @@ public:
   async_write_some(ConstBufferSequence const& buffers, CompletionToken&& token)
   {
     return boost::apply_visitor(
-      [&](auto& stream) mutable
-      {
-        return stream.async_write_some(buffers, std::forward<CompletionToken>(token));
+      [&](auto& stream) mutable {
+        return stream.async_write_some(buffers,
+                                       std::forward<CompletionToken>(token));
       },
       stream_);
   }
@@ -93,61 +98,54 @@ public:
 
 template <class Stream, class X>
 template <class Arg>
-basic_multi_stream<Stream, X>::
-basic_multi_stream(Arg&& arg)
+basic_multi_stream<Stream, X>::basic_multi_stream(Arg&& arg)
   : stream_(stream_type(std::forward<Arg>(arg)))
 {
 }
 
 template <class Stream, class X>
 template <class Arg>
-basic_multi_stream<Stream, X>::
-basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx)
+basic_multi_stream<Stream, X>::basic_multi_stream(
+  Arg&&                      arg,
+  boost::asio::ssl::context& ctx)
   : stream_(ssl_stream_type(std::forward<Arg>(arg), ctx))
 {
 }
 
 template <class Stream, class X>
-auto
-basic_multi_stream<Stream, X>::
-plain() & noexcept -> stream_type&
+  auto
+  basic_multi_stream<Stream, X>::plain() &
+  noexcept -> stream_type&
 {
   return boost::get<stream_type>(stream_);
 }
 
 template <class Stream, class X>
-auto
-basic_multi_stream<Stream, X>::
-ssl() & noexcept -> ssl_stream_type&
+  auto
+  basic_multi_stream<Stream, X>::ssl() &
+  noexcept -> ssl_stream_type&
 {
   return boost::get<ssl_stream_type>(stream_);
 }
 
 template <class Stream, class X>
 auto
-basic_multi_stream<Stream, X>::
-is_ssl() const noexcept -> bool
+basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
 {
   return stream_.which() == 1;
 }
 
 template <class Stream, class X>
 auto
-basic_multi_stream<Stream, X>::
-get_executor()
--> boost::asio::io_context::executor_type
+basic_multi_stream<Stream, X>::get_executor()
+  -> boost::asio::io_context::executor_type
 {
   return boost::apply_visitor(
-    [&](auto& stream) mutable
-    {
-      return stream.get_executor();
-    },
-    stream_);
+    [&](auto& stream) mutable { return stream.get_executor(); }, stream_);
 }
 
-extern template struct basic_multi_stream<boost::asio::ip::tcp::socket>;
 using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
 
-} // foxy
+} // namespace foxy
 
 #endif // FOXY_MULTI_STREAM_HPP_
