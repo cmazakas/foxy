@@ -214,12 +214,9 @@ TEST_CASE("Our forward proxy")
 
       client.async_request(request, res_parser, yield);
 
-      std::cout << "writing message to proxy now...\n";
       client.async_request(request2, res_parser2, yield);
 
       auto response = res_parser2.release();
-
-      std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body   = (response.body().size() > 0);
@@ -275,12 +272,9 @@ TEST_CASE("Our forward proxy")
 
       client.async_request(request, res_parser, yield);
 
-      std::cout << "writing message to proxy now over a secure connection...\n";
       client.async_request(request2, res_parser2, yield);
 
       auto response = res_parser2.release();
-
-      std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body   = (response.body().size() > 0);
