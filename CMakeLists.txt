@@ -27,6 +27,7 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
@@ -127,6 +128,7 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/tunnel_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
   )
 
