@@ -19,9 +19,14 @@ namespace uri
 {
 namespace parser
 {
-boost::spirit::x3::rule<class sub_delims> const sub_delims = "sub_delims";
-auto const sub_delims_def = boost::spirit::x3::lit("?");
+namespace x3 = boost::spirit::x3;
+
+x3::rule<class sub_delims> const sub_delims = "sub_delims";
+
+auto const sub_delims_def = x3::lit("?");
+
 BOOST_SPIRIT_DEFINE(sub_delims);
+
 } // namespace parser
 
 auto

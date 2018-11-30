@@ -1,5 +1,4 @@
 #include <foxy/uri.hpp>
-#include <foxy/detail/uri_def.hpp>
 #include <boost/utility/string_view.hpp>
 #include <vector>
 #include <algorithm>
@@ -17,7 +16,9 @@ TEST_CASE("Our URI module...")
 
     auto const matched_all_sub_delims =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
-        return x3::parse(delim.begin(), delim.end(), foxy::uri::sub_delims());
+        auto       begin = delim.begin();
+        auto const end   = delim.end();
+        return x3::parse(begin, end, foxy::uri::sub_delims());
       });
 
     CHECK(matched_all_sub_delims);

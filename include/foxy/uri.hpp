@@ -12,6 +12,7 @@
 #define FOXY_URI_HPP_
 
 #include <boost/spirit/home/x3.hpp>
+#include <boost/utility/string_view.hpp>
 
 namespace foxy
 {
@@ -19,8 +20,14 @@ namespace uri
 {
 namespace parser
 {
-using sub_delims_type = boost::spirit::x3::rule<class sub_delims>;
+namespace x3 = boost::spirit::x3;
+
+using iterator_type = char const*;
+using context_type  = x3::phrase_parse_context<x3::ascii::space_type>::type;
+
+using sub_delims_type = x3::rule<class sub_delims>;
 BOOST_SPIRIT_DECLARE(sub_delims_type);
+
 } // namespace parser
 
 auto
