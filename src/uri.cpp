@@ -8,17 +8,17 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#ifndef FOXY_UTILITY_HPP_
-#define FOXY_UTILITY_HPP_
-
-#include <boost/utility/string_view.hpp>
-#include <utility>
+#include <foxy/detail/uri_def.hpp>
 
 namespace foxy
 {
-auto
-parse_authority_form(boost::string_view const uri)
-  -> std::pair<std::string, std::string>;
+namespace uri
+{
+namespace parser
+{
+using iterator_type = char const*;
+using context_type  = boost::spirit::x3::unused_type;
+BOOST_SPIRIT_INSTANTIATE(sub_delims_type, iterator_type, context_type);
+} // namespace parser
+} // namespace uri
 } // namespace foxy
-
-#endif // FOXY_UTILITY_HPP_
