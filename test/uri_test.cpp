@@ -16,9 +16,10 @@ TEST_CASE("Our URI module...")
 
     auto const matched_all_sub_delims =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
-        auto       begin = delim.begin();
-        auto const end   = delim.end();
-        return x3::parse(begin, end, foxy::uri::sub_delims());
+        auto       begin  = delim.begin();
+        auto const end    = delim.end();
+        auto       unused = x3::unused_type();
+        return x3::parse(begin, end, foxy::uri::sub_delims(), unused);
       });
 
     CHECK(matched_all_sub_delims);

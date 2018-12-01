@@ -23,7 +23,7 @@ namespace parser
 namespace x3 = boost::spirit::x3;
 
 using iterator_type = char const*;
-using context_type  = x3::phrase_parse_context<x3::ascii::space_type>::type;
+using context_type  = x3::unused_type;
 
 using sub_delims_type = x3::rule<class sub_delims>;
 BOOST_SPIRIT_DECLARE(sub_delims_type);
