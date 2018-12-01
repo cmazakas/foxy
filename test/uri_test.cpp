@@ -23,5 +23,14 @@ TEST_CASE("Our URI module...")
       });
 
     CHECK(matched_all_sub_delims);
+
+    auto       view   = boost::string_view("rawr");
+    auto       begin  = view.begin();
+    auto const end    = view.end();
+    auto       unused = x3::unused_type();
+    auto const non_match =
+      !x3::parse(begin, end, foxy::uri::sub_delims(), unused);
+
+    CHECK(non_match);
   }
 }
