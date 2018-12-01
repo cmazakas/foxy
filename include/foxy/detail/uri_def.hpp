@@ -23,7 +23,8 @@ namespace x3 = boost::spirit::x3;
 
 x3::rule<class sub_delims> const sub_delims = "sub_delims";
 
-auto const sub_delims_def = x3::lit("?");
+auto const sub_delims_def =
+  x3::char_set<boost::spirit::char_encoding::ascii>("!$&'()*+,;=");
 
 BOOST_SPIRIT_DEFINE(sub_delims);
 
