@@ -28,10 +28,16 @@ using context_type  = x3::unused_type;
 using sub_delims_type = x3::rule<class sub_delims>;
 BOOST_SPIRIT_DECLARE(sub_delims_type);
 
+using gen_delims_type = x3::rule<class gen_delims>;
+BOOST_SPIRIT_DECLARE(gen_delims_type);
+
 } // namespace parser
 
 auto
 sub_delims() -> parser::sub_delims_type;
+
+auto
+gen_delims() -> parser::gen_delims_type;
 
 } // namespace uri
 } // namespace foxy

@@ -18,6 +18,7 @@ namespace uri
 namespace parser
 {
 BOOST_SPIRIT_INSTANTIATE(sub_delims_type, iterator_type, context_type);
+BOOST_SPIRIT_INSTANTIATE(gen_delims_type, iterator_type, context_type);
 } // namespace parser
 } // namespace uri
 } // namespace foxy

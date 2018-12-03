@@ -28,12 +28,25 @@ auto const sub_delims_def =
 
 BOOST_SPIRIT_DEFINE(sub_delims);
 
+x3::rule<class gen_delims> const gen_delims = "gen_delims";
+
+auto const gen_delims_def =
+  x3::char_set<boost::spirit::char_encoding::ascii>(":/?#[]@");
+
+BOOST_SPIRIT_DEFINE(gen_delims);
+
 } // namespace parser
 
 auto
 sub_delims() -> parser::sub_delims_type
 {
   return parser::sub_delims;
+}
+
+auto
+gen_delims() -> parser::gen_delims_type
+{
+  return parser::gen_delims;
 }
 
 } // namespace uri
