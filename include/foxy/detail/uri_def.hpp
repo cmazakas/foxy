@@ -22,31 +22,49 @@ namespace parser
 namespace x3 = boost::spirit::x3;
 
 x3::rule<class sub_delims> const sub_delims = "sub_delims";
-
-auto const sub_delims_def =
-  x3::char_set<boost::spirit::char_encoding::ascii>("!$&'()*+,;=");
-
+auto const                       sub_delims_def =
+  +x3::char_set<boost::spirit::char_encoding::ascii>("!$&'()*+,;=");
 BOOST_SPIRIT_DEFINE(sub_delims);
 
 x3::rule<class gen_delims> const gen_delims = "gen_delims";
-
-auto const gen_delims_def =
+auto const                       gen_delims_def =
   x3::char_set<boost::spirit::char_encoding::ascii>(":/?#[]@");
-
 BOOST_SPIRIT_DEFINE(gen_delims);
+
+x3::rule<class reserved> const reserved     = "reserved";
+auto const                     reserved_def = sub_delims | gen_delims;
+BOOST_SPIRIT_DEFINE(reserved);
+
+x3::rule<class unreserved> const unreserved = "unreserved";
+auto const                       unreserved_def =
+  x3::alpha | x3::digit |
+  x3::char_set<boost::spirit::char_encoding::ascii>("-._~");
+BOOST_SPIRIT_DEFINE(unreserved);
 
 } // namespace parser
 
-auto
+inline auto
 sub_delims() -> parser::sub_delims_type
 {
   return parser::sub_delims;
 }
 
-auto
+inline auto
 gen_delims() -> parser::gen_delims_type
 {
   return parser::gen_delims;
+}
+
+inline auto
+reserved() -> parser::reserved_type
+{
+  return parser::reserved;
+}
+
+inline auto
+unreserved() -> parser::unreserved_type
+{
+  return parser::unreserved;
 }
 
 } // namespace uri

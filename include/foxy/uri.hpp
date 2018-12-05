@@ -22,14 +22,17 @@ namespace parser
 {
 namespace x3 = boost::spirit::x3;
 
-using iterator_type = char const*;
-using context_type  = x3::unused_type;
-
 using sub_delims_type = x3::rule<class sub_delims>;
 BOOST_SPIRIT_DECLARE(sub_delims_type);
 
 using gen_delims_type = x3::rule<class gen_delims>;
 BOOST_SPIRIT_DECLARE(gen_delims_type);
+
+using reserved_type = x3::rule<class reserved>;
+BOOST_SPIRIT_DECLARE(reserved_type);
+
+using unreserved_type = x3::rule<class unreserved>;
+BOOST_SPIRIT_DECLARE(unreserved_type);
 
 } // namespace parser
 
@@ -39,7 +42,15 @@ sub_delims() -> parser::sub_delims_type;
 auto
 gen_delims() -> parser::gen_delims_type;
 
+auto
+reserved() -> parser::reserved_type;
+
+auto
+unreserved() -> parser::unreserved_type;
+
 } // namespace uri
 } // namespace foxy
+
+#include <foxy/detail/uri_def.hpp>
 
 #endif // FOXY_URI_HPP_
