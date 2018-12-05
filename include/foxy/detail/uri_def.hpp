@@ -41,6 +41,15 @@ auto const                       unreserved_def =
   x3::char_set<boost::spirit::char_encoding::ascii>("-._~");
 BOOST_SPIRIT_DEFINE(unreserved);
 
+x3::rule<class pct_encoded> const pct_encoded = "pct_encoded";
+auto const pct_encoded_def = x3::lit("%") > x3::xdigit > x3::xdigit;
+BOOST_SPIRIT_DEFINE(pct_encoded);
+
+x3::rule<class pchar> const pchar     = "pchar";
+auto const                  pchar_def = unreserved | pct_encoded | sub_delims |
+                       x3::char_set<boost::spirit::char_encoding::ascii>(":@");
+BOOST_SPIRIT_DEFINE(pchar);
+
 } // namespace parser
 
 inline auto
@@ -65,6 +74,18 @@ inline auto
 unreserved() -> parser::unreserved_type
 {
   return parser::unreserved;
+}
+
+inline auto
+pct_encoded() -> parser::pct_encoded_type
+{
+  return parser::pct_encoded;
+}
+
+inline auto
+pchar() -> parser::pchar_type
+{
+  return parser::pchar;
 }
 
 } // namespace uri

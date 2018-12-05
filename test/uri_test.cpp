@@ -94,4 +94,62 @@ TEST_CASE("Our URI module...")
       CHECK(begin == end);
     }
   }
+
+  SECTION("should support percent encoded parsing")
+  {
+    auto       view  = boost::string_view("%5B");
+    auto       begin = view.begin();
+    auto const end   = view.end();
+
+    auto const match = x3::parse(begin, end, foxy::uri::pct_encoded());
+
+    CHECK(match);
+    CHECK(begin == end);
+  }
+
+  SECTION("should support the pchar")
+  {
+    // unreserved + ":@" portion of pchar
+    //
+    {
+      auto       view  = boost::string_view("~~:~~Le@on@ine.King1199__--:-");
+      auto       begin = view.begin();
+      auto const end   = view.end();
+
+      auto const match = x3::parse(begin, end, +foxy::uri::pchar());
+
+      CHECK(match);
+      CHECK(begin == end);
+    }
+
+    // pct_encoded portion of pchar
+    //
+    {
+      auto       view  = boost::string_view("%5B");
+      auto       begin = view.begin();
+      auto const end   = view.end();
+
+      auto const match = x3::parse(begin, end, foxy::uri::pchar());
+
+      CHECK(match);
+      CHECK(begin == end);
+    }
+
+    // sub_delims portion of pchar
+    //
+    {
+      auto const delims = std::vector<boost::string_view>{
+        "!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="};
+
+      auto const matched_all_sub_delims =
+        std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
+          auto       begin = delim.begin();
+          auto const end   = delim.end();
+
+          return x3::parse(begin, end, foxy::uri::sub_delims());
+        });
+
+      CHECK(matched_all_sub_delims);
+    }
+  }
 }

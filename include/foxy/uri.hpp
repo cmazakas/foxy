@@ -34,6 +34,12 @@ BOOST_SPIRIT_DECLARE(reserved_type);
 using unreserved_type = x3::rule<class unreserved>;
 BOOST_SPIRIT_DECLARE(unreserved_type);
 
+using pct_encoded_type = x3::rule<class pct_encoded>;
+BOOST_SPIRIT_DECLARE(pct_encoded_type);
+
+using pchar_type = x3::rule<class pchar>;
+BOOST_SPIRIT_DECLARE(pchar_type);
+
 } // namespace parser
 
 auto
@@ -47,6 +53,12 @@ reserved() -> parser::reserved_type;
 
 auto
 unreserved() -> parser::unreserved_type;
+
+auto
+pct_encoded() -> parser::pct_encoded_type;
+
+auto
+pchar() -> parser::pchar_type;
 
 } // namespace uri
 } // namespace foxy
