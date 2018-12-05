@@ -16,20 +16,19 @@ TEST_CASE("Our URI module...")
 
     auto const matched_all_sub_delims =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
-        auto       begin  = delim.begin();
-        auto const end    = delim.end();
-        auto       unused = x3::unused_type();
-        return x3::parse(begin, end, foxy::uri::sub_delims(), unused);
+        auto       begin = delim.begin();
+        auto const end   = delim.end();
+
+        return x3::parse(begin, end, foxy::uri::sub_delims());
       });
 
     CHECK(matched_all_sub_delims);
 
-    auto       view   = boost::string_view("rawr");
-    auto       begin  = view.begin();
-    auto const end    = view.end();
-    auto       unused = x3::unused_type();
-    auto const non_match =
-      !x3::parse(begin, end, foxy::uri::sub_delims(), unused);
+    auto       view  = boost::string_view("rawr");
+    auto       begin = view.begin();
+    auto const end   = view.end();
+
+    auto const non_match = !x3::parse(begin, end, foxy::uri::sub_delims());
 
     CHECK(non_match);
   }
@@ -41,20 +40,19 @@ TEST_CASE("Our URI module...")
 
     auto const matched_all_gen_delims =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
-        auto       begin  = delim.begin();
-        auto const end    = delim.end();
-        auto       unused = x3::unused_type();
-        return x3::parse(begin, end, foxy::uri::gen_delims(), unused);
+        auto       begin = delim.begin();
+        auto const end   = delim.end();
+
+        return x3::parse(begin, end, foxy::uri::gen_delims());
       });
 
     CHECK(matched_all_gen_delims);
 
-    auto       view   = boost::string_view("rawr");
-    auto       begin  = view.begin();
-    auto const end    = view.end();
-    auto       unused = x3::unused_type();
-    auto const non_match =
-      !x3::parse(begin, end, foxy::uri::gen_delims(), unused);
+    auto       view  = boost::string_view("rawr");
+    auto       begin = view.begin();
+    auto const end   = view.end();
+
+    auto const non_match = !x3::parse(begin, end, foxy::uri::gen_delims());
 
     CHECK(non_match);
   }
@@ -67,32 +65,30 @@ TEST_CASE("Our URI module...")
 
     auto const matched_all_reserved =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
-        auto       begin  = delim.begin();
-        auto const end    = delim.end();
-        auto       unused = x3::unused_type();
-        return x3::parse(begin, end, foxy::uri::reserved(), unused);
+        auto       begin = delim.begin();
+        auto const end   = delim.end();
+
+        return x3::parse(begin, end, foxy::uri::reserved());
       });
 
     CHECK(matched_all_reserved);
 
     {
-      auto       view   = boost::string_view("rawr");
-      auto       begin  = view.begin();
-      auto const end    = view.end();
-      auto       unused = x3::unused_type();
-      auto const non_match =
-        !x3::parse(begin, end, foxy::uri::reserved(), unused);
+      auto       view  = boost::string_view("rawr");
+      auto       begin = view.begin();
+      auto const end   = view.end();
+
+      auto const non_match = !x3::parse(begin, end, foxy::uri::reserved());
 
       CHECK(non_match);
     }
 
     {
-      auto       view   = boost::string_view("~~~~Leonine.King1199__---");
-      auto       begin  = view.begin();
-      auto const end    = view.end();
-      auto       unused = x3::unused_type();
-      auto const match =
-        x3::parse(begin, end, +foxy::uri::unreserved(), unused);
+      auto       view  = boost::string_view("~~~~Leonine.King1199__---");
+      auto       begin = view.begin();
+      auto const end   = view.end();
+
+      auto const match = x3::parse(begin, end, +foxy::uri::unreserved());
 
       CHECK(match);
       CHECK(begin == end);
