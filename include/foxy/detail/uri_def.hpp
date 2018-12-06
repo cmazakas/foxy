@@ -23,7 +23,7 @@ namespace x3 = boost::spirit::x3;
 
 x3::rule<class sub_delims> const sub_delims = "sub_delims";
 auto const                       sub_delims_def =
-  +x3::char_set<boost::spirit::char_encoding::ascii>("!$&'()*+,;=");
+  x3::char_set<boost::spirit::char_encoding::ascii>("!$&'()*+,;=");
 BOOST_SPIRIT_DEFINE(sub_delims);
 
 x3::rule<class gen_delims> const gen_delims = "gen_delims";
@@ -42,13 +42,35 @@ auto const                       unreserved_def =
 BOOST_SPIRIT_DEFINE(unreserved);
 
 x3::rule<class pct_encoded> const pct_encoded = "pct_encoded";
-auto const pct_encoded_def = x3::lit("%") > x3::xdigit > x3::xdigit;
+auto const pct_encoded_def = x3::lit("%") >> x3::xdigit >> x3::xdigit;
 BOOST_SPIRIT_DEFINE(pct_encoded);
 
 x3::rule<class pchar> const pchar     = "pchar";
 auto const                  pchar_def = unreserved | pct_encoded | sub_delims |
                        x3::char_set<boost::spirit::char_encoding::ascii>(":@");
 BOOST_SPIRIT_DEFINE(pchar);
+
+x3::rule<class query> const query = "query";
+auto const                  query_def =
+  *pchar | x3::char_set<boost::spirit::char_encoding::ascii>("/?");
+BOOST_SPIRIT_DEFINE(query);
+
+x3::rule<class fragment> const fragment = "fragment";
+auto const                     fragment_def =
+  *pchar | x3::char_set<boost::spirit::char_encoding::ascii>("/?");
+BOOST_SPIRIT_DEFINE(fragment);
+
+x3::rule<class segment> const segment     = "segment";
+auto const                    segment_def = *pchar;
+BOOST_SPIRIT_DEFINE(segment);
+
+x3::rule<class segment_nz> const segment_nz     = "segment_nz";
+auto const                       segment_nz_def = +pchar;
+BOOST_SPIRIT_DEFINE(segment_nz);
+
+x3::rule<class segment_nz_nc> const segment_nz_nc = "segment_nz_nc";
+auto const segment_nz_nc_def = +(unreserved | pct_encoded | sub_delims | "@");
+BOOST_SPIRIT_DEFINE(segment_nz_nc);
 
 } // namespace parser
 
@@ -86,6 +108,36 @@ inline auto
 pchar() -> parser::pchar_type
 {
   return parser::pchar;
+}
+
+inline auto
+query() -> parser::query_type
+{
+  return parser::query;
+}
+
+inline auto
+fragment() -> parser::fragment_type
+{
+  return parser::fragment;
+}
+
+inline auto
+segment() -> parser::segment_type
+{
+  return parser::segment;
+}
+
+inline auto
+segment_nz() -> parser::segment_nz_type
+{
+  return parser::segment_nz;
+}
+
+inline auto
+segment_nz_nc() -> parser::segment_nz_nc_type
+{
+  return parser::segment_nz_nc;
 }
 
 } // namespace uri

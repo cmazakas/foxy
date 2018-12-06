@@ -146,10 +146,26 @@ TEST_CASE("Our URI module...")
           auto       begin = delim.begin();
           auto const end   = delim.end();
 
-          return x3::parse(begin, end, foxy::uri::sub_delims());
+          return x3::parse(begin, end, foxy::uri::pchar());
         });
 
       CHECK(matched_all_sub_delims);
+    }
+  }
+
+  SECTION("should support query/fragment parsing")
+  {
+    {
+      auto       view  = boost::string_view("/lol?asdfasdfasdf");
+      auto       begin = view.begin();
+      auto const end   = view.end();
+
+      auto const match1 = x3::parse(begin, end, foxy::uri::query());
+
+      begin             = view.begin();
+      auto const match2 = x3::parse(begin, end, foxy::uri::fragment());
+
+      CHECK((match1 && match2));
     }
   }
 }

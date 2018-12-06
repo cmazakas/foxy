@@ -40,6 +40,21 @@ BOOST_SPIRIT_DECLARE(pct_encoded_type);
 using pchar_type = x3::rule<class pchar>;
 BOOST_SPIRIT_DECLARE(pchar_type);
 
+using query_type = x3::rule<class query>;
+BOOST_SPIRIT_DECLARE(query_type);
+
+using fragment_type = x3::rule<class fragment>;
+BOOST_SPIRIT_DECLARE(fragment_type);
+
+using segment_type = x3::rule<class segment>;
+BOOST_SPIRIT_DECLARE(segment_type);
+
+using segment_nz_type = x3::rule<class segment_nz>;
+BOOST_SPIRIT_DECLARE(segment_nz_type);
+
+using segment_nz_nc_type = x3::rule<class segment_nz_nc>;
+BOOST_SPIRIT_DECLARE(segment_nz_nc_type);
+
 } // namespace parser
 
 auto
@@ -59,6 +74,21 @@ pct_encoded() -> parser::pct_encoded_type;
 
 auto
 pchar() -> parser::pchar_type;
+
+auto
+query() -> parser::query_type;
+
+auto
+fragment() -> parser::fragment_type;
+
+auto
+segment() -> parser::segment_type;
+
+auto
+segment_nz() -> parser::segment_nz_type;
+
+auto
+segment_nz_nc() -> parser::segment_nz_nc_type;
 
 } // namespace uri
 } // namespace foxy
