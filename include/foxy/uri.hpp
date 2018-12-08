@@ -55,6 +55,24 @@ BOOST_SPIRIT_DECLARE(segment_nz_type);
 using segment_nz_nc_type = x3::rule<class segment_nz_nc>;
 BOOST_SPIRIT_DECLARE(segment_nz_nc_type);
 
+using path_empty_type = x3::rule<class path_empty>;
+BOOST_SPIRIT_DECLARE(path_empty_type);
+
+using path_rootless_type = x3::rule<class path_rootless>;
+BOOST_SPIRIT_DECLARE(path_rootless_type);
+
+using path_noscheme_type = x3::rule<class path_noscheme>;
+BOOST_SPIRIT_DECLARE(path_noscheme_type);
+
+using path_absolute_type = x3::rule<class path_absolute>;
+BOOST_SPIRIT_DECLARE(path_absolute_type);
+
+using path_abempty_type = x3::rule<class path_abempty>;
+BOOST_SPIRIT_DECLARE(path_abempty_type);
+
+using path_type = x3::rule<class path>;
+BOOST_SPIRIT_DECLARE(path_type);
+
 } // namespace parser
 
 auto
@@ -89,6 +107,24 @@ segment_nz() -> parser::segment_nz_type;
 
 auto
 segment_nz_nc() -> parser::segment_nz_nc_type;
+
+auto
+path_empty() -> parser::path_empty_type;
+
+auto
+path_rootless() -> parser::path_rootless_type;
+
+auto
+path_noscheme() -> parser::path_noscheme_type;
+
+auto
+path_absolute() -> parser::path_absolute_type;
+
+auto
+path_abempty() -> parser::path_abempty_type;
+
+auto
+path() -> parser::path_type;
 
 } // namespace uri
 } // namespace foxy

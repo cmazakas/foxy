@@ -72,6 +72,35 @@ x3::rule<class segment_nz_nc> const segment_nz_nc = "segment_nz_nc";
 auto const segment_nz_nc_def = +(unreserved | pct_encoded | sub_delims | "@");
 BOOST_SPIRIT_DEFINE(segment_nz_nc);
 
+x3::rule<class path_empty> const path_empty     = "path_empty";
+auto const                       path_empty_def = x3::eps;
+BOOST_SPIRIT_DEFINE(path_empty);
+
+x3::rule<class path_rootless> const path_rootless = "path_rootless";
+auto const path_rootless_def = segment_nz >> *("/" >> segment);
+BOOST_SPIRIT_DEFINE(path_rootless);
+
+x3::rule<class path_noscheme> const path_noscheme = "path_noscheme";
+auto const path_noscheme_def = segment_nz_nc >> *("/" >> segment);
+BOOST_SPIRIT_DEFINE(path_noscheme);
+
+x3::rule<class path_absolute> const path_absolute     = "path_absolute";
+auto const                          path_absolute_def = x3::lit("/") >>
+                               -(segment_nz >> *("/" >> segment));
+BOOST_SPIRIT_DEFINE(path_absolute);
+
+x3::rule<class path_abempty> const path_abempty = "path_abempty";
+auto const path_abempty_def                     = *(x3::lit("/") >> segment);
+BOOST_SPIRIT_DEFINE(path_abempty);
+
+x3::rule<class path> const path = "path";
+auto const path_def             = path_abempty // begins with "/" or is empty
+                      | path_absolute          // begins with "/" but not "//"
+                      | path_noscheme // begins with a non-colon segment
+                      | path_rootless // begins with a segment
+                      | path_empty;   // zero characters
+BOOST_SPIRIT_DEFINE(path);
+
 } // namespace parser
 
 inline auto
@@ -138,6 +167,42 @@ inline auto
 segment_nz_nc() -> parser::segment_nz_nc_type
 {
   return parser::segment_nz_nc;
+}
+
+inline auto
+path_empty() -> parser::path_empty_type
+{
+  return parser::path_empty;
+}
+
+inline auto
+path_rootless() -> parser::path_rootless_type
+{
+  return parser::path_rootless;
+}
+
+inline auto
+path_noscheme() -> parser::path_noscheme_type
+{
+  return parser::path_noscheme;
+}
+
+inline auto
+path_absolute() -> parser::path_absolute_type
+{
+  return parser::path_absolute;
+}
+
+inline auto
+path_abempty() -> parser::path_abempty_type
+{
+  return parser::path_abempty;
+}
+
+inline auto
+path() -> parser::path_type
+{
+  return parser::path;
 }
 
 } // namespace uri
