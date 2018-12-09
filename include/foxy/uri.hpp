@@ -73,6 +73,12 @@ BOOST_SPIRIT_DECLARE(path_abempty_type);
 using path_type = x3::rule<class path>;
 BOOST_SPIRIT_DECLARE(path_type);
 
+using reg_name_type = x3::rule<class reg_name>;
+BOOST_SPIRIT_DECLARE(reg_name_type);
+
+using dec_octet_type = x3::rule<class dec_octet>;
+BOOST_SPIRIT_DECLARE(dec_octet_type);
+
 } // namespace parser
 
 auto
@@ -125,6 +131,12 @@ path_abempty() -> parser::path_abempty_type;
 
 auto
 path() -> parser::path_type;
+
+auto
+reg_name() -> parser::reg_name_type;
+
+auto
+dec_octet() -> parser::dec_octet_type;
 
 } // namespace uri
 } // namespace foxy

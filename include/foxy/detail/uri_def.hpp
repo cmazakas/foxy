@@ -101,6 +101,20 @@ auto const path_def             = path_abempty // begins with "/" or is empty
                       | path_empty;   // zero characters
 BOOST_SPIRIT_DEFINE(path);
 
+x3::rule<class reg_name> const reg_name = "reg_name";
+auto const reg_name_def = *(unreserved | pct_encoded | sub_delims);
+BOOST_SPIRIT_DEFINE(reg_name);
+
+x3::rule<class dec_octet> const dec_octet = "dec_octet";
+auto const                      dec_octet_def =
+  (x3::lit("25") >> x3::char_set<boost::spirit::char_encoding::ascii>("0-5")) |
+  (x3::lit("2") >> x3::char_set<boost::spirit::char_encoding::ascii>("0-4") >>
+   x3::digit) |
+  (x3::lit("1") >> x3::repeat(2)[x3::digit]) |
+  (x3::char_set<boost::spirit::char_encoding::ascii>("1-9") >> x3::digit) |
+  x3::digit;
+BOOST_SPIRIT_DEFINE(dec_octet);
+
 } // namespace parser
 
 inline auto
@@ -203,6 +217,18 @@ inline auto
 path() -> parser::path_type
 {
   return parser::path;
+}
+
+inline auto
+reg_name() -> parser::reg_name_type
+{
+  return parser::reg_name;
+}
+
+inline auto
+dec_octet() -> parser::dec_octet_type
+{
+  return parser::dec_octet;
 }
 
 } // namespace uri

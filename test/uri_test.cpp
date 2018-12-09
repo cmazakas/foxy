@@ -2,6 +2,7 @@
 #include <boost/utility/string_view.hpp>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -167,5 +168,43 @@ TEST_CASE("Our URI module...")
 
       CHECK((match1 && match2));
     }
+  }
+
+  SECTION("should support decimal octet parsing")
+  {
+    auto const valid_inputs = std::vector<boost::string_view>{
+      "0", "1", "9", "10", "99", "100", "199", "200", "249", "250", "255"};
+
+    auto const all_match = std::all_of(
+      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
+
+        auto const match = x3::parse(begin, end, foxy::uri::dec_octet());
+
+        auto const full_match = match && (begin == end);
+
+        return full_match;
+      });
+
+    CHECK(all_match);
+
+    auto const invalid_inputs = std::vector<boost::string_view>{
+      "lolol", "-1", "256", "010", "01", "267", "1337"};
+
+    auto const none_match =
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
+                  [](auto const view) -> bool {
+                    auto       begin = view.begin();
+                    auto const end   = view.end();
+
+                    auto const match =
+                      x3::parse(begin, end, foxy::uri::dec_octet());
+
+                    if (match) { return begin != end; }
+                    return !match;
+                  });
+
+    CHECK(none_match);
   }
 }
