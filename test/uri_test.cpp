@@ -226,5 +226,23 @@ TEST_CASE("Our URI module...")
       });
 
     CHECK(all_match);
+
+    auto const invalid_inputs = std::vector<boost::string_view>{
+      "127.0.0.01", "255.255.255.255.255", "a.b.c.d", "192.68.334340.2227"};
+
+    auto const none_match =
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
+                  [](auto const view) -> bool {
+                    auto       begin = view.begin();
+                    auto const end   = view.end();
+
+                    auto const match =
+                      x3::parse(begin, end, foxy::uri::ip_v4_address());
+
+                    if (match) { return begin != end; }
+                    return !match;
+                  });
+
+    CHECK(none_match);
   }
 }
