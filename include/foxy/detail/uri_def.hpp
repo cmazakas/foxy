@@ -120,6 +120,46 @@ auto const                          ip_v4_address_def =
   dec_octet >> "." >> dec_octet >> "." >> dec_octet >> "." >> dec_octet;
 BOOST_SPIRIT_DEFINE(ip_v4_address);
 
+x3::rule<class h16> const h16     = "h16";
+auto const                h16_def = x3::repeat(1, 4)[x3::xdigit];
+BOOST_SPIRIT_DEFINE(h16);
+
+x3::rule<class ls32> const ls32     = "ls32";
+auto const                 ls32_def = (h16 >> ":" >> h16) | ip_v4_address;
+BOOST_SPIRIT_DEFINE(ls32);
+
+x3::rule<class ip_v6_address> const ip_v6_address = "ip_v6_address";
+auto const                          ip_v6_address_def =
+  // 6( h16 ":" ) ls32
+  (x3::repeat(6)[h16 >> ":"] >> ls32) |
+
+  // "::" 5( h16 ":" ) ls32
+  (x3::lit("::") >> x3::repeat(5)[h16 >> ":"] >> ls32) |
+
+  //   [               h16 ] "::" 4( h16 ":" ) ls32
+  (-h16 >> "::" >> x3::repeat(4)[h16 >> ":"] >> ls32) |
+
+  // [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
+  (-(x3::repeat(0, 1)[h16 >> ":"] >> h16) >> "::" >>
+   x3::repeat(3)[h16 >> ":"] >> ls32) |
+
+  // [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
+  (-(x3::repeat(0, 2)[h16 >> ":"] >> h16) >> "::" >>
+   x3::repeat(2)[h16 >> ":"] >> ls32) |
+
+  // [ *3( h16 ":" ) h16 ] "::"    h16 ":"   ls32
+  (-(x3::repeat(0, 3)[h16 >> ":"] >> h16) >> "::" >> h16 >> ":" >> ls32) |
+
+  // [ *4( h16 ":" ) h16 ] "::"              ls32
+  (-(x3::repeat(0, 4)[h16 >> ":"] >> h16) >> "::" >> ls32) |
+
+  // [ *5( h16 ":" ) h16 ] "::"              h16
+  (-(x3::repeat(0, 5)[h16 >> ":"] >> h16) >> "::" >> h16) |
+
+  // [ *6( h16 ":" ) h16 ] "::"
+  (-(x3::repeat(0, 6)[h16 >> ":"] >> h16) >> "::");
+BOOST_SPIRIT_DEFINE(ip_v6_address);
+
 } // namespace parser
 
 inline auto
@@ -240,6 +280,24 @@ inline auto
 ip_v4_address() -> parser::ip_v4_address_type
 {
   return parser::ip_v4_address;
+}
+
+inline auto
+h16() -> parser::h16_type
+{
+  return parser::h16;
+}
+
+inline auto
+ls32() -> parser::ls32_type
+{
+  return parser::ls32;
+}
+
+inline auto
+ip_v6_address() -> parser::ip_v6_address_type
+{
+  return parser::ip_v6_address;
 }
 
 } // namespace uri

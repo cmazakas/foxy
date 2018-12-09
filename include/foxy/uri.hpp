@@ -82,6 +82,15 @@ BOOST_SPIRIT_DECLARE(dec_octet_type);
 using ip_v4_address_type = x3::rule<class ip_v4_address>;
 BOOST_SPIRIT_DECLARE(ip_v4_address_type);
 
+using h16_type = x3::rule<class h16>;
+BOOST_SPIRIT_DECLARE(h16_type);
+
+using ls32_type = x3::rule<class ls32>;
+BOOST_SPIRIT_DECLARE(ls32_type);
+
+using ip_v6_address_type = x3::rule<class ip_v6_address>;
+BOOST_SPIRIT_DECLARE(ip_v6_address_type);
+
 } // namespace parser
 
 auto
@@ -143,6 +152,15 @@ dec_octet() -> parser::dec_octet_type;
 
 auto
 ip_v4_address() -> parser::ip_v4_address_type;
+
+auto
+h16() -> parser::h16_type;
+
+auto
+ls32() -> parser::ls32_type;
+
+auto
+ip_v6_address() -> parser::ip_v6_address_type;
 
 } // namespace uri
 } // namespace foxy
