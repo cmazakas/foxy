@@ -228,7 +228,8 @@ TEST_CASE("Our URI module...")
     CHECK(all_match);
 
     auto const invalid_inputs = std::vector<boost::string_view>{
-      "127.0.0.01", "255.255.255.255.255", "a.b.c.d", "192.68.334340.2227"};
+      "127.0.0.01", "255.255.255.255.255", "a.b.c.d", "192.68.334340.2227",
+      "127.0.1"};
 
     auto const none_match =
       std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
