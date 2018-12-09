@@ -115,6 +115,11 @@ auto const                      dec_octet_def =
   x3::digit;
 BOOST_SPIRIT_DEFINE(dec_octet);
 
+x3::rule<class ip_v4_address> const ip_v4_address = "ip_v4_address";
+auto const                          ip_v4_address_def =
+  dec_octet >> "." >> dec_octet >> "." >> dec_octet >> "." >> dec_octet;
+BOOST_SPIRIT_DEFINE(ip_v4_address);
+
 } // namespace parser
 
 inline auto
@@ -229,6 +234,12 @@ inline auto
 dec_octet() -> parser::dec_octet_type
 {
   return parser::dec_octet;
+}
+
+inline auto
+ip_v4_address() -> parser::ip_v4_address_type
+{
+  return parser::ip_v4_address;
 }
 
 } // namespace uri

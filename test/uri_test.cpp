@@ -207,4 +207,24 @@ TEST_CASE("Our URI module...")
 
     CHECK(none_match);
   }
+
+  SECTION("should support IPv4 address parsing")
+  {
+    auto const valid_inputs = std::vector<boost::string_view>{
+      "127.0.0.1", "255.255.255.255", "0.0.0.0", "192.68.0.27"};
+
+    auto const all_match = std::all_of(
+      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
+
+        auto const match = x3::parse(begin, end, foxy::uri::ip_v4_address());
+
+        auto const full_match = match && (begin == end);
+
+        return full_match;
+      });
+
+    CHECK(all_match);
+  }
 }
