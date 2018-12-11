@@ -249,8 +249,20 @@ TEST_CASE("Our URI module...")
 
   SECTION("should support IPv6 address parsing")
   {
-    auto const valid_inputs = std::vector<boost::string_view>{
-      "3ffe:1900:4545:3:200:f8ff:fe21:67cf", "fe80:0:0:0:200:f8ff:fe21:67cf"};
+    auto const valid_inputs =
+      std::vector<boost::string_view>{"3ffe:1900:4545:3:200:f8ff:fe21:67cf",
+                                      "fe80:0:0:0:200:f8ff:fe21:67cf",
+                                      "2001:0db8:0a0b:12f0:0000:0000:0000:0001",
+                                      "2001:db8:3333:4444:5555:6666:7777:8888",
+                                      "2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF",
+                                      "::",
+                                      "2001:db8::",
+                                      "::1234:5678",
+                                      "2001:db8::1234:5678",
+                                      "2001:0db8:0001:0000:0000:0ab9:C0A8:0102",
+                                      "2001:db8:1::ab9:C0A8:102",
+                                      "684D:1111:222:3333:4444:5555:6:77",
+                                      "0:0:0:0:0:0:0:0"};
 
     auto const all_match = std::all_of(
       valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
@@ -259,6 +271,11 @@ TEST_CASE("Our URI module...")
 
         auto const match = x3::parse(begin, end, foxy::uri::ip_v6_address());
         auto const full_match = match && (begin == end);
+
+        if (!full_match) {
+          std::cout << view << " is not a full-match!\n";
+          std::cout << view.substr(0, begin - view.begin()) << " was matched\n";
+        }
 
         return full_match;
       });
