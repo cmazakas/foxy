@@ -91,6 +91,45 @@ BOOST_SPIRIT_DECLARE(ls32_type);
 using ip_v6_address_type = x3::rule<class ip_v6_address>;
 BOOST_SPIRIT_DECLARE(ip_v6_address_type);
 
+using ip_vfuture_type = x3::rule<class ip_vfuture>;
+BOOST_SPIRIT_DECLARE(ip_vfuture_type);
+
+using ip_literal_type = x3::rule<class ip_literal>;
+BOOST_SPIRIT_DECLARE(ip_literal_type);
+
+using port_type = x3::rule<class port>;
+BOOST_SPIRIT_DECLARE(port_type);
+
+using host_type = x3::rule<class host>;
+BOOST_SPIRIT_DECLARE(host_type);
+
+using userinfo_type = x3::rule<class userinfo>;
+BOOST_SPIRIT_DECLARE(userinfo_type);
+
+using authority_type = x3::rule<class authority>;
+BOOST_SPIRIT_DECLARE(authority_type);
+
+using scheme_type = x3::rule<class scheme>;
+BOOST_SPIRIT_DECLARE(scheme_type);
+
+using relative_part_type = x3::rule<class relative_part>;
+BOOST_SPIRIT_DECLARE(relative_part_type);
+
+using relative_ref_type = x3::rule<class relative_ref>;
+BOOST_SPIRIT_DECLARE(relative_ref_type);
+
+using absolute_uri_type = x3::rule<class absolute_uri>;
+BOOST_SPIRIT_DECLARE(absolute_uri_type);
+
+using uri_reference_type = x3::rule<class uri_reference>;
+BOOST_SPIRIT_DECLARE(uri_reference_type);
+
+using hier_part_type = x3::rule<class hier_part>;
+BOOST_SPIRIT_DECLARE(hier_part_type);
+
+using uri_type = x3::rule<class uri>;
+BOOST_SPIRIT_DECLARE(uri_type);
+
 } // namespace parser
 
 auto
@@ -161,6 +200,45 @@ ls32() -> parser::ls32_type;
 
 auto
 ip_v6_address() -> parser::ip_v6_address_type;
+
+auto
+ip_vfuture() -> parser::ip_vfuture_type;
+
+auto
+ip_literal() -> parser::ip_literal_type;
+
+auto
+port() -> parser::port_type;
+
+auto
+host() -> parser::host_type;
+
+auto
+userinfo() -> parser::userinfo_type;
+
+auto
+authority() -> parser::authority_type;
+
+auto
+scheme() -> parser::scheme_type;
+
+auto
+relative_part() -> parser::relative_part_type;
+
+auto
+relative_ref() -> parser::relative_ref_type;
+
+auto
+absolute_uri() -> parser::absolute_uri_type;
+
+auto
+uri_reference() -> parser::uri_reference_type;
+
+auto
+hier_part() -> parser::hier_part_type;
+
+auto
+uri() -> parser::uri_type;
 
 } // namespace uri
 } // namespace foxy
