@@ -13,6 +13,11 @@
 
 #include <foxy/uri.hpp>
 
+// A (hopefully) conforming implementation of the ABNF found at:
+// https://tools.ietf.org/html/rfc3986#appendix-A
+// written using Boost.Spirit.X3
+//
+
 namespace foxy
 {
 namespace uri
