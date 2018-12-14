@@ -49,6 +49,7 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
@@ -58,6 +59,7 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/uri_parts.cpp
 
   # TODO: someday make this work
   #
@@ -136,6 +138,7 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/tunnel_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_parts_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
   )
