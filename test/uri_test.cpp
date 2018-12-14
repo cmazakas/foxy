@@ -299,4 +299,50 @@ TEST_CASE("Our URI module...")
 
     CHECK(none_match);
   }
+
+  SECTION("should support URI parsing")
+  {
+    auto const valid_inputs =
+      std::vector<boost::string_view>{"https://www.google.com",
+                                      "http://example.com/",
+                                      "http://goo%20%20goo%7C%7C.com/",
+                                      "http://a.com/",
+                                      "http://192.168.0.1/",
+                                      "http://xn--6qqa088eba/"};
+
+    auto const all_match = std::all_of(
+      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
+
+        auto const match      = x3::parse(begin, end, foxy::uri::uri());
+        auto const full_match = match && (begin == end);
+
+        if (!full_match) {
+          std::cout << view << " is not a full-match!\n";
+          std::cout << view.substr(0, begin - view.begin()) << " was matched\n";
+        }
+
+        return full_match;
+      });
+
+    CHECK(all_match);
+
+    auto const invalid_inputs =
+      std::vector<boost::string_view>{"http://192.168.0.1%20hello/"};
+
+    auto const none_match =
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
+                  [](auto const view) -> bool {
+                    auto       begin = view.begin();
+                    auto const end   = view.end();
+
+                    auto const match = x3::parse(begin, end, foxy::uri::uri());
+
+                    if (match) { return begin != end; }
+                    return !match;
+                  });
+
+    CHECK(none_match);
+  }
 }
