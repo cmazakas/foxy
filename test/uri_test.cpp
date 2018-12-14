@@ -302,13 +302,21 @@ TEST_CASE("Our URI module...")
 
   SECTION("should support URI parsing")
   {
-    auto const valid_inputs =
-      std::vector<boost::string_view>{"https://www.google.com",
-                                      "http://example.com/",
-                                      "http://goo%20%20goo%7C%7C.com/",
-                                      "http://a.com/",
-                                      "http://192.168.0.1/",
-                                      "http://xn--6qqa088eba/"};
+    auto const valid_inputs = std::vector<boost::string_view>{
+      "https://www.google.com",
+      "http://example.com/",
+      "http://goo%20%20goo%7C%7C.com/",
+      "http://a.com/",
+      "http://192.168.0.1/",
+      "http://xn--6qqa088eba/",
+      "foobar://www.example.com:80/",
+      "http://example.com/foo%09%C2%91%93",
+      "http://example.com/%7Ffp3%3Eju%3Dduvgw%3Dd",
+      "http://www.example.com/?%02hello%7F%20bye",
+      "http://www.example.com/?q=%26%2355296%3B%26%2355296%3B",
+      "http://www.example.com/?foo=bar",
+      "http://www.example.com/#hello",
+      "http://www.example.com/#%23asdf"};
 
     auto const all_match = std::all_of(
       valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
@@ -328,8 +336,8 @@ TEST_CASE("Our URI module...")
 
     CHECK(all_match);
 
-    auto const invalid_inputs =
-      std::vector<boost::string_view>{"http://192.168.0.1%20hello/"};
+    auto const invalid_inputs = std::vector<boost::string_view>{
+      "http://192.168.0.1%20hello/", "http://[google.com]/"};
 
     auto const none_match =
       std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
