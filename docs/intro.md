@@ -28,8 +28,8 @@ favoring an ever-lower set of HTTP APIs.
 
 Beast and Asio are both low-level but in their case, the pendulum has swung too
 far in the other direction and they're known for being intimidating and
-difficult to use (Asio moreso than Beast).
+difficult to use (mainly just Asio).
 
 Foxy steps in and fills this gap, offering a low-level set of session-based
-primitives that empower users to create their own abstractions on top while also
+primitives that empower users to create their own abstractions while also
 offering much more familiar APIs.
