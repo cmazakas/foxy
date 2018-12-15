@@ -26,32 +26,30 @@ namespace parser
 {
 namespace x3 = boost::spirit::x3;
 
+using char_set = x3::char_set<boost::spirit::char_encoding::ascii>;
+
 // sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
 //
-x3::rule<class sub_delims> const sub_delims = "sub_delims";
-auto const                       sub_delims_def =
-  x3::char_set<boost::spirit::char_encoding::ascii>("!$&'()*+,;=");
+x3::rule<class sub_delims> const sub_delims     = "sub_delims";
+auto const                       sub_delims_def = char_set("!$&'()*+,;=");
 BOOST_SPIRIT_DEFINE(sub_delims);
 
 // gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"
 //
-x3::rule<class gen_delims> const gen_delims = "gen_delims";
-auto const                       gen_delims_def =
-  x3::char_set<boost::spirit::char_encoding::ascii>(":/?#[]@");
+x3::rule<class gen_delims> const gen_delims     = "gen_delims";
+auto const                       gen_delims_def = char_set(":/?#[]@");
 BOOST_SPIRIT_DEFINE(gen_delims);
 
 // reserved = gen-delims / sub-delims
 //
 x3::rule<class reserved> const reserved     = "reserved";
-auto const                     reserved_def = sub_delims | gen_delims;
+auto const                     reserved_def = gen_delims | sub_delims;
 BOOST_SPIRIT_DEFINE(reserved);
 
 // unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
 //
 x3::rule<class unreserved> const unreserved = "unreserved";
-auto const                       unreserved_def =
-  x3::alpha | x3::digit |
-  x3::char_set<boost::spirit::char_encoding::ascii>("-._~");
+auto const unreserved_def = x3::alpha | x3::digit | char_set("-._~");
 BOOST_SPIRIT_DEFINE(unreserved);
 
 // pct-encoded = "%" HEXDIG HEXDIG
@@ -62,23 +60,20 @@ BOOST_SPIRIT_DEFINE(pct_encoded);
 
 // pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
 //
-x3::rule<class pchar> const pchar     = "pchar";
-auto const                  pchar_def = unreserved | pct_encoded | sub_delims |
-                       x3::char_set<boost::spirit::char_encoding::ascii>(":@");
+x3::rule<class pchar> const pchar = "pchar";
+auto const pchar_def = unreserved | pct_encoded | sub_delims | char_set(":@");
 BOOST_SPIRIT_DEFINE(pchar);
 
 // query = *( pchar / "/" / "?" )
 //
-x3::rule<class query> const query = "query";
-auto const                  query_def =
-  *pchar | x3::char_set<boost::spirit::char_encoding::ascii>("/?");
+x3::rule<class query> const query     = "query";
+auto const                  query_def = *(pchar | char_set("/?"));
 BOOST_SPIRIT_DEFINE(query);
 
 // fragment = *( pchar / "/" / "?" )
 //
-x3::rule<class fragment> const fragment = "fragment";
-auto const                     fragment_def =
-  *pchar | x3::char_set<boost::spirit::char_encoding::ascii>("/?");
+x3::rule<class fragment> const fragment     = "fragment";
+auto const                     fragment_def = *(pchar | char_set("/?"));
 BOOST_SPIRIT_DEFINE(fragment);
 
 // segment = *pchar
@@ -97,38 +92,38 @@ BOOST_SPIRIT_DEFINE(segment_nz);
 //  ; non-zero-length segment without any colon ":"
 //
 x3::rule<class segment_nz_nc> const segment_nz_nc = "segment_nz_nc";
-auto const segment_nz_nc_def = +(unreserved | pct_encoded | sub_delims | "@");
+auto const segment_nz_nc_def = +(unreserved | pct_encoded | sub_delims | '@');
 BOOST_SPIRIT_DEFINE(segment_nz_nc);
 
 // path-empty = 0<pchar>
 //
 x3::rule<class path_empty> const path_empty     = "path_empty";
-auto const                       path_empty_def = x3::eps;
+auto const                       path_empty_def = x3::repeat(0)[pchar];
 BOOST_SPIRIT_DEFINE(path_empty);
 
 // path-rootless = segment-nz *( "/" segment )
 //
 x3::rule<class path_rootless> const path_rootless = "path_rootless";
-auto const path_rootless_def = segment_nz >> *("/" >> segment);
+auto const path_rootless_def = segment_nz >> *('/' >> segment);
 BOOST_SPIRIT_DEFINE(path_rootless);
 
 // path-noscheme = segment-nz-nc *( "/" segment )
 //
 x3::rule<class path_noscheme> const path_noscheme = "path_noscheme";
-auto const path_noscheme_def = segment_nz_nc >> *("/" >> segment);
+auto const path_noscheme_def = segment_nz_nc >> *('/' >> segment);
 BOOST_SPIRIT_DEFINE(path_noscheme);
 
 // path-absolute = "/" [ segment-nz *( "/" segment ) ]
 //
 x3::rule<class path_absolute> const path_absolute     = "path_absolute";
-auto const                          path_absolute_def = x3::lit("/") >>
-                               -(segment_nz >> *("/" >> segment));
+auto const                          path_absolute_def = x3::char_('/') >>
+                               -(segment_nz >> *('/' >> segment));
 BOOST_SPIRIT_DEFINE(path_absolute);
 
 // path-abempty = *( "/" segment )
 //
 x3::rule<class path_abempty> const path_abempty = "path_abempty";
-auto const path_abempty_def                     = *(x3::lit("/") >> segment);
+auto const path_abempty_def                     = *(x3::char_('/') >> segment);
 BOOST_SPIRIT_DEFINE(path_abempty);
 
 // path = path-abempty    ; begins with "/" or is empty
@@ -158,13 +153,10 @@ BOOST_SPIRIT_DEFINE(reg_name);
 //              / "25" %x30-35          ; 250-255
 //
 x3::rule<class dec_octet> const dec_octet = "dec_octet";
-auto const                      dec_octet_def =
-  (x3::lit("25") >> x3::char_set<boost::spirit::char_encoding::ascii>("0-5")) |
-  (x3::lit("2") >> x3::char_set<boost::spirit::char_encoding::ascii>("0-4") >>
-   x3::digit) |
-  (x3::lit("1") >> x3::repeat(2)[x3::digit]) |
-  (x3::char_set<boost::spirit::char_encoding::ascii>("1-9") >> x3::digit) |
-  x3::digit;
+auto const dec_octet_def                  = (x3::lit("25") >> char_set("0-5")) |
+                           (x3::lit("2") >> char_set("0-4") >> x3::digit) |
+                           (x3::lit("1") >> x3::repeat(2)[x3::digit]) |
+                           (char_set("1-9") >> x3::digit) | x3::digit;
 BOOST_SPIRIT_DEFINE(dec_octet);
 
 // IPv4address = dec-octet "." dec-octet "." dec-octet "." dec-octet
@@ -260,10 +252,7 @@ BOOST_SPIRIT_DEFINE(authority);
 // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
 //
 x3::rule<class scheme> const scheme = "scheme";
-auto const
-  scheme_def = x3::alpha >>
-               *(x3::alpha | x3::digit |
-                 x3::char_set<boost::spirit::char_encoding::ascii>("+-."));
+auto const scheme_def = x3::alpha >> *(x3::alpha | x3::digit | char_set("+-."));
 BOOST_SPIRIT_DEFINE(scheme);
 
 // relative-part = "//" authority path-abempty
@@ -272,9 +261,8 @@ BOOST_SPIRIT_DEFINE(scheme);
 //               / path-empty
 //
 x3::rule<class relative_part> const relative_part = "relative_part";
-auto const relative_part_def = x3::alpha >> x3::lit("//") >> authority >>
-                               (path_abempty | path_absolute | path_noscheme |
-                                path_empty);
+auto const relative_part_def = (x3::lit("//") >> authority >> path_abempty) |
+                               path_absolute | path_noscheme | path_empty;
 BOOST_SPIRIT_DEFINE(relative_part);
 
 // relative-ref = relative-part [ "?" query ] [ "#" fragment ]
@@ -289,10 +277,9 @@ BOOST_SPIRIT_DEFINE(relative_ref);
 //           / path-rootless
 //           / path-empty
 //
-x3::rule<class hier_part> const hier_part     = "hier_part";
-auto const                      hier_part_def = x3::lit("//") >> authority >>
-                           (path_abempty | path_absolute | path_rootless |
-                            path_empty);
+x3::rule<class hier_part> const hier_part = "hier_part";
+auto const hier_part_def = (x3::lit("//") >> authority >> path_abempty) |
+                           path_absolute | path_rootless | path_empty;
 BOOST_SPIRIT_DEFINE(hier_part);
 
 // URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]

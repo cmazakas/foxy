@@ -326,7 +326,10 @@ TEST_CASE("Our URI module...")
       "http://www.example.com/?q=%26%2355296%3B%26%2355296%3B",
       "http://www.example.com/?foo=bar",
       "http://www.example.com/#hello",
-      "http://www.example.com/#%23asdf"};
+      "http://www.example.com/#%23asdf",
+      "http:",
+      "asdf:jkl;",
+      "foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof"};
 
     auto const all_match = std::all_of(
       valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
