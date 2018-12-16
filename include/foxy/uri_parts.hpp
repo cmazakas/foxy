@@ -9,6 +9,9 @@
 //
 
 #include <boost/utility/string_view.hpp>
+#include <boost/range/iterator_range_core.hpp>
+#include <boost/fusion/adapted/struct/adapt_struct.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
 
 namespace foxy
 {
@@ -16,16 +19,16 @@ struct uri_parts
 {
 public:
   using string_view = boost::string_view;
+  using iterator    = typename string_view::iterator;
+  using range       = boost::iterator_range<iterator>;
 
-private:
-  string_view scheme_;
-  string_view host_;
-  string_view port_;
-  string_view path_;
-  string_view query_;
-  string_view fragment_;
+  range scheme_;
+  range host_;
+  range port_;
+  range path_;
+  range query_;
+  range fragment_;
 
-public:
   uri_parts()                 = default;
   uri_parts(uri_parts const&) = default;
   uri_parts(uri_parts&&)      = default;
@@ -53,3 +56,11 @@ auto
 make_uri_parts(uri_parts::string_view const uri_view) -> uri_parts;
 
 } // namespace foxy
+
+BOOST_FUSION_ADAPT_STRUCT(foxy::uri_parts,
+                          scheme_,
+                          host_,
+                          port_,
+                          path_,
+                          query_,
+                          fragment_)

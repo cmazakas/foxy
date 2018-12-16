@@ -9,45 +9,66 @@
 //
 
 #include <foxy/uri_parts.hpp>
+#include <foxy/uri.hpp>
+
+namespace x3 = boost::spirit::x3;
 
 auto
 foxy::uri_parts::scheme() const -> string_view
 {
-  return scheme_;
+  return string_view(scheme_.begin(), scheme_.end() - scheme_.begin());
 }
 
 auto
 foxy::uri_parts::host() const -> string_view
 {
-  return host_;
+  return string_view(host_.begin(), host_.end() - host_.begin());
 }
 
 auto
 foxy::uri_parts::port() const -> string_view
 {
-  return port_;
+  return string_view(port_.begin(), port_.end() - port_.begin());
 }
 
 auto
 foxy::uri_parts::path() const -> string_view
 {
-  return path_;
+  return string_view(path_.begin(), path_.end() - path_.begin());
 }
 
 auto
 foxy::uri_parts::query() const -> string_view
 {
-  return query_;
+  return string_view(query_.begin(), query_.end() - query_.begin());
 }
 
 auto
 foxy::uri_parts::fragment() const -> string_view
 {
-  return fragment_;
+  return string_view(fragment_.begin(), fragment_.end() - fragment_.begin());
 }
 
 auto
 foxy::make_uri_parts(uri_parts::string_view const uri_view) -> uri_parts
 {
-  return foxy::uri_parts();
+  auto       iter  = uri_view.begin();
+  auto const end   = uri_view.end();
+  auto       parts = foxy::uri_parts();
+
+  auto const path_absolute = x3::raw[x3::lit("")] >> x3::raw[x3::lit("")] >>
+                             x3::raw[foxy::uri::path_absolute()];
+
+  auto const hier_part =
+    (x3::lit("//") >> -(foxy::uri::userinfo() >> "@") >>
+     x3::raw[foxy::uri::host()] >> -(":" >> x3::raw[foxy::uri::port()]) >>
+     x3::raw[foxy::uri::path_abempty()]);
+
+  x3::parse(iter, end,
+            x3::raw[foxy::uri::scheme()] >> ":" >> hier_part >>
+              -("?" >> x3::raw[foxy::uri::query()]) >>
+              -("#" >> x3::raw[foxy::uri::fragment()]),
+            parts);
+
+  return parts;
 }
