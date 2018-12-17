@@ -29,4 +29,33 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.query() == "query");
     CHECK(uri_parts.fragment() == "fragment");
   }
+
+  SECTION("should handle an empty URL")
+  {
+    auto const view = boost::string_view("http:");
+
+    auto const uri_parts = foxy::make_uri_parts(view);
+
+    CHECK(uri_parts.scheme() == "http");
+    CHECK(uri_parts.host() == "");
+    CHECK(uri_parts.port() == "");
+    CHECK(uri_parts.path() == "");
+    CHECK(uri_parts.query() == "");
+    CHECK(uri_parts.fragment() == "");
+  }
+
+  SECTION("should handle wonky user-input")
+  {
+    auto const view =
+      boost::string_view("foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof");
+
+    auto const uri_parts = foxy::make_uri_parts(view);
+
+    CHECK(uri_parts.scheme() == "foof");
+    CHECK(uri_parts.host() == "[::]");
+    CHECK(uri_parts.port() == "");
+    CHECK(uri_parts.path() == "/@;:");
+    CHECK(uri_parts.query() == "?:;@/~@;://");
+    CHECK(uri_parts.fragment() == "//:;@~/@;:??//:foof");
+  }
 }
