@@ -1,5 +1,6 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
+// com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,7 +35,8 @@ TEST_CASE("Our SSL client session class")
 
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
-    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+
     auto opts = foxy::session_opts{ctx, 30s};
 
     auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
@@ -46,25 +48,22 @@ TEST_CASE("Our SSL client session class")
 
     session.async_connect(
       "www.google.com", "https",
-      [&valid_request, &session, sh = std::move(session_handle)]
-      (error_code ec, tcp::endpoint) mutable -> void
-      {
-        auto parser_handle  = boost::make_unique<http::response_parser<http::string_body>>();
+      [&valid_request, &session, sh = std::move(session_handle)](
+        error_code ec, tcp::endpoint) mutable -> void {
+        auto parser_handle =
+          boost::make_unique<http::response_parser<http::string_body>>();
         auto request_handle =
-          boost::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
+          boost::make_unique<http::request<http::empty_body>>(http::verb::get,
+                                                              "/", 11);
 
         auto& parser  = *parser_handle;
         auto& request = *request_handle;
 
         session.async_request(
           request, parser,
-          [
-            &valid_request, &session, &parser, &request,
-            ph = std::move(parser_handle),
-            rh = std::move(request_handle),
-            sh = std::move(sh)
-          ](error_code ec) mutable -> void
-          {
+          [&valid_request, &session, &parser, &request,
+           ph = std::move(parser_handle), rh = std::move(request_handle),
+           sh = std::move(sh)](error_code ec) mutable -> void {
             auto response = parser.release();
 
             auto is_valid_status = (response.result_int() == 200);
@@ -79,23 +78,16 @@ TEST_CASE("Our SSL client session class")
 
             auto& other_session = *new_handler;
 
-            other_session
-              .stream
-              .ssl()
-              .async_shutdown(
-                [
-                  nh = std::move(new_handler)
-                ]
-                (error_code ec) -> void
-                {
-                  if (ec == boost::asio::error::eof) {
-                    // Rationale:
-                    // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-                    ec.assign(0, ec.category());
-                  }
+            other_session.stream.ssl().async_shutdown(
+              [nh = std::move(new_handler)](error_code ec) -> void {
+                if (ec == boost::asio::error::eof) {
+                  // Rationale:
+                  // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+                  ec.assign(0, ec.category());
+                }
 
-                  if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
-                });
+                if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
+              });
           });
       });
 
@@ -117,9 +109,8 @@ TEST_CASE("Our SSL client session class")
 
     session.async_connect(
       "www.google.com", "1337",
-      [&timed_out, &session, sh = std::move(session_handle)]
-      (error_code ec, tcp::endpoint) mutable -> void
-      {
+      [&timed_out, &session, sh = std::move(session_handle)](
+        error_code ec, tcp::endpoint) mutable -> void {
         timed_out = (ec == boost::asio::error::operation_aborted);
       });
 

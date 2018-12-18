@@ -11,20 +11,6 @@ cmake_minimum_required(VERSION 3.12)
 
 project(foxy LANGUAGES CXX)
 
-# set this via a toolchain file (foxy.cmake for example)
-#
-if (MSVC AND MSVC_INCREMENTAL_DEFAULT)
-
-  STRING(
-    REPLACE "INCREMENTAL:YES" "INCREMENTAL:NO"
-    CMAKE_EXE_LINKER_FLAGS_DEBUG
-    ${CMAKE_EXE_LINKER_FLAGS_DEBUG}
-  )
-
-  SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "/INCREMENTAL:NO")
-
-endif()
-
 find_package(
   Boost 1.68
   REQUIRED
@@ -41,6 +27,8 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/uri_def.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
@@ -61,16 +49,22 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/multi_stream.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/session.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/uri_parts.cpp
+
+  # TODO: someday make this work
+  #
+  # ${CMAKE_CURRENT_SOURCE_DIR}/src/uri.cpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 )
 
@@ -143,6 +137,9 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/tunnel_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_parts_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
   )
 

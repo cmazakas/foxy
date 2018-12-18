@@ -1,4 +1,4 @@
-// // github.com/LeonineKing1199/foxy
+//
 // Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
 // com)
 //
@@ -30,13 +30,19 @@
 
 using boost::optional;
 using boost::asio::ip::tcp;
-namespace http = boost::beast::http;
+
+namespace http  = boost::beast::http;
+namespace beast = boost::beast;
+
+using namespace std::placeholders;
 
 foxy::proxy::proxy(boost::asio::io_context& io,
                    endpoint_type const&     endpoint,
-                   bool                     reuse_addr)
+                   bool                     reuse_addr,
+                   foxy::session_opts       client_opts)
   : stream_(io)
   , acceptor_(io, endpoint, reuse_addr)
+  , client_opts_(std::move(client_opts))
 {
 }
 
@@ -101,9 +107,9 @@ struct async_connect_op
     boost::asio::coroutine connect_coro;
     boost::asio::coroutine tunnel_coro;
 
-    state(foxy::multi_stream stream)
+    state(foxy::multi_stream stream, foxy::session_opts const& client_opts)
       : session(std::move(stream))
-      , client(session.get_executor().context())
+      , client(session.get_executor().context(), client_opts)
       , buf{0}
       , request_buf_parser(boost::in_place_init)
       , request_buf_sr(request_buf_parser->get())
@@ -115,7 +121,8 @@ struct async_connect_op
 
   std::unique_ptr<state> p_;
 
-  async_connect_op(foxy::multi_stream stream);
+  async_connect_op(foxy::multi_stream        stream,
+                   foxy::session_opts const& client_opts);
 
   struct on_connect_t
   {
@@ -151,17 +158,24 @@ struct async_connect_op
 } // namespace
 
 auto
-foxy::proxy::async_accept(boost::system::error_code ec) -> void
+foxy::proxy::async_accept() -> void
 {
-  using namespace std::placeholders;
+  if (!acceptor_.is_open()) {
+    std::cout << "foxy::proxy cannot accept on a closed ip::tcp::acceptor\n";
+    return;
+  }
+  loop({});
+}
 
-  BOOST_ASIO_CORO_REENTER(*this)
+auto
+foxy::proxy::loop(boost::system::error_code ec) -> void
+{
+  BOOST_ASIO_CORO_REENTER(accept_coro_)
   {
     for (;;) {
       BOOST_ASIO_CORO_YIELD
-      acceptor_.async_accept(
-        stream_.plain(),
-        std::bind(&proxy::async_accept, shared_from_this(), _1));
+      acceptor_.async_accept(stream_.plain(),
+                             std::bind(&proxy::loop, shared_from_this(), _1));
 
       if (ec == boost::asio::error::operation_aborted) { break; }
 
@@ -170,15 +184,16 @@ foxy::proxy::async_accept(boost::system::error_code ec) -> void
         continue;
       }
 
-      async_connect_op(std::move(stream_))({}, 0);
+      async_connect_op(std::move(stream_), client_opts_)({}, 0);
     }
   }
 }
 
 namespace
 {
-async_connect_op::async_connect_op(foxy::multi_stream stream)
-  : p_(std::make_unique<state>(std::move(stream)))
+async_connect_op::async_connect_op(foxy::multi_stream        stream,
+                                   foxy::session_opts const& client_opts)
+  : p_(std::make_unique<state>(std::move(stream), client_opts))
 {
 }
 
@@ -189,7 +204,7 @@ async_connect_op::write_error(boost::beast::http::status const status,
   auto& s = *p_;
 
   s.err_response.result(status);
-
+  s.err_response.version(11);
   s.err_response.body() = std::move(what);
   s.err_response.prepare_payload();
 
@@ -208,9 +223,6 @@ void
 async_connect_op::operator()(boost::system::error_code ec,
                              std::size_t               bytes_transferred)
 {
-  using namespace std::placeholders;
-  namespace beast = boost::beast;
-
   auto should_tunnel = false;
 
   auto& s = *p_;
@@ -377,9 +389,6 @@ void
 async_connect_op::
 operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
 {
-  using namespace std::placeholders;
-  namespace beast = boost::beast;
-
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
   {
@@ -409,21 +418,23 @@ operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
     s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.plain().close(ec);
 
-    s.client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+    if (s.client.stream.is_ssl()) {
+      BOOST_ASIO_CORO_YIELD
+      s.client.stream.ssl().async_shutdown(
+        beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, true));
 
-    if (s.parser) { s.parser = boost::none; }
-    s.parser.emplace();
+      if (ec == boost::asio::error::eof) {
+        // Rationale:
+        // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+        ec.assign(0, ec.category());
+      }
 
-    BOOST_ASIO_CORO_YIELD
-    s.client.async_read(
-      *s.parser,
-      beast::bind_handler(std::move(*this), on_close_read_t{}, _1, _2));
+      if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
 
-    if (ec && ec != http::error::end_of_stream) {
-      foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
+      BOOST_ASIO_CORO_YIELD break;
     }
 
-    s.client.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+    s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
     s.client.stream.plain().close(ec);
   }
 }

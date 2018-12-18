@@ -18,8 +18,6 @@
 #include <boost/beast/core/ostream.hpp>
 #include <boost/beast/experimental/test/stream.hpp>
 
-#include <boost/beast/core/ostream.hpp>
-
 #include <catch2/catch.hpp>
 
 namespace asio  = boost::asio;
