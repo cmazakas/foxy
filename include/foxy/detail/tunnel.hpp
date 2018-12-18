@@ -12,6 +12,7 @@
 #define FOXY_DETAIL_TUNNEL_HPP_
 
 #include <foxy/session.hpp>
+#include <foxy/uri_parts.hpp>
 #include <boost/beast/http/empty_body.hpp>
 
 namespace foxy
@@ -46,6 +47,8 @@ private:
     serializer_type<false, body_type> res_sr;
     fields_type                       res_fields;
 
+    // TODO: remember if we need this or not...
+    //
     bool close_tunnel;
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
@@ -118,6 +121,9 @@ operator()(boost::system::error_code ec,
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
+    BOOST_ASIO_CORO_YIELD
+    s.server.async_read_header(s.req_parser, std::move(*this));
+
   upcall:
     if (!is_continuation) {
       BOOST_ASIO_CORO_YIELD
