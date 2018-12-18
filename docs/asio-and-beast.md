@@ -14,4 +14,4 @@ APIs but the reason why Foxy chose Asio is exactly because it's low-level from
 an abstract perspective but is high-level in terms of being
 platform-independent.
 
-
+Foxy is therefore built on top of a set of high-level networking primitives
