@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -97,8 +96,7 @@ public:
   auto
   get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(),
-                                                p_->server.get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->server.get_executor());
   }
 
   auto
@@ -116,8 +114,8 @@ public:
 template <class Stream, class RelayHandler>
 auto
 relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
-                                           std::size_t const bytes_transferred,
-                                           bool const is_continuation) -> void
+                                           std::size_t const         bytes_transferred,
+                                           bool const                is_continuation) -> void
 {
   using namespace std::placeholders;
   using boost::beast::bind_handler;
@@ -132,12 +130,10 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     if (ec) { goto upcall; }
 
     // remove hop-by-hop headers here and then store them externally...
-    // however, if the user is writing a Connection: close, they are
-    // communicating to our proxy that they wish to terminate the connection
-    // and we want to empower users to gracefully close their server sessions
-    // so we propagate the Connection: close field to convey to the remote
-    // that we won't be needing to persist the connection beyond this current
-    // response cycle
+    // however, if the user is writing a Connection: close, they are communicating to our proxy that
+    // they wish to terminate the connection and we want to empower users to gracefully close their
+    // server sessions so we propagate the Connection: close field to convey to the remote that we
+    // won't be needing to persist the connection beyond this current response cycle
     //
     BOOST_ASIO_CORO_YIELD
     {
@@ -158,16 +154,17 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
     do {
       if (!s.req_parser.is_done()) {
+        auto const available_octets = s.buffer.size();
+
         s.req_parser.get().body().data = s.buffer.data();
-        s.req_parser.get().body().size = s.buffer.size();
+        s.req_parser.get().body().size = available_octets;
 
         BOOST_ASIO_CORO_YIELD
         s.server.async_read(s.req_parser, std::move(*this));
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 
-        s.req_parser.get().body().size =
-          s.buffer.size() - s.req_parser.get().body().size;
+        s.req_parser.get().body().size = s.buffer.size() - s.req_parser.get().body().size;
         s.req_parser.get().body().data = s.buffer.data();
         s.req_parser.get().body().more = !s.req_parser.is_done();
 
@@ -222,8 +219,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 
-        s.res_parser.get().body().size =
-          s.buffer.size() - s.res_parser.get().body().size;
+        s.res_parser.get().body().size = s.buffer.size() - s.res_parser.get().body().size;
         s.res_parser.get().body().data = s.buffer.data();
         s.res_parser.get().body().more = !s.res_parser.is_done();
 
@@ -259,15 +255,11 @@ auto
 async_relay(::foxy::basic_session<Stream>& server,
             ::foxy::basic_session<Stream>& client,
             RelayHandler&&                 handler)
-  -> BOOST_ASIO_INITFN_RESULT_TYPE(RelayHandler,
-                                   void(boost::system::error_code, bool))
+  -> BOOST_ASIO_INITFN_RESULT_TYPE(RelayHandler, void(boost::system::error_code, bool))
 {
-  boost::asio::async_completion<RelayHandler,
-                                void(boost::system::error_code, bool)>
-    init(handler);
+  boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
 
-  relay_op<Stream, BOOST_ASIO_HANDLER_TYPE(
-                     RelayHandler, void(boost::system::error_code, bool))>(
+  relay_op<Stream, BOOST_ASIO_HANDLER_TYPE(RelayHandler, void(boost::system::error_code, bool))>(
     server, client, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();

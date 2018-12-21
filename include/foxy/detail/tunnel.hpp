@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -90,8 +89,7 @@ public:
   auto
   get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(),
-                                                p_->server.get_executor());
+    return boost::asio::get_associated_executor(p_.handler(), p_->server.get_executor());
   }
 
   auto
@@ -108,10 +106,9 @@ public:
 
 template <class Stream, class TunnelHandler>
 auto
-tunnel_op<Stream, TunnelHandler>::
-operator()(boost::system::error_code ec,
-           std::size_t const         bytes_transferred,
-           bool const                is_continuation) -> void
+tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
+                                             std::size_t const         bytes_transferred,
+                                             bool const                is_continuation) -> void
 {
   using namespace std::placeholders;
   using boost::beast::bind_handler;
@@ -139,15 +136,11 @@ auto
 async_tunnel(::foxy::basic_session<Stream>& server,
              ::foxy::basic_session<Stream>& client,
              TunnelHandler&&                handler)
-  -> BOOST_ASIO_INITFN_RESULT_TYPE(TunnelHandler,
-                                   void(boost::system::error_code, bool))
+  -> BOOST_ASIO_INITFN_RESULT_TYPE(TunnelHandler, void(boost::system::error_code, bool))
 {
-  boost::asio::async_completion<TunnelHandler,
-                                void(boost::system::error_code, bool)>
-    init(handler);
+  boost::asio::async_completion<TunnelHandler, void(boost::system::error_code, bool)> init(handler);
 
-  tunnel_op<Stream, BOOST_ASIO_HANDLER_TYPE(
-                      TunnelHandler, void(boost::system::error_code, bool))>(
+  tunnel_op<Stream, BOOST_ASIO_HANDLER_TYPE(TunnelHandler, void(boost::system::error_code, bool))>(
     server, client, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();
