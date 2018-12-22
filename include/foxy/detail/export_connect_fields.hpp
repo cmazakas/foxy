@@ -46,9 +46,7 @@ namespace detail
 // Connection = *( "," OWS ) connection-option *( OWS "," [ OWS
 // connection-option ] )
 //
-template <
-  class Fields,
-  class = std::enable_if_t<boost::beast::http::is_fields<Fields>::value>>
+template <class Fields, class = std::enable_if_t<boost::beast::http::is_fields<Fields>::value>>
 void
 export_connect_fields(Fields& src, Fields& dst);
 
@@ -64,19 +62,17 @@ foxy::detail::export_connect_fields(Fields& src, Fields& dst)
 
   using fields_allocator_type = typename Fields::allocator_type;
 
-  using string_allocator_type = typename std::allocator_traits<
-    fields_allocator_type>::template rebind_alloc<char>;
+  using string_allocator_type =
+    typename std::allocator_traits<fields_allocator_type>::template rebind_alloc<char>;
 
-  using string_type =
-    std::basic_string<char, std::char_traits<char>, string_allocator_type>;
+  using string_type = std::basic_string<char, std::char_traits<char>, string_allocator_type>;
 
-  using vector_allocator_type = typename std::allocator_traits<
-    fields_allocator_type>::template rebind_alloc<string_type>;
+  using vector_allocator_type =
+    typename std::allocator_traits<fields_allocator_type>::template rebind_alloc<string_type>;
 
   // first collect all the Connection options into one coherent list
   //
-  auto connect_opts =
-    std::vector<string_type, vector_allocator_type>(src.get_allocator());
+  auto connect_opts = std::vector<string_type, vector_allocator_type>(src.get_allocator());
 
   connect_opts.reserve(128);
 
@@ -84,11 +80,10 @@ foxy::detail::export_connect_fields(Fields& src, Fields& dst)
   auto       out            = std::back_inserter(connect_opts);
 
   range::for_each(connect_fields, [&src, out](auto const& connect_field) {
-    range::transform(http::token_list(connect_field.value()), out,
-                     [&src](auto const token_view) -> string_type {
-                       return string_type(token_view.begin(), token_view.end(),
-                                          src.get_allocator());
-                     });
+    range::transform(
+      http::token_list(connect_field.value()), out, [&src](auto const token_view) -> string_type {
+        return string_type(token_view.begin(), token_view.end(), src.get_allocator());
+      });
   });
 
   range::sort(connect_opts);
@@ -97,25 +92,21 @@ foxy::detail::export_connect_fields(Fields& src, Fields& dst)
   // iterate the `src` fields, moving any connect headers and the
   // corresponding tokens to the `dst` fields
   //
-  auto const hop_by_hops =
-    std::array<http::field, 11>{http::field::connection,
-                                http::field::keep_alive,
-                                http::field::proxy_authenticate,
-                                http::field::proxy_authentication_info,
-                                http::field::proxy_authorization,
-                                http::field::proxy_connection,
-                                http::field::proxy_features,
-                                http::field::proxy_instruction,
-                                http::field::te,
-                                http::field::trailer,
-                                http::field::transfer_encoding};
+  auto const hop_by_hops = std::array<http::field, 11>{http::field::connection,
+                                                       http::field::keep_alive,
+                                                       http::field::proxy_authenticate,
+                                                       http::field::proxy_authentication_info,
+                                                       http::field::proxy_authorization,
+                                                       http::field::proxy_connection,
+                                                       http::field::proxy_features,
+                                                       http::field::proxy_instruction,
+                                                       http::field::te,
+                                                       http::field::trailer,
+                                                       http::field::transfer_encoding};
 
-  auto const is_connect_opt =
-    [&connect_opts,
-     &hop_by_hops](typename Fields::value_type const& field) -> bool {
-    if (range::find(hop_by_hops, field.name()) != hop_by_hops.end()) {
-      return true;
-    }
+  auto const is_connect_opt = [&connect_opts,
+                               &hop_by_hops](typename Fields::value_type const& field) -> bool {
+    if (range::find(hop_by_hops, field.name()) != hop_by_hops.end()) { return true; }
 
     for (auto const opt : connect_opts) {
       if (field.name_string() == opt) { return true; }

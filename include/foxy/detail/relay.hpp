@@ -154,13 +154,16 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
     do {
       if (!s.req_parser.is_done()) {
-        auto const available_octets = s.buffer.size();
-
-        s.req_parser.get().body().data = s.buffer.data();
-        s.req_parser.get().body().size = available_octets;
-
         BOOST_ASIO_CORO_YIELD
-        s.server.async_read(s.req_parser, std::move(*this));
+        {
+          auto&      body             = s.req_parser.get().body();
+          auto const available_octets = s.buffer.size();
+
+          body.data = s.buffer.data();
+          body.size = available_octets;
+
+          s.server.async_read(s.req_parser, std::move(*this));
+        }
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { goto upcall; }
 

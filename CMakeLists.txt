@@ -7,12 +7,12 @@
 # Official repository: https://github.com/LeonineKing1199/foxy
 #
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 project(foxy LANGUAGES CXX)
 
 find_package(
-  Boost 1.68
+  Boost 1.69
   REQUIRED
     system
     date_time
