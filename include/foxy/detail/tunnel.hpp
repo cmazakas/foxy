@@ -13,6 +13,7 @@
 #include <foxy/session.hpp>
 #include <foxy/uri_parts.hpp>
 #include <boost/beast/http/empty_body.hpp>
+#include <boost/beast/http/string_body.hpp>
 
 namespace foxy
 {
@@ -21,30 +22,14 @@ namespace detail
 template <class Stream, class TunnelHandler>
 struct tunnel_op : boost::asio::coroutine
 {
-public:
-  using body_type = boost::beast::http::empty_body;
-
-  template <bool isRequest, class Body>
-  using parser_type = boost::beast::http::parser<isRequest, Body>;
-
-  template <bool isRequest, class Body>
-  using serializer_type = boost::beast::http::serializer<isRequest, Body>;
-
-  using fields_type = boost::beast::http::fields;
-
 private:
   struct state
   {
     ::foxy::basic_session<Stream>& server;
     ::foxy::basic_session<Stream>& client;
 
-    parser_type<true, body_type>     req_parser;
-    serializer_type<true, body_type> req_sr;
-    fields_type                      req_fields;
-
-    parser_type<false, body_type>     res_parser;
-    serializer_type<false, body_type> res_sr;
-    fields_type                       res_fields;
+    boost::beast::http::request_parser<boost::beast::http::empty_body> parser;
+    boost::beast::http::response<boost::beast::http::string_body> err_response;
 
     // TODO: remember if we need this or not...
     //
@@ -57,8 +42,6 @@ private:
                    ::foxy::basic_session<Stream>& client_)
       : server(server_)
       , client(client_)
-      , req_sr(req_parser.get())
-      , res_sr(res_parser.get())
       , close_tunnel{false}
       , work(server.get_executor())
     {
@@ -119,7 +102,7 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
   BOOST_ASIO_CORO_REENTER(*this)
   {
     BOOST_ASIO_CORO_YIELD
-    s.server.async_read_header(s.req_parser, std::move(*this));
+    s.server.async_read_header(s.parser, std::move(*this));
 
   upcall:
     if (!is_continuation) {

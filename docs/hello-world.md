@@ -10,3 +10,5 @@ For our purposes, we'll be testing Foxy against `www.google.com`.
 Foxy's core abstraction revolves around the idea of an HTTP session, where an
 HTTP "session" represents several messages passed back and forth between a
 server and a client.
+
+[To ToC](./intro.md#Table\ of\ Contents)

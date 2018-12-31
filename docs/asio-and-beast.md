@@ -1,8 +1,8 @@
 # Asio and Beast
 
-Asio and Beast form the core machinery of Foxy. These libs were chosen very selectively. This
-document aims to explore the reasons for choosing these libraries as well as covering what relevant
-portions one must learn to effectively use Foxy.
+Asio and Beast form the core machinery of Foxy. This document aims to explore the reasons for
+choosing these libraries as well as covering what relevant portions one must learn to effectively
+use Foxy.
 
 ## Asio
 
@@ -12,7 +12,7 @@ compared to native platform-dependent APIs but the reason why Foxy chose Asio is
 it's low-level from an abstract perspective but is high-level in terms of being
 platform-independent.
 
-Asio gives programmers a set of types that they can use to compose higher-order abstractions with,
+Asio gives programmers a set of types that they can use to compose higher-order abstractions with
 Beast being one of the most notable.
 
 ### Asio At a Glance
@@ -89,3 +89,4 @@ useful formalization of how one uses both `Mutable` and `ConstBufferSequence`s.
 #### Executors
 
 
+[To ToC](./intro.md#Table\ of\ Contents)

@@ -63,11 +63,9 @@ TEST_CASE("Our forward proxy")
 
       auto response = res_parser.release();
 
-      auto const was_valid_result =
-        response.result() == http::status::bad_request;
+      auto const was_valid_result = response.result() == http::status::bad_request;
       auto const was_valid_body =
-        response.body() ==
-        "Connection must be persistent to allow proper tunneling\n\n";
+        response.body() == "Connection must be persistent to allow proper tunneling\n\n";
 
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);
@@ -89,9 +87,8 @@ TEST_CASE("Our forward proxy")
     auto handled_bad_remote       = false;
 
     asio::spawn([&](asio::yield_context yield) mutable {
-      auto const src_endpoint =
-        tcp::endpoint(ip::make_address_v4("127.0.0.1"), 1337);
-      auto const reuse_addr = true;
+      auto const src_endpoint = tcp::endpoint(ip::make_address_v4("127.0.0.1"), 1337);
+      auto const reuse_addr   = true;
 
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
       proxy->async_accept();
@@ -104,8 +101,7 @@ TEST_CASE("Our forward proxy")
       // unexpected body
       //
       {
-        auto request =
-          http::request<http::string_body>(http::verb::get, "/", 11);
+        auto request = http::request<http::string_body>(http::verb::get, "/", 11);
         request.keep_alive(true);
         request.body() = "ha ha ha, this is an non-zero length body";
         request.prepare_payload();
@@ -116,9 +112,8 @@ TEST_CASE("Our forward proxy")
 
         auto response = res_parser.release();
 
-        auto const was_valid_result =
-          response.result() == http::status::bad_request;
-        auto const was_valid_body = response.body() ==
+        auto const was_valid_result = response.result() == http::status::bad_request;
+        auto const was_valid_body   = response.body() ==
                                     "Messages with bodies are not supported "
                                     "for establishing a tunnel\n\n";
 
@@ -128,8 +123,7 @@ TEST_CASE("Our forward proxy")
       // non-CONNECT test
       //
       {
-        auto request =
-          http::request<http::empty_body>(http::verb::get, "/", 11);
+        auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
         request.keep_alive(true);
         request.prepare_payload();
 
@@ -139,19 +133,17 @@ TEST_CASE("Our forward proxy")
 
         auto response = res_parser.release();
 
-        auto const was_valid_result =
-          response.result() == http::status::method_not_allowed;
+        auto const was_valid_result = response.result() == http::status::method_not_allowed;
         auto const was_valid_body =
-          response.body() ==
-          "Invalid request method. Only CONNECT is supported\n\n";
+          response.body() == "Invalid request method. Only CONNECT is supported\n\n";
         rejected_non_connect = was_valid_result && was_valid_body;
       }
 
       // invalid remote origin
       //
       {
-        auto request = http::request<http::empty_body>(
-          http::verb::connect, "www.google.com:1337", 11);
+        auto request =
+          http::request<http::empty_body>(http::verb::connect, "www.google.com:1337", 11);
         request.keep_alive(true);
         request.prepare_payload();
 
@@ -161,9 +153,8 @@ TEST_CASE("Our forward proxy")
 
         auto response = res_parser.release();
 
-        auto const was_valid_result =
-          response.result() == http::status::bad_request;
-        auto const was_valid_body = response.body().size() > 0;
+        auto const was_valid_result = response.result() == http::status::bad_request;
+        auto const was_valid_body   = response.body().size() > 0;
 
         handled_bad_remote = was_valid_result && was_valid_body;
       }
@@ -200,8 +191,7 @@ TEST_CASE("Our forward proxy")
       auto client = foxy::client_session(io);
       client.async_connect("127.0.0.1", "1337", yield);
 
-      auto request = http::request<http::empty_body>(http::verb::connect,
-                                                     "www.google.com:80", 11);
+      auto request = http::request<http::empty_body>(http::verb::connect, "www.google.com:80", 11);
       request.prepare_payload();
 
       http::response_parser<http::string_body> res_parser;
@@ -249,8 +239,7 @@ TEST_CASE("Our forward proxy")
       auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
       auto opts = foxy::session_opts{ctx, 5s};
 
-      auto proxy =
-        std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
+      auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
       proxy->async_accept();
 
       auto client         = foxy::client_session(io);
@@ -258,8 +247,7 @@ TEST_CASE("Our forward proxy")
 
       client.async_connect("127.0.0.1", "1337", yield);
 
-      auto request = http::request<http::empty_body>(http::verb::connect,
-                                                     "www.google.com:443", 11);
+      auto request = http::request<http::empty_body>(http::verb::connect, "www.google.com:443", 11);
       request.prepare_payload();
 
       http::response_parser<http::string_body> res_parser;

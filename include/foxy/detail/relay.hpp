@@ -15,6 +15,7 @@
 
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/serializer.hpp>
+#include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/buffer_body.hpp>
 #include <boost/beast/http/error.hpp>
 
@@ -29,15 +30,20 @@ template <class Stream, class RelayHandler>
 struct relay_op : boost::asio::coroutine
 {
 public:
-  using body_type = boost::beast::http::buffer_body;
+  using executor_type = boost::asio::associated_executor_t<
+    RelayHandler,
+    decltype((std::declval<::foxy::basic_session<Stream>&>().get_executor()))>;
 
-  template <bool isRequest, class Body>
-  using parser_type = boost::beast::http::parser<isRequest, Body>;
+  using allocator_type = boost::asio::associated_allocator_t<RelayHandler>;
 
-  template <bool isRequest, class Body>
-  using serializer_type = boost::beast::http::serializer<isRequest, Body>;
+  template <bool isRequest, class Body, class Allocator>
+  using parser = boost::beast::http::parser<isRequest, Body, Allocator>;
 
-  using fields_type = boost::beast::http::fields;
+  template <bool isRequest, class Body, class Fields>
+  using serializer = boost::beast::http::serializer<isRequest, Body, Fields>;
+
+  using buffer_body = boost::beast::http::buffer_body;
+  using fields      = boost::beast::http::basic_fields<allocator_type>;
 
 private:
   struct state
@@ -47,13 +53,13 @@ private:
     ::foxy::basic_session<Stream>& server;
     ::foxy::basic_session<Stream>& client;
 
-    parser_type<true, body_type>     req_parser;
-    serializer_type<true, body_type> req_sr;
-    fields_type                      req_fields;
+    parser<true, buffer_body, allocator_type> req_parser;
+    serializer<true, buffer_body, fields>     req_sr;
+    fields                                    req_fields;
 
-    parser_type<false, body_type>     res_parser;
-    serializer_type<false, body_type> res_sr;
-    fields_type                       res_fields;
+    parser<false, buffer_body, allocator_type> res_parser;
+    serializer<false, buffer_body, fields>     res_sr;
+    fields                                     res_fields;
 
     bool close_tunnel;
 
@@ -64,8 +70,16 @@ private:
                    ::foxy::basic_session<Stream>& client_)
       : server(server_)
       , client(client_)
+      , req_parser(std::piecewise_construct,
+                   std::make_tuple(),
+                   std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , req_sr(req_parser.get())
+      , req_fields(boost::asio::get_associated_allocator(handler))
+      , res_parser(std::piecewise_construct,
+                   std::make_tuple(),
+                   std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , res_sr(res_parser.get())
+      , res_fields(boost::asio::get_associated_allocator(handler))
       , close_tunnel{false}
       , work(server.get_executor())
     {
@@ -86,12 +100,6 @@ public:
     : p_(std::forward<DeducedHandler>(handler), server, client)
   {
   }
-
-  using executor_type = boost::asio::associated_executor_t<
-    RelayHandler,
-    decltype((std::declval<::foxy::basic_session<Stream>&>().get_executor()))>;
-
-  using allocator_type = boost::asio::associated_allocator_t<RelayHandler>;
 
   auto
   get_executor() const noexcept -> executor_type
@@ -143,7 +151,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       auto const is_chunked = req.chunked();
 
-      ::foxy::detail::export_connect_fields<fields_type>(req, s.req_fields);
+      ::foxy::detail::export_connect_fields<fields>(req, s.req_fields);
 
       if (s.close_tunnel) { req.keep_alive(false); }
       if (is_chunked) { req.chunked(true); }
@@ -203,7 +211,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       auto const is_chunked = res.chunked();
 
-      ::foxy::detail::export_connect_fields<fields_type>(res, s.res_fields);
+      ::foxy::detail::export_connect_fields<fields>(res, s.res_fields);
 
       if (s.close_tunnel) { res.keep_alive(false); }
       if (is_chunked) { res.chunked(true); }
