@@ -17,6 +17,7 @@
 #include <boost/beast/http/serializer.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/buffer_body.hpp>
+#include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/error.hpp>
 
 #include <array>
@@ -43,6 +44,7 @@ public:
   using serializer = boost::beast::http::serializer<isRequest, Body, Fields>;
 
   using buffer_body = boost::beast::http::buffer_body;
+  using empty_body  = boost::beast::http::empty_body;
   using fields      = boost::beast::http::basic_fields<allocator_type>;
 
 private:
@@ -73,6 +75,25 @@ private:
       , req_parser(std::piecewise_construct,
                    std::make_tuple(),
                    std::make_tuple(boost::asio::get_associated_allocator(handler)))
+      , req_sr(req_parser.get())
+      , req_fields(boost::asio::get_associated_allocator(handler))
+      , res_parser(std::piecewise_construct,
+                   std::make_tuple(),
+                   std::make_tuple(boost::asio::get_associated_allocator(handler)))
+      , res_sr(res_parser.get())
+      , res_fields(boost::asio::get_associated_allocator(handler))
+      , close_tunnel{false}
+      , work(server.get_executor())
+    {
+    }
+
+    explicit state(RelayHandler const&                        handler,
+                   ::foxy::basic_session<Stream>&             server_,
+                   ::foxy::basic_session<Stream>&             client_,
+                   parser<true, empty_body, allocator_type>&& req_parser_)
+      : server(server_)
+      , client(client_)
+      , req_parser(std::move(req_parser_))
       , req_sr(req_parser.get())
       , req_fields(boost::asio::get_associated_allocator(handler))
       , res_parser(std::piecewise_construct,
@@ -133,9 +154,11 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
-    BOOST_ASIO_CORO_YIELD
-    s.server.async_read_header(s.req_parser, std::move(*this));
-    if (ec) { goto upcall; }
+    if (!s.req_parser.is_header_done()) {
+      BOOST_ASIO_CORO_YIELD
+      s.server.async_read_header(s.req_parser, std::move(*this));
+      if (ec) { goto upcall; }
+    }
 
     // remove hop-by-hop headers here and then store them externally...
     // however, if the user is writing a Connection: close, they are communicating to our proxy that

@@ -12,8 +12,10 @@
 
 #include <foxy/session.hpp>
 #include <foxy/uri_parts.hpp>
+
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/string_body.hpp>
+#include <boost/beast/http/fields.hpp>
 
 namespace foxy
 {
@@ -22,17 +24,24 @@ namespace detail
 template <class Stream, class TunnelHandler>
 struct tunnel_op : boost::asio::coroutine
 {
+public:
+  using executor_type = boost::asio::associated_executor_t<
+    TunnelHandler,
+    decltype((std::declval<::foxy::basic_session<Stream>&>().get_executor()))>;
+
+  using allocator_type = boost::asio::associated_allocator_t<TunnelHandler>;
+
 private:
   struct state
   {
     ::foxy::basic_session<Stream>& server;
     ::foxy::basic_session<Stream>& client;
 
-    boost::beast::http::request_parser<boost::beast::http::empty_body> parser;
-    boost::beast::http::response<boost::beast::http::string_body> err_response;
+    boost::beast::http::request_parser<boost::beast::http::empty_body, allocator_type> parser;
+    boost::beast::http::response<boost::beast::http::string_body,
+                                 boost::beast::http::basic_fields<allocator_type>>
+      err_response;
 
-    // TODO: remember if we need this or not...
-    //
     bool close_tunnel;
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
@@ -42,6 +51,12 @@ private:
                    ::foxy::basic_session<Stream>& client_)
       : server(server_)
       , client(client_)
+      , parser(std::piecewise_construct,
+               std::make_tuple(),
+               std::make_tuple(boost::asio::get_associated_allocator(handler)))
+      , err_response(std::piecewise_construct,
+                     std::make_tuple(),
+                     std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , close_tunnel{false}
       , work(server.get_executor())
     {
@@ -62,12 +77,6 @@ public:
     : p_(std::forward<DeducedHandler>(handler), server, client)
   {
   }
-
-  using executor_type = boost::asio::associated_executor_t<
-    TunnelHandler,
-    decltype((std::declval<::foxy::basic_session<Stream>&>().get_executor()))>;
-
-  using allocator_type = boost::asio::associated_allocator_t<TunnelHandler>;
 
   auto
   get_executor() const noexcept -> executor_type

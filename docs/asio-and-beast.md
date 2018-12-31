@@ -88,5 +88,36 @@ useful formalization of how one uses both `Mutable` and `ConstBufferSequence`s.
 
 #### Executors
 
+Executors are a core abstraction of Asio and they define how submitted function objects are executed
+(as their name would imply).
+
+At the heart of Asio is the [ExecutionContext](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/execution_context.html),
+a concept that is described as:
+> A context for function object execution.
+
+which, while vague, is a simple and high-level description. It's simply a context used to manage and
+schedule the execution of function objects.
+
+In Asio, every `ExecutionContext` has an [Executor](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/Executor1.html)
+associated with it.
+
+The principle `ExecutionContext` in Asio is the [asio::io_context](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/io_context.html)
+so we will focus the discussion around that.
+
+This is the workhorse in Asio that runs the user's callbacks. More on [asynchronous operations](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/asynchronous_operations.html)
+can be read here.
+
+Typically structured Asio applications will instantiate an `io_context` first as the `io_context` is
+used to create many of the I/O objects used by the library. Using this association, the object's
+methods know where to dispatch their callbacks to. For example, the callback passed to
+`ip::tcp::socket::async_read_some` will be passed to the `io_context` for later execution.
+
+Users of Asio must subscribe worker threads to the `io_context` by calling `io_context::run`. Then,
+when an asynchronous operation completes, the user's callback will be submitted for execution. Once
+it has been submitted, it will eventually be executed by the `io_context`, using the associated
+executor of the callback.
+
+Executors are a deep and nuanced subject in Asio and require extensive research which extends well
+beyond the scope of this document so independent research is recommended.
 
 [To ToC](./intro.md#Table-of-Contents)
