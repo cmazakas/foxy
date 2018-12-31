@@ -89,4 +89,4 @@ useful formalization of how one uses both `Mutable` and `ConstBufferSequence`s.
 #### Executors
 
 
-[To ToC](./intro.md#Table\ of\ Contents)
+[To ToC](./intro.md#Table-of-Contents)
