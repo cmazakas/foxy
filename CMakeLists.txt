@@ -137,7 +137,6 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/tunnel_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_parts_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp

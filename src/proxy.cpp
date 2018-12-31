@@ -14,6 +14,7 @@
 #include <foxy/log.hpp>
 #include <foxy/utility.hpp>
 #include <foxy/detail/relay.hpp>
+#include <foxy/detail/tunnel.hpp>
 
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/message.hpp>

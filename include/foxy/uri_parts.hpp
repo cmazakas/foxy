@@ -50,6 +50,12 @@ public:
 
   auto
   fragment() const -> string_view;
+
+  auto
+  is_http() const noexcept -> bool;
+
+  auto
+  is_authority() const noexcept -> bool;
 };
 
 auto
@@ -57,10 +63,4 @@ make_uri_parts(uri_parts::string_view const uri_view) -> uri_parts;
 
 } // namespace foxy
 
-BOOST_FUSION_ADAPT_STRUCT(foxy::uri_parts,
-                          scheme_,
-                          host_,
-                          port_,
-                          path_,
-                          query_,
-                          fragment_)
+BOOST_FUSION_ADAPT_STRUCT(foxy::uri_parts, scheme_, host_, port_, path_, query_, fragment_)
