@@ -112,6 +112,7 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
   {
     BOOST_ASIO_CORO_YIELD
     s.server.async_read_header(s.parser, std::move(*this));
+    if (ec) { goto upcall; }
 
     {
       auto const uri_parts = foxy::make_uri_parts(s.parser.get().target());

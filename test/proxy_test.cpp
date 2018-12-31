@@ -43,7 +43,42 @@ TEST_CASE("Our forward proxy")
       auto const endpoint = tcp::endpoint(addr, port);
 
       auto const reuse_addr = true;
+
+      // our initial test of the relay operation will be determining if we get back a valid response
+      // from a well-known website
+      //
+      auto const request =
+        http::request<http::empty_body>(http::verb::get, "http://www.google.com:80/", 11);
+
+      // create our proxy server and begin listening
+      //
+      auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
+      proxy->async_accept();
+
+      // create a client that connects to it locally and feeds it requests
+      //
+      auto client = foxy::client_session(io);
+      client.async_connect("127.0.0.1", "1337", yield);
+
+      http::response_parser<http::string_body> parser;
+      client.async_request(request, parser, yield);
+
+      auto ec = boost::system::error_code();
+      client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+      client.stream.plain().close(ec);
+
+      auto response = parser.release();
+
+      auto const was_valid_result = response.result() == http::status::ok;
+      auto const was_valid_body   = response.body().size() > 0;
+
+      was_valid_response = was_valid_result && was_valid_body;
+      proxy->cancel(ec);
+      proxy.reset();
     });
+
+    io.run();
+    REQUIRE(was_valid_response);
   }
 
   // SECTION("should reject all non-persistent connections")
