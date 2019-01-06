@@ -51,6 +51,12 @@ public:
   }
 
   auto
+  operator=(uri_parts const&) -> uri_parts& = default;
+
+  auto
+  operator=(uri_parts&&) noexcept -> uri_parts& = default;
+
+  auto
   scheme() const -> string_view;
 
   auto
