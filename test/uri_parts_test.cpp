@@ -26,8 +26,10 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.path() == "/hello");
     CHECK(uri_parts.query() == "query");
     CHECK(uri_parts.fragment() == "fragment");
+
     CHECK(uri_parts.is_http());
-    CHECK(uri_parts.is_authority());
+    CHECK(!uri_parts.is_authority());
+    CHECK(!uri_parts.is_absolute());
   }
 
   SECTION("should handle an empty URL")
@@ -42,8 +44,10 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.path() == "");
     CHECK(uri_parts.query() == "");
     CHECK(uri_parts.fragment() == "");
+
     CHECK(uri_parts.is_http());
     CHECK(!uri_parts.is_authority());
+    CHECK(uri_parts.is_absolute());
   }
 
   SECTION("should handle wonky user-input")
@@ -58,7 +62,27 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.path() == "/@;:");
     CHECK(uri_parts.query() == "?:;@/~@;://");
     CHECK(uri_parts.fragment() == "//:;@~/@;:??//:foof");
+
+    CHECK(!uri_parts.is_http());
+    CHECK(!uri_parts.is_authority());
+    CHECK(!uri_parts.is_absolute());
+  }
+
+  SECTION("support a partial URI")
+  {
+    auto const view = boost::string_view("www.example.com:80");
+
+    auto const uri_parts = foxy::make_uri_parts(view);
+
+    CHECK(uri_parts.scheme() == "");
+    CHECK(uri_parts.host() == "www.example.com");
+    CHECK(uri_parts.port() == "80");
+    CHECK(uri_parts.path() == "");
+    CHECK(uri_parts.query() == "");
+    CHECK(uri_parts.fragment() == "");
+
     CHECK(!uri_parts.is_http());
     CHECK(uri_parts.is_authority());
+    CHECK(!uri_parts.is_absolute());
   }
 }

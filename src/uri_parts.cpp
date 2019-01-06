@@ -52,10 +52,6 @@ foxy::uri_parts::fragment() const -> string_view
 auto
 foxy::make_uri_parts(uri_parts::string_view const uri_view) -> uri_parts
 {
-  auto       iter  = uri_view.begin();
-  auto const end   = uri_view.end();
-  auto       parts = foxy::uri_parts();
-
   auto const path_absolute =
     x3::raw[x3::eps] >> x3::raw[x3::eps] >> x3::raw[foxy::uri::path_absolute()];
 
@@ -63,42 +59,70 @@ foxy::make_uri_parts(uri_parts::string_view const uri_view) -> uri_parts
     (x3::lit("//") >> -(foxy::uri::userinfo() >> "@") >> x3::raw[foxy::uri::host()] >>
      -(":" >> x3::raw[foxy::uri::port()]) >> x3::raw[foxy::uri::path_abempty()]);
 
+  auto       iter  = uri_view.begin();
+  auto const end   = uri_view.end();
+  auto       parts = foxy::uri_parts(uri_view);
+
   auto old   = iter;
   auto match = false;
 
   match = x3::parse(iter, end, x3::raw[foxy::uri::scheme()] >> ":", parts.scheme_);
-  if (!match) { goto upcall; }
 
-  old = iter;
+  // if we fail to parse the initial scheme portion, check if we're working with an authority
+  // form of a URI, i.e. www.example.com:80/1337
+  //
+  if (!match) {
+    iter          = old;
+    parts.scheme_ = foxy::uri_parts::range(uri_view);
 
-  match = x3::parse(iter, end,
-                    x3::lit("//") >> -(foxy::uri::userinfo() >> "@") >> x3::raw[foxy::uri::host()],
-                    parts.host_);
+    match = x3::parse(iter, end, -(foxy::uri::userinfo() >> "@") >> x3::raw[foxy::uri::host()],
+                      parts.host_);
 
-  if (match) {
+    if (!match) { goto upcall; }
+
     match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port()]), parts.port_);
     if (!match) { goto upcall; }
 
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty()], parts.path_);
+    old = iter;
+
+  }
+  // we have a valid scheme portion, continue to parse the hier-part normally
+  //
+  else {
+    old = iter;
+
+    match = x3::parse(
+      iter, end, x3::lit("//") >> -(foxy::uri::userinfo() >> "@") >> x3::raw[foxy::uri::host()],
+      parts.host_);
+
+    // if we have a valid host, check for the port and then the path-abempty portion of the
+    // hier-part
+    //
+    if (match) {
+      match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port()]), parts.port_);
+      if (!match) { goto upcall; }
+
+      match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty()], parts.path_);
+      if (!match) { goto upcall; }
+    }
+
+    if (!match) {
+      iter = old;
+      x3::parse(iter, end, x3::raw[foxy::uri::path_absolute()], parts.path_);
+    }
+
+    if (!match) {
+      iter  = old;
+      match = x3::parse(iter, end, x3::raw[foxy::uri::path_rootless()], parts.path_);
+    }
+
+    if (!match) {
+      iter  = old;
+      match = x3::parse(iter, end, x3::raw[foxy::uri::path_empty()], parts.path_);
+    }
+
     if (!match) { goto upcall; }
   }
-
-  if (!match) {
-    iter = old;
-    x3::parse(iter, end, x3::raw[foxy::uri::path_absolute()], parts.path_);
-  }
-
-  if (!match) {
-    iter  = old;
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_rootless()], parts.path_);
-  }
-
-  if (!match) {
-    iter  = old;
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_empty()], parts.path_);
-  }
-
-  if (!match) { goto upcall; }
 
   match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query()]), parts.query_);
   if (!match) { goto upcall; }
@@ -120,5 +144,11 @@ foxy::uri_parts::is_http() const noexcept -> bool
 auto
 foxy::uri_parts::is_authority() const noexcept -> bool
 {
-  return host().size() > 0;
+  return scheme().empty() && !host().empty();
+}
+
+auto
+foxy::uri_parts::is_absolute() const noexcept -> bool
+{
+  return !scheme().empty() && fragment().empty();
 }

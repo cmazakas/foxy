@@ -16,6 +16,7 @@
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/fields.hpp>
+#include <boost/beast/http/verb.hpp>
 
 namespace foxy
 {
@@ -115,7 +116,13 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
     if (ec) { goto upcall; }
 
     {
-      auto const uri_parts = foxy::make_uri_parts(s.parser.get().target());
+      auto const& request      = s.parser.get();
+      auto const  uri_parts    = foxy::make_uri_parts(request.target());
+      auto const  is_authority = uri_parts.is_authority();
+      auto const  is_http      = uri_parts.is_http();
+      auto const  is_connect   = request.method() == http::verb::connect;
+
+      if (!is_authority && !is_connect) {}
     }
 
   upcall:
