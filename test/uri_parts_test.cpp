@@ -86,6 +86,24 @@ TEST_CASE("Our uri_parts function")
     CHECK(!uri_parts.is_absolute());
   }
 
+  SECTION("support a partial URI wihout a port")
+  {
+    auto const view = boost::string_view("www.example.com/page1?user-info#lol");
+
+    auto const uri_parts = foxy::make_uri_parts(view);
+
+    CHECK(uri_parts.scheme() == "");
+    CHECK(uri_parts.host() == "www.example.com");
+    CHECK(uri_parts.port() == "");
+    CHECK(uri_parts.path() == "/page1");
+    CHECK(uri_parts.query() == "user-info");
+    CHECK(uri_parts.fragment() == "lol");
+
+    CHECK(!uri_parts.is_http());
+    CHECK(uri_parts.is_authority());
+    CHECK(!uri_parts.is_absolute());
+  }
+
   SECTION("should handle another esoteric example")
   {
     auto const view = boost::string_view(
