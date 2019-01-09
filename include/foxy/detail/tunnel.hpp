@@ -17,6 +17,7 @@
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/verb.hpp>
+#include <boost/beast/http/status.hpp>
 
 namespace foxy
 {
@@ -106,6 +107,7 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
   using namespace std::placeholders;
   using boost::beast::bind_handler;
 
+  namespace net  = boost::asio;
   namespace http = boost::beast::http;
 
   auto& s = *p_;
@@ -115,20 +117,37 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
     s.server.async_read_header(s.parser, std::move(*this));
     if (ec) { goto upcall; }
 
+    BOOST_ASIO_CORO_YIELD
     {
       auto const& request      = s.parser.get();
       auto const  uri_parts    = foxy::make_uri_parts(request.target());
       auto const  is_authority = uri_parts.is_authority();
+      auto const  is_absolute  = uri_parts.is_absolute();
       auto const  is_http      = uri_parts.is_http();
       auto const  is_connect   = request.method() == http::verb::connect;
 
-      if (!is_authority && !is_connect) {}
+      // right now, we're only going to support one-time relays
+      // in this case, we only forward messages that send in an absolute URL
+      // we take a little extra precaution around the user sending us a funky URI with an incorrect
+      // scheme
+      //
+      if (!is_absolute || !is_http) {
+        s.err_response.result(http::status::bad_request);
+        s.err_response.body() =
+          "Currently only non-persistent proxying is supported.\nUse an absolute URI as your "
+          "request target for the proxy.\n";
+        s.err_response.prepare_payload();
+
+        s.server.async_write(s.err_response, std::move(*this));
+      } else {
+        net::post(bind_handler(std::move(*this), ec, 0));
+      }
     }
 
   upcall:
     if (!is_continuation) {
       BOOST_ASIO_CORO_YIELD
-      boost::asio::post(bind_handler(std::move(*this), ec, 0));
+      net::post(bind_handler(std::move(*this), ec, 0));
     }
     auto work = std::move(s.work);
     p_.invoke(ec, false);

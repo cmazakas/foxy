@@ -25,6 +25,7 @@
 #include <boost/beast/http/error.hpp>
 
 #include <boost/optional/optional.hpp>
+#include <boost/asio/error.hpp>
 
 #include <memory>
 #include <iostream>
@@ -32,6 +33,7 @@
 using boost::optional;
 using boost::asio::ip::tcp;
 
+namespace net   = boost::asio;
 namespace http  = boost::beast::http;
 namespace beast = boost::beast;
 
@@ -50,6 +52,8 @@ struct async_connect_op : boost::asio::coroutine
     // our session with the client's intended remote
     //
     foxy::client_session client;
+
+    http::response_parser<http::empty_body> shutdown_parser;
 
     state(foxy::multi_stream stream, foxy::session_opts const& client_opts)
       : session(std::move(stream))
@@ -154,10 +158,8 @@ operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::end
 }
 
 void
-async_connect_op::operator()(boost::system::error_code ec, bool close)
+async_connect_op::operator()(boost::system::error_code ec, bool should_tunnel)
 {
-  auto should_tunnel = false;
-
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
@@ -168,9 +170,7 @@ async_connect_op::operator()(boost::system::error_code ec, bool close)
         // do shutdown stuff
       }
 
-      if (close) {
-        // do shutdown stuff
-      }
+      if (!should_tunnel) { break; }
 
       BOOST_ASIO_CORO_YIELD
       ::foxy::detail::async_relay(s.session, s.client, std::move(*this));
@@ -178,10 +178,32 @@ async_connect_op::operator()(boost::system::error_code ec, bool close)
         // do shutdown stuff
       }
 
-      if (close) {
-        // do shutdown stuff
-      }
+      if (should_tunnel) { break; }
     }
+
+    // http rfc 7230 section 6.6 Tear-down
+    // -----------------------------------
+    // To avoid the TCP reset problem, servers typically close a connection
+    // in stages.  First, the server performs a half-close by closing only
+    // the write side of the read/write connection.  The server then
+    // continues to read from the connection until it receives a
+    // corresponding close by the client, or until the server is reasonably
+    // certain that its own TCP stack has received the client's
+    // acknowledgement of the packet(s) containing the server's last
+    // response.  Finally, the server fully closes the connection.
+    //
+    s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+
+    BOOST_ASIO_CORO_YIELD
+    s.session.async_read(s.shutdown_parser, std::move(*this));
+
+    if (ec && ec != http::error::end_of_stream) {
+      foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
+    }
+
+    s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+    s.session.stream.plain().close(ec);
+
     //   while (true) {
     //     if (s.parser) { s.parser = boost::none; }
     //     s.parser.emplace();
