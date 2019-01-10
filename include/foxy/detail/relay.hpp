@@ -299,6 +299,22 @@ async_relay(::foxy::basic_session<Stream>& server,
   return init.result.get();
 }
 
+template <class Stream, class Parser, class RelayHandler>
+auto
+async_relay(::foxy::basic_session<Stream>& server,
+            ::foxy::basic_session<Stream>& client,
+            Parser&&                       parser,
+            RelayHandler&&                 handler)
+  -> BOOST_ASIO_INITFN_RESULT_TYPE(RelayHandler, void(boost::system::error_code, bool))
+{
+  boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
+
+  relay_op<Stream, BOOST_ASIO_HANDLER_TYPE(RelayHandler, void(boost::system::error_code, bool))>(
+    server, client, std::move(parser), std::move(init.completion_handler))({}, 0, false);
+
+  return init.result.get();
+}
+
 } // namespace detail
 } // namespace foxy
 
