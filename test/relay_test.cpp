@@ -279,17 +279,21 @@ TEST_CASE("Our async HTTP relay")
 
     net::spawn([&](net::yield_context yield) mutable {
       auto const allocator = net::get_associated_allocator(yield);
+
       http::request_parser<http::empty_body, std::decay_t<decltype(allocator)>> header_parser(
         std::piecewise_construct, std::make_tuple(), std::make_tuple(allocator));
+
       server.async_read_header(header_parser, yield);
 
-      std::cout << "read in the header\n";
-
       foxy::detail::async_relay(server, client, std::move(header_parser), yield);
-
-      std::cout << "done with relay op\n";
     });
 
     io.run();
+
+    CHECK(request_stream.str() == "GET http://www.google.com HTTP/1.1\r\nHost: localhost\r\n\r\n");
+    CHECK(response_stream.str() ==
+          "HTTP/1.1 200 OK\r\n"
+          "Content-Length: 21\r\n\r\n"
+          "google res goes here!");
   }
 }

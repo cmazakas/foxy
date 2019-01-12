@@ -128,7 +128,7 @@ public:
            ::foxy::basic_session<Stream>&             client,
            parser<true, empty_body, allocator_type>&& req_parser,
            DeducedHandler&&                           handler)
-    : p_(std::forward<DeducedHandler>(handler), server, client)
+    : p_(std::forward<DeducedHandler>(handler), server, client, std::move(req_parser))
   {
   }
 
@@ -164,10 +164,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
-    std::cout << "in main relay op\n";
     if (!s.req_parser.is_header_done()) {
-      std::cout << "parsing header...\n";
-
       BOOST_ASIO_CORO_YIELD
       s.server.async_read_header(s.req_parser, std::move(*this));
       if (ec) { goto upcall; }
@@ -179,7 +176,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     // server sessions so we propagate the Connection: close field to convey to the remote that we
     // won't be needing to persist the connection beyond this current response cycle
     //
-    std::cout << "writing header..\n";
     BOOST_ASIO_CORO_YIELD
     {
       auto& req = s.req_parser.get();
@@ -199,7 +195,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
     do {
       if (!s.req_parser.is_done()) {
-        std::cout << "reading rest of message...\n";
         BOOST_ASIO_CORO_YIELD
         {
           auto&      body             = s.req_parser.get().body();
@@ -222,14 +217,12 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
         s.req_parser.get().body().size = 0;
       }
 
-      std::cout << "writing body...\n";
       BOOST_ASIO_CORO_YIELD
       s.client.async_write(s.req_sr, std::move(*this));
       if (ec == http::error::need_buffer) { ec = {}; }
       if (ec) { goto upcall; }
     } while (!s.req_parser.is_done() && !s.req_sr.is_done());
 
-    std::cout << "reading response header now...\n";
     BOOST_ASIO_CORO_YIELD
     s.client.async_read_header(s.res_parser, std::move(*this));
     if (ec) { goto upcall; }
@@ -245,7 +238,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     //
     BOOST_ASIO_CORO_YIELD
     {
-      std::cout << "writing response header backt to client now...\n";
       auto& res = s.res_parser.get();
 
       s.close_tunnel = s.close_tunnel || !res.keep_alive();
@@ -263,7 +255,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
     do {
       if (!s.res_parser.is_done()) {
-        std::cout << "reading response body chunk...\n";
         s.res_parser.get().body().data = s.buffer.data();
         s.res_parser.get().body().size = s.buffer.size();
 
@@ -281,7 +272,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
         s.res_parser.get().body().size = 0;
       }
 
-      std::cout << "writing response body chunk back now...\n";
       BOOST_ASIO_CORO_YIELD
       s.server.async_write(s.res_sr, std::move(*this));
       if (ec == http::error::need_buffer) { ec = {}; }
@@ -289,7 +279,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     } while (!s.res_parser.is_done() && !s.res_sr.is_done());
 
     {
-      std::cout << "done with operation now...\n";
       auto       work         = std::move(s.work);
       auto const close_tunnel = s.close_tunnel;
       return p_.invoke(boost::system::error_code(), close_tunnel);
