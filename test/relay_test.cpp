@@ -13,39 +13,41 @@
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
+#include <boost/asio/associated_allocator.hpp>
 
 #include <boost/beast/http.hpp>
 #include <boost/beast/core/ostream.hpp>
 #include <boost/beast/experimental/test/stream.hpp>
 
+#include <iostream>
+
 #include <catch2/catch.hpp>
 
-namespace asio  = boost::asio;
+namespace net   = boost::asio;
 namespace beast = boost::beast;
 namespace http  = boost::beast::http;
 
-using stream_type = beast::test::stream;
+using test_stream = beast::test::stream;
 
 TEST_CASE("Our async HTTP relay")
 {
   SECTION("should be able to relay messages from a server client to a remote")
   {
-    asio::io_context io;
+    net::io_context io;
 
-    auto req_stream = stream_type(io);
-    auto res_stream = stream_type(io);
+    auto req_stream = test_stream(io);
+    auto res_stream = test_stream(io);
 
-    auto server_stream = stream_type(io);
-    auto client_stream = stream_type(io);
+    auto server_stream = test_stream(io);
+    auto client_stream = test_stream(io);
 
-    auto server = foxy::basic_session<stream_type>(std::move(server_stream));
-    auto client = foxy::basic_session<stream_type>(std::move(client_stream));
+    auto server = foxy::basic_session<test_stream>(std::move(server_stream));
+    auto client = foxy::basic_session<test_stream>(std::move(client_stream));
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
 
     auto response = http::response<http::string_body>(
-      http::status::ok, 11,
-      "I bestow the heads of virgins and the first-born sons!!!!\n");
+      http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n");
 
     response.prepare_payload();
 
@@ -70,9 +72,8 @@ TEST_CASE("Our async HTTP relay")
     REQUIRE(req_stream.str() == "");
     REQUIRE(res_stream.str() == "");
 
-    asio::spawn([&](asio::yield_context yield) mutable {
-      foxy::detail::async_relay(server, client, yield);
-    });
+    net::spawn(
+      [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
 
     io.run();
 
@@ -92,16 +93,16 @@ TEST_CASE("Our async HTTP relay")
 
   SECTION("should relay while respecting Connection header semantics")
   {
-    asio::io_context io;
+    net::io_context io;
 
-    auto req_stream = stream_type(io);
-    auto res_stream = stream_type(io);
+    auto req_stream = test_stream(io);
+    auto res_stream = test_stream(io);
 
-    auto server_stream = stream_type(io);
-    auto client_stream = stream_type(io);
+    auto server_stream = test_stream(io);
+    auto client_stream = test_stream(io);
 
-    auto server = foxy::basic_session<stream_type>(std::move(server_stream));
-    auto client = foxy::basic_session<stream_type>(std::move(client_stream));
+    auto server = foxy::basic_session<test_stream>(std::move(server_stream));
+    auto client = foxy::basic_session<test_stream>(std::move(client_stream));
 
     // in this test, it's our proxy client that initiates the teardown of the
     // Connection
@@ -111,8 +112,7 @@ TEST_CASE("Our async HTTP relay")
     request.insert(http::field::connection, "foo");
 
     auto response = http::response<http::string_body>(
-      http::status::ok, 11,
-      "I bestow the heads of virgins and the first-born sons!!!!\n");
+      http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n");
 
     response.prepare_payload();
 
@@ -125,9 +125,8 @@ TEST_CASE("Our async HTTP relay")
     REQUIRE(req_stream.str() == "");
     REQUIRE(res_stream.str() == "");
 
-    asio::spawn([&](asio::yield_context yield) mutable {
-      foxy::detail::async_relay(server, client, yield);
-    });
+    net::spawn(
+      [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
 
     io.run();
 
@@ -143,22 +142,21 @@ TEST_CASE("Our async HTTP relay")
 
   SECTION("should forward a Connection: close if the remote sends one")
   {
-    asio::io_context io;
+    net::io_context io;
 
-    auto req_stream = stream_type(io);
-    auto res_stream = stream_type(io);
+    auto req_stream = test_stream(io);
+    auto res_stream = test_stream(io);
 
-    auto server_stream = stream_type(io);
-    auto client_stream = stream_type(io);
+    auto server_stream = test_stream(io);
+    auto client_stream = test_stream(io);
 
-    auto server = foxy::basic_session<stream_type>(std::move(server_stream));
-    auto client = foxy::basic_session<stream_type>(std::move(client_stream));
+    auto server = foxy::basic_session<test_stream>(std::move(server_stream));
+    auto client = foxy::basic_session<test_stream>(std::move(client_stream));
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
 
     auto response = http::response<http::string_body>(
-      http::status::ok, 11,
-      "I bestow the heads of virgins and the first-born sons!!!!\n");
+      http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n");
 
     response.keep_alive(false);
     response.prepare_payload();
@@ -172,9 +170,8 @@ TEST_CASE("Our async HTTP relay")
     REQUIRE(req_stream.str() == "");
     REQUIRE(res_stream.str() == "");
 
-    asio::spawn([&](asio::yield_context yield) mutable {
-      foxy::detail::async_relay(server, client, yield);
-    });
+    net::spawn(
+      [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
 
     io.run();
 
@@ -190,16 +187,16 @@ TEST_CASE("Our async HTTP relay")
 
   SECTION("should support requests with payloads")
   {
-    asio::io_context io;
+    net::io_context io;
 
-    auto req_stream = stream_type(io);
-    auto res_stream = stream_type(io);
+    auto req_stream = test_stream(io);
+    auto res_stream = test_stream(io);
 
-    auto server_stream = stream_type(io);
-    auto client_stream = stream_type(io);
+    auto server_stream = test_stream(io);
+    auto client_stream = test_stream(io);
 
-    auto server = foxy::basic_session<stream_type>(std::move(server_stream));
-    auto client = foxy::basic_session<stream_type>(std::move(client_stream));
+    auto server = foxy::basic_session<test_stream>(std::move(server_stream));
+    auto client = foxy::basic_session<test_stream>(std::move(client_stream));
 
     auto request = http::request<http::string_body>(
       http::verb::post, "/", 11,
@@ -209,8 +206,7 @@ TEST_CASE("Our async HTTP relay")
     request.chunked(true);
 
     auto response = http::response<http::string_body>(
-      http::status::ok, 11,
-      "I bestow the heads of virgins and the first-born sons!!!!\n");
+      http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n");
 
     response.chunked(true);
 
@@ -223,9 +219,8 @@ TEST_CASE("Our async HTTP relay")
     REQUIRE(req_stream.str() == "");
     REQUIRE(res_stream.str() == "");
 
-    asio::spawn([&](asio::yield_context yield) mutable {
-      foxy::detail::async_relay(server, client, yield);
-    });
+    net::spawn(
+      [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
 
     io.run();
 
@@ -253,5 +248,48 @@ TEST_CASE("Our async HTTP relay")
           "I bestow the heads of virgins and the first-born sons!!!!\n"
           "\r\n"
           "0\r\n\r\n");
+  }
+
+  SECTION("should support relaying even when the header of the parser was already read in")
+  {
+    auto request = http::request<http::empty_body>(http::verb::get, "http://www.google.com", 11);
+    request.set(http::field::host, "localhost");
+    request.prepare_payload();
+
+    auto response =
+      http::response<http::string_body>(http::status::ok, 11, "google res goes here!");
+    response.prepare_payload();
+
+    net::io_context io;
+
+    auto request_stream  = test_stream(io);
+    auto response_stream = test_stream(io);
+
+    auto client = foxy::basic_session<test_stream>(io);
+    auto server = foxy::basic_session<test_stream>(io);
+
+    beast::ostream(server.stream.plain().buffer()) << request;
+    beast::ostream(client.stream.plain().buffer()) << response;
+
+    // the client writes the request to the stream
+    // the server writes the response to the stream
+    //
+    client.stream.plain().connect(request_stream);
+    server.stream.plain().connect(response_stream);
+
+    net::spawn([&](net::yield_context yield) mutable {
+      auto const allocator = net::get_associated_allocator(yield);
+      http::request_parser<http::empty_body, std::decay_t<decltype(allocator)>> header_parser(
+        std::piecewise_construct, std::make_tuple(), std::make_tuple(allocator));
+      server.async_read_header(header_parser, yield);
+
+      std::cout << "read in the header\n";
+
+      foxy::detail::async_relay(server, client, std::move(header_parser), yield);
+
+      std::cout << "done with relay op\n";
+    });
+
+    io.run();
   }
 }
