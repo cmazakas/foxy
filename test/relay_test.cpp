@@ -254,7 +254,6 @@ TEST_CASE("Our async HTTP relay")
   {
     auto request = http::request<http::empty_body>(http::verb::get, "http://www.google.com", 11);
     request.set(http::field::host, "localhost");
-    request.prepare_payload();
 
     auto response =
       http::response<http::string_body>(http::status::ok, 11, "google res goes here!");
