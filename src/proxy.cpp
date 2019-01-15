@@ -178,6 +178,9 @@ async_connect_op::operator()(boost::system::error_code ec, bool close_tunnel) ->
     s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.plain().close(ec);
 
+    s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
+    s.client.stream.plain().close(ec);
+
     //   while (true) {
     //     if (s.parser) { s.parser = boost::none; }
     //     s.parser.emplace();
