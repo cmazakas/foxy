@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
 // com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying

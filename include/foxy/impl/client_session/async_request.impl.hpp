@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,29 +16,26 @@ namespace foxy
 {
 namespace detail
 {
-
 template <class Request, class ResponseParser, class RequestHandler>
 struct request_op : boost::asio::coroutine
 {
 private:
-
   struct state
   {
     ::foxy::session& session;
-    Request&                request;
-    ResponseParser&         parser;
+    Request&         request;
+    ResponseParser&  parser;
 
     boost::asio::executor_work_guard<decltype(session.get_executor())> work;
 
-    explicit state(
-      RequestHandler const&   handler,
-      ::foxy::session& session_,
-      Request&                request_,
-      ResponseParser&         parser_)
-    : session(session_)
-    , request(request_)
-    , parser(parser_)
-    , work(session.get_executor())
+    explicit state(RequestHandler const& handler,
+                   ::foxy::session&      session_,
+                   Request&              request_,
+                   ResponseParser&       parser_)
+      : session(session_)
+      , request(request_)
+      , parser(parser_)
+      , work(session.get_executor())
     {
     }
   };
@@ -51,47 +48,43 @@ public:
   request_op(request_op&&)      = default;
 
   template <class DeducedHandler>
-  request_op(
-    ::foxy::session& session,
-    Request&                request,
-    ResponseParser&         parser,
-    DeducedHandler&&        handler)
-  : p_(
-    std::forward<DeducedHandler>(handler),
-    session, request, parser)
+  request_op(::foxy::session& session,
+             Request&         request,
+             ResponseParser&  parser,
+             DeducedHandler&& handler)
+    : p_(std::forward<DeducedHandler>(handler), session, request, parser)
   {
   }
 
-  using executor_type = boost::asio::associated_executor_t<
-    RequestHandler,
-    decltype((std::declval<::foxy::session&>().get_executor()))
-  >;
+  using executor_type =
+    boost::asio::associated_executor_t<RequestHandler,
+                                       decltype((std::declval<::foxy::session&>().get_executor()))>;
 
   using allocator_type = boost::asio::associated_allocator_t<RequestHandler>;
 
-  auto get_executor() const noexcept -> executor_type
+  auto
+  get_executor() const noexcept -> executor_type
   {
     return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
   }
 
-  auto get_allocator() const noexcept -> allocator_type
+  auto
+  get_allocator() const noexcept -> allocator_type
   {
     return boost::asio::get_associated_allocator(p_.handler());
   }
 
   auto
-  operator()(
-    boost::system::error_code ec,
-    std::size_t const         bytes_transferred,
-    bool const                is_continuation = true) -> void;
+  operator()(boost::system::error_code ec,
+             std::size_t const         bytes_transferred,
+             bool const                is_continuation = true) -> void;
 };
 
 template <class Request, class ResponseParser, class RequestHandler>
 auto
-request_op<Request, ResponseParser, RequestHandler>::operator()(
-  boost::system::error_code ec,
-  std::size_t const         bytes_transferred,
-  bool const                is_continuation) -> void
+request_op<Request, ResponseParser, RequestHandler>::operator()(boost::system::error_code ec,
+                                                                std::size_t const bytes_transferred,
+                                                                bool const is_continuation) -> void
 {
   using namespace std::placeholders;
   using boost::beast::bind_handler;
@@ -124,33 +117,26 @@ request_op<Request, ResponseParser, RequestHandler>::operator()(
   }
 }
 
-} // detail
+} // namespace detail
 
 template <class Request, class ResponseParser, class RequestHandler>
 auto
 client_session::async_request(
   Request&         request,
   ResponseParser&  parser,
-  RequestHandler&& handler
-) & -> BOOST_ASIO_INITFN_RESULT_TYPE(RequestHandler, void(boost::system::error_code))
+  RequestHandler&& handler) & -> return_t<RequestHandler, void(boost::system::error_code)>
 {
-  boost::asio::async_completion<
-    RequestHandler, void(boost::system::error_code)
-  >
-  init(handler);
+  boost::asio::async_completion<RequestHandler, void(boost::system::error_code)> init(handler);
 
-  detail::timed_op_wrapper<
-    boost::asio::ip::tcp::socket,
-    detail::request_op,
-    BOOST_ASIO_HANDLER_TYPE(
-      RequestHandler,
-      void(boost::system::error_code)),
-    void(boost::system::error_code)
-  >(*this, std::move(init.completion_handler)).template init<Request, ResponseParser>(request, parser);
+  detail::timed_op_wrapper<boost::asio::ip::tcp::socket, detail::request_op,
+                           completion_handler_t<RequestHandler, void(boost::system::error_code)>,
+                           void(boost::system::error_code)>(*this,
+                                                            std::move(init.completion_handler))
+    .template init<Request, ResponseParser>(request, parser);
 
   return init.result.get();
 }
 
-} // foxy
+} // namespace foxy
 
 #endif // FOXY_IMPL_CLIENT_SESSION_ASYNC_REQUEST_IMPL_HPP_

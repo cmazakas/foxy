@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
 // or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -142,6 +142,7 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
       } else {
         net::post(bind_handler(std::move(*this), ec, 0));
       }
+
     }
 
   upcall:
@@ -150,7 +151,7 @@ tunnel_op<Stream, TunnelHandler>::operator()(boost::system::error_code ec,
       net::post(bind_handler(std::move(*this), ec, 0));
     }
     auto work = std::move(s.work);
-    p_.invoke(ec, false);
+    p_.invoke(ec, true);
   }
 }
 

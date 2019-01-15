@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
 // or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -66,27 +66,8 @@ struct async_connect_op : boost::asio::coroutine
 
   async_connect_op(foxy::multi_stream stream, foxy::session_opts const& client_opts);
 
-  struct on_connect_t
-  {
-  };
-  struct on_tunnel_t
-  {
-  };
-  struct on_close_read_t
-  {
-  };
-
-  void
-  operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::endpoint endpoint);
-
-  void
-  operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close);
-
-  void
-  operator()(on_close_read_t, boost::system::error_code ec, std::size_t const bytes_transferred);
-
-  void
-  operator()(boost::system::error_code ec, bool close);
+  auto
+  operator()(boost::system::error_code ec, bool close) -> void;
 };
 } // namespace
 
@@ -150,15 +131,8 @@ async_connect_op::async_connect_op(foxy::multi_stream stream, foxy::session_opts
 {
 }
 
-void
-async_connect_op::
-operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::endpoint endpoint)
-{
-  (*this)(ec, 0);
-}
-
-void
-async_connect_op::operator()(boost::system::error_code ec, bool should_tunnel)
+auto
+async_connect_op::operator()(boost::system::error_code ec, bool close_tunnel) -> void
 {
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
@@ -170,7 +144,7 @@ async_connect_op::operator()(boost::system::error_code ec, bool should_tunnel)
         // do shutdown stuff
       }
 
-      if (!should_tunnel) { break; }
+      if (close_tunnel) { break; }
 
       BOOST_ASIO_CORO_YIELD
       ::foxy::detail::async_relay(s.session, s.client, std::move(*this));
@@ -178,7 +152,7 @@ async_connect_op::operator()(boost::system::error_code ec, bool should_tunnel)
         // do shutdown stuff
       }
 
-      if (should_tunnel) { break; }
+      if (close_tunnel) { break; }
     }
 
     // http rfc 7230 section 6.6 Tear-down
@@ -345,64 +319,57 @@ async_connect_op::operator()(boost::system::error_code ec, bool should_tunnel)
   // (*this)(on_tunnel_t{}, {}, false);
 }
 
-void
-async_connect_op::
-operator()(on_close_read_t, boost::system::error_code ec, std::size_t const bytes_transferred)
-{
-  (*this)(on_tunnel_t{}, ec, true);
-}
+// void
+// async_connect_op::operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
+// {
+// auto& s = *p_;
+// BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
+// {
+//   while (!should_close && !ec) {
+//     BOOST_ASIO_CORO_YIELD
+//     ::foxy::detail::async_relay(s.session, s.client,
+//                                 beast::bind_handler(std::move(*this), on_tunnel_t{}, _1,
+//                                 _2));
+//   }
 
-void
-async_connect_op::operator()(on_tunnel_t, boost::system::error_code ec, bool const should_close)
-{
-  // auto& s = *p_;
-  // BOOST_ASIO_CORO_REENTER(s.tunnel_coro)
-  // {
-  //   while (!should_close && !ec) {
-  //     BOOST_ASIO_CORO_YIELD
-  //     ::foxy::detail::async_relay(s.session, s.client,
-  //                                 beast::bind_handler(std::move(*this), on_tunnel_t{}, _1,
-  //                                 _2));
-  //   }
+//   // if we close one connection, we close the other as well
+//   //
+//   s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
 
-  //   // if we close one connection, we close the other as well
-  //   //
-  //   s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+//   if (s.parser) { s.parser = boost::none; }
+//   s.parser.emplace();
 
-  //   if (s.parser) { s.parser = boost::none; }
-  //   s.parser.emplace();
+//   BOOST_ASIO_CORO_YIELD
+//   s.session.async_read(*s.parser,
+//                        beast::bind_handler(std::move(*this), on_close_read_t{}, _1, _2));
 
-  //   BOOST_ASIO_CORO_YIELD
-  //   s.session.async_read(*s.parser,
-  //                        beast::bind_handler(std::move(*this), on_close_read_t{}, _1, _2));
+//   if (ec && ec != http::error::end_of_stream) {
+//     foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
+//   }
 
-  //   if (ec && ec != http::error::end_of_stream) {
-  //     foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
-  //   }
+//   s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
+//   s.session.stream.plain().close(ec);
 
-  //   s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
-  //   s.session.stream.plain().close(ec);
+//   if (s.client.stream.is_ssl()) {
+//     BOOST_ASIO_CORO_YIELD
+//     s.client.stream.ssl().async_shutdown(
+//       beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, true));
 
-  //   if (s.client.stream.is_ssl()) {
-  //     BOOST_ASIO_CORO_YIELD
-  //     s.client.stream.ssl().async_shutdown(
-  //       beast::bind_handler(std::move(*this), on_tunnel_t{}, _1, true));
+//     if (ec == boost::asio::error::eof) {
+//       // Rationale:
+//       //
+//       http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+//       ec.assign(0, ec.category());
+//     }
 
-  //     if (ec == boost::asio::error::eof) {
-  //       // Rationale:
-  //       //
-  //       http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-  //       ec.assign(0, ec.category());
-  //     }
+//     if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
 
-  //     if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
+//     BOOST_ASIO_CORO_YIELD break;
+//   }
 
-  //     BOOST_ASIO_CORO_YIELD break;
-  //   }
-
-  //   s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-  //   s.client.stream.plain().close(ec);
-  // }
-}
+//   s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
+//   s.client.stream.plain().close(ec);
+// }
+// }
 
 } // namespace
