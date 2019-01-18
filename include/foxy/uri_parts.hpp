@@ -17,7 +17,7 @@ namespace foxy
 // uri_parts stores a set of `string_views` that identify each relevant portion of a URI as defined
 // by the RFC
 // uri_parts is not meant to be consumed directly and instead should be created by the factory
-// function `foxy::make_uri_parts`.
+// function `foxy::parse_uri`.
 //
 struct uri_parts
 {
@@ -91,7 +91,7 @@ public:
 };
 
 auto
-make_uri_parts(uri_parts::string_view const uri_view) -> uri_parts;
+parse_uri(uri_parts::string_view const uri_view) -> uri_parts;
 
 } // namespace foxy
 

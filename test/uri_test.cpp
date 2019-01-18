@@ -22,8 +22,8 @@ TEST_CASE("Our URI module...")
 {
   SECTION("should parse the sub-delims")
   {
-    auto const delims = std::vector<boost::string_view>{
-      "!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="};
+    auto const delims =
+      std::vector<boost::string_view>{"!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="};
 
     auto const matched_all_sub_delims =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
@@ -46,8 +46,7 @@ TEST_CASE("Our URI module...")
 
   SECTION("should parse the gen-delims")
   {
-    auto const delims =
-      std::vector<boost::string_view>{":", "/", "?", "#", "[", "]", "@"};
+    auto const delims = std::vector<boost::string_view>{":", "/", "?", "#", "[", "]", "@"};
 
     auto const matched_all_gen_delims =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
@@ -71,8 +70,7 @@ TEST_CASE("Our URI module...")
   SECTION("should parse the reserved")
   {
     auto const delims = std::vector<boost::string_view>{
-      ":", "/", "?", "#", "[", "]", "@", "!", "$",
-      "&", "'", "(", ")", "*", "+", ",", ";", "="};
+      ":", "/", "?", "#", "[", "]", "@", "!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="};
 
     auto const matched_all_reserved =
       std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
@@ -149,8 +147,8 @@ TEST_CASE("Our URI module...")
     // sub_delims portion of pchar
     //
     {
-      auto const delims = std::vector<boost::string_view>{
-        "!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="};
+      auto const delims =
+        std::vector<boost::string_view>{"!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="};
 
       auto const matched_all_sub_delims =
         std::all_of(delims.begin(), delims.end(), [](auto const delim) -> bool {
@@ -185,8 +183,8 @@ TEST_CASE("Our URI module...")
     auto const valid_inputs = std::vector<boost::string_view>{
       "0", "1", "9", "10", "99", "100", "199", "200", "249", "250", "255"};
 
-    auto const all_match = std::all_of(
-      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+    auto const all_match =
+      std::all_of(valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
         auto       begin = view.begin();
         auto const end   = view.end();
 
@@ -199,32 +197,30 @@ TEST_CASE("Our URI module...")
 
     CHECK(all_match);
 
-    auto const invalid_inputs = std::vector<boost::string_view>{
-      "lolol", "-1", "256", "010", "01", "267", "1337"};
+    auto const invalid_inputs =
+      std::vector<boost::string_view>{"lolol", "-1", "256", "010", "01", "267", "1337"};
 
     auto const none_match =
-      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
-                  [](auto const view) -> bool {
-                    auto       begin = view.begin();
-                    auto const end   = view.end();
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
 
-                    auto const match =
-                      x3::parse(begin, end, foxy::uri::dec_octet());
+        auto const match = x3::parse(begin, end, foxy::uri::dec_octet());
 
-                    if (match) { return begin != end; }
-                    return !match;
-                  });
+        if (match) { return begin != end; }
+        return !match;
+      });
 
     CHECK(none_match);
   }
 
   SECTION("should support IPv4 address parsing")
   {
-    auto const valid_inputs = std::vector<boost::string_view>{
-      "127.0.0.1", "255.255.255.255", "0.0.0.0", "192.68.0.27"};
+    auto const valid_inputs =
+      std::vector<boost::string_view>{"127.0.0.1", "255.255.255.255", "0.0.0.0", "192.68.0.27"};
 
-    auto const all_match = std::all_of(
-      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+    auto const all_match =
+      std::all_of(valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
         auto       begin = view.begin();
         auto const end   = view.end();
 
@@ -238,21 +234,18 @@ TEST_CASE("Our URI module...")
     CHECK(all_match);
 
     auto const invalid_inputs = std::vector<boost::string_view>{
-      "127.0.0.01", "255.255.255.255.255", "a.b.c.d", "192.68.334340.2227",
-      "127.0.1"};
+      "127.0.0.01", "255.255.255.255.255", "a.b.c.d", "192.68.334340.2227", "127.0.1"};
 
     auto const none_match =
-      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
-                  [](auto const view) -> bool {
-                    auto       begin = view.begin();
-                    auto const end   = view.end();
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
 
-                    auto const match =
-                      x3::parse(begin, end, foxy::uri::ip_v4_address());
+        auto const match = x3::parse(begin, end, foxy::uri::ip_v4_address());
 
-                    if (match) { return begin != end; }
-                    return !match;
-                  });
+        if (match) { return begin != end; }
+        return !match;
+      });
 
     CHECK(none_match);
   }
@@ -274,12 +267,12 @@ TEST_CASE("Our URI module...")
                                       "684D:1111:222:3333:4444:5555:6:77",
                                       "0:0:0:0:0:0:0:0"};
 
-    auto const all_match = std::all_of(
-      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+    auto const all_match =
+      std::all_of(valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
         auto       begin = view.begin();
         auto const end   = view.end();
 
-        auto const match = x3::parse(begin, end, foxy::uri::ip_v6_address());
+        auto const match      = x3::parse(begin, end, foxy::uri::ip_v6_address());
         auto const full_match = match && (begin == end);
 
         if (!full_match) {
@@ -295,45 +288,43 @@ TEST_CASE("Our URI module...")
     auto const invalid_inputs = std::vector<boost::string_view>{};
 
     auto const none_match =
-      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
-                  [](auto const view) -> bool {
-                    auto       begin = view.begin();
-                    auto const end   = view.end();
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
 
-                    auto const match =
-                      x3::parse(begin, end, foxy::uri::ip_v6_address());
+        auto const match = x3::parse(begin, end, foxy::uri::ip_v6_address());
 
-                    if (match) { return begin != end; }
-                    return !match;
-                  });
+        if (match) { return begin != end; }
+        return !match;
+      });
 
     CHECK(none_match);
   }
 
   SECTION("should support URI parsing")
   {
-    auto const valid_inputs = std::vector<boost::string_view>{
-      "https://www.google.com",
-      "http://example.com/",
-      "http://goo%20%20goo%7C%7C.com/",
-      "http://a.com/",
-      "http://192.168.0.1/",
-      "http://xn--6qqa088eba/",
-      "foobar://www.example.com:80/",
-      "http://example.com/foo%09%C2%91%93",
-      "http://example.com/%7Ffp3%3Eju%3Dduvgw%3Dd",
-      "http://www.example.com/?%02hello%7F%20bye",
-      "http://www.example.com/?q=%26%2355296%3B%26%2355296%3B",
-      "http://www.example.com/?foo=bar",
-      "http://www.example.com/#hello",
-      "http://www.example.com/#%23asdf",
-      "http:",
-      "asdf:jkl;",
-      "foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof",
-      "http://ay%40lmao:password@[fe80::]/p@th?q=@lol"};
+    auto const valid_inputs =
+      std::vector<boost::string_view>{"https://www.google.com",
+                                      "http://example.com/",
+                                      "http://goo%20%20goo%7C%7C.com/",
+                                      "http://a.com/",
+                                      "http://192.168.0.1/",
+                                      "http://xn--6qqa088eba/",
+                                      "foobar://www.example.com:80/",
+                                      "http://example.com/foo%09%C2%91%93",
+                                      "http://example.com/%7Ffp3%3Eju%3Dduvgw%3Dd",
+                                      "http://www.example.com/?%02hello%7F%20bye",
+                                      "http://www.example.com/?q=%26%2355296%3B%26%2355296%3B",
+                                      "http://www.example.com/?foo=bar",
+                                      "http://www.example.com/#hello",
+                                      "http://www.example.com/#%23asdf",
+                                      "http:",
+                                      "asdf:jkl;",
+                                      "foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof",
+                                      "http://ay%40lmao:password@[fe80::]/p@th?q=@lol"};
 
-    auto const all_match = std::all_of(
-      valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
+    auto const all_match =
+      std::all_of(valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
         auto       begin = view.begin();
         auto const end   = view.end();
 
@@ -350,20 +341,19 @@ TEST_CASE("Our URI module...")
 
     CHECK(all_match);
 
-    auto const invalid_inputs = std::vector<boost::string_view>{
-      "http://192.168.0.1%20hello/", "http://[google.com]/"};
+    auto const invalid_inputs =
+      std::vector<boost::string_view>{"http://192.168.0.1%20hello/", "http://[google.com]/"};
 
     auto const none_match =
-      std::all_of(invalid_inputs.begin(), invalid_inputs.end(),
-                  [](auto const view) -> bool {
-                    auto       begin = view.begin();
-                    auto const end   = view.end();
+      std::all_of(invalid_inputs.begin(), invalid_inputs.end(), [](auto const view) -> bool {
+        auto       begin = view.begin();
+        auto const end   = view.end();
 
-                    auto const match = x3::parse(begin, end, foxy::uri::uri());
+        auto const match = x3::parse(begin, end, foxy::uri::uri());
 
-                    if (match) { return begin != end; }
-                    return !match;
-                  });
+        if (match) { return begin != end; }
+        return !match;
+      });
 
     CHECK(none_match);
   }

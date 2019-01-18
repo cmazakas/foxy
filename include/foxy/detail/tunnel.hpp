@@ -158,7 +158,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
     {
       auto const& request = s.parser.get();
 
-      s.uri_parts = foxy::make_uri_parts(request.target());
+      s.uri_parts = foxy::parse_uri(request.target());
 
       auto const is_authority = s.uri_parts.is_authority();
       auto const is_absolute  = s.uri_parts.is_absolute();

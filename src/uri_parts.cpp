@@ -154,7 +154,7 @@ upcall:
 } // namespace
 
 auto
-foxy::make_uri_parts(boost::string_view const uri) -> foxy::uri_parts
+foxy::parse_uri(boost::string_view const uri) -> foxy::uri_parts
 {
   auto parts = foxy::uri_parts();
   if (parse_complete(uri, parts)) { return parts; }

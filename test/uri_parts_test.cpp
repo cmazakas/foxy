@@ -18,7 +18,7 @@ TEST_CASE("Our uri_parts function")
   {
     auto const view = boost::string_view("http://www.google.com:80/hello?query#fragment");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "http");
     CHECK(uri_parts.host() == "www.google.com");
@@ -36,7 +36,7 @@ TEST_CASE("Our uri_parts function")
   {
     auto const view = boost::string_view("http:");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "http");
     CHECK(uri_parts.host() == "");
@@ -54,7 +54,7 @@ TEST_CASE("Our uri_parts function")
   {
     auto const view = boost::string_view("foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "foof");
     CHECK(uri_parts.host() == "[::]");
@@ -72,7 +72,7 @@ TEST_CASE("Our uri_parts function")
   {
     auto const view = boost::string_view("www.example.com:80");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "");
     CHECK(uri_parts.host() == "www.example.com");
@@ -90,7 +90,7 @@ TEST_CASE("Our uri_parts function")
   {
     auto const view = boost::string_view("www.example.com/page1?user-info#lol");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "");
     CHECK(uri_parts.host() == "www.example.com");
@@ -114,7 +114,7 @@ TEST_CASE("Our uri_parts function")
       "2Cp_n_feature_five_browse-bin%3A13580790011%7c13580791011%7c13580788011%7c13580787011&bbn="
       "13896615011&ie=UTF8&qid=1484776142&rnid=2257851011");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "https");
     CHECK(uri_parts.host() == "www.example.com");
@@ -158,7 +158,7 @@ TEST_CASE("Our uri_parts function")
       "1630949035%7C163094968X%7C1630949698%7C1630949701%7C163094971X%7C1630949728%7C1630949736%"
       "2Cssx%3Arelevance");
 
-    auto const uri_parts = foxy::make_uri_parts(view);
+    auto const uri_parts = foxy::parse_uri(view);
 
     CHECK(uri_parts.scheme() == "https");
     CHECK(uri_parts.host() == "www.example.com");
