@@ -50,6 +50,8 @@ private:
                                  boost::beast::http::basic_fields<allocator_type>>
       err_response;
 
+    ::foxy::uri_parts uri_parts;
+
     bool close_tunnel;
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
@@ -154,12 +156,14 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
     BOOST_ASIO_CORO_YIELD
     {
-      auto const& request      = s.parser.get();
-      auto const  uri_parts    = foxy::make_uri_parts(request.target());
-      auto const  is_authority = uri_parts.is_authority();
-      auto const  is_absolute  = uri_parts.is_absolute();
-      auto const  is_http      = uri_parts.is_http();
-      auto const  is_connect   = request.method() == http::verb::connect;
+      auto const& request = s.parser.get();
+
+      s.uri_parts = foxy::make_uri_parts(request.target());
+
+      auto const is_authority = s.uri_parts.is_authority();
+      auto const is_absolute  = s.uri_parts.is_absolute();
+      auto const is_http      = s.uri_parts.is_http();
+      auto const is_connect   = request.method() == http::verb::connect;
 
       // right now, we're only going to support one-time relays
       // in this case, we only forward messages that send in an absolute URL
@@ -176,18 +180,22 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         s.server.async_write(s.err_response, std::move(*this));
 
       } else {
-        std::cout << "connecting to: \n" << uri_parts.host() << "\n\n";
+        std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
 
-        s.client.async_connect(static_cast<std::string>(uri_parts.host()), "80",
+        s.client.async_connect(static_cast<std::string>(s.uri_parts.host()),
+                               static_cast<std::string>(s.uri_parts.port()),
                                bind_handler(std::move(*this), on_connect_t{}, _1, _2));
       }
     }
 
     s.parser.get().keep_alive(false);
+    s.parser.get().target(s.uri_parts.path());
 
     BOOST_ASIO_CORO_YIELD
     async_relay(s.server, s.client, std::move(s.parser),
                 bind_handler(std::move(*this), on_relay_t{}, _1, _2));
+
+    if (ec) { goto upcall; }
 
     {
       auto guard = std::move(s.work);

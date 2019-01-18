@@ -156,13 +156,13 @@ upcall:
 auto
 foxy::make_uri_parts(boost::string_view const uri) -> foxy::uri_parts
 {
-  auto parts = foxy::uri_parts(uri);
+  auto parts = foxy::uri_parts();
   if (parse_complete(uri, parts)) { return parts; }
 
-  parts = foxy::uri_parts(uri);
+  parts = foxy::uri_parts();
   if (parse_authority(uri, parts)) { return parts; }
 
-  return foxy::uri_parts(uri);
+  return foxy::uri_parts();
 }
 
 auto

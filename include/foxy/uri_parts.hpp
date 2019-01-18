@@ -35,20 +35,17 @@ public:
   range query_;
   range fragment_;
 
-  uri_parts()                 = delete;
-  uri_parts(uri_parts const&) = default;
-  uri_parts(uri_parts&&)      = default;
-
-  template <class Range>
-  uri_parts(Range const& range)
-    : scheme_(range.begin(), range.begin())
-    , host_(range.begin(), range.begin())
-    , port_(range.begin(), range.begin())
-    , path_(range.begin(), range.begin())
-    , query_(range.begin(), range.begin())
-    , fragment_(range.begin(), range.begin())
+  uri_parts()
+    : scheme_(nullptr, nullptr)
+    , host_(nullptr, nullptr)
+    , port_(nullptr, nullptr)
+    , query_(nullptr, nullptr)
+    , fragment_(nullptr, nullptr)
   {
   }
+
+  uri_parts(uri_parts const&) = default;
+  uri_parts(uri_parts&&)      = default;
 
   auto
   operator=(uri_parts const&) -> uri_parts& = default;

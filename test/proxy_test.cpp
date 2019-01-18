@@ -101,7 +101,7 @@ TEST_CASE("Our forward proxy")
       // from a well-known website
       //
       auto const request =
-        http::request<http::empty_body>(http::verb::get, "http://www.google.com:80", 11);
+        http::request<http::empty_body>(http::verb::get, "http://www.google.com:80/", 11);
 
       // create our proxy server and begin listening
       //
