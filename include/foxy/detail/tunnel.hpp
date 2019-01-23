@@ -22,6 +22,8 @@
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/http/status.hpp>
 
+#include <boost/optional/optional.hpp>
+
 #include <iostream>
 
 namespace foxy
@@ -34,37 +36,41 @@ struct tunnel_op : boost::asio::coroutine
 public:
   using executor_type = boost::asio::associated_executor_t<
     TunnelHandler,
-    decltype(
-      (std::declval<::foxy::basic_session<boost::asio::ip::tcp::socket>&>().get_executor()))>;
+    decltype((std::declval<foxy::basic_session<boost::asio::ip::tcp::socket>&>().get_executor()))>;
 
   using allocator_type = boost::asio::associated_allocator_t<TunnelHandler>;
 
 private:
   struct state
   {
-    ::foxy::server_session& server;
-    ::foxy::client_session& client;
+    foxy::server_session& server;
+    foxy::client_session& client;
 
-    boost::beast::http::request_parser<boost::beast::http::empty_body, allocator_type> parser;
-    boost::beast::http::response<boost::beast::http::string_body,
-                                 boost::beast::http::basic_fields<allocator_type>>
+    boost::optional<
+      boost::beast::http::request_parser<boost::beast::http::empty_body, allocator_type>>
+      parser;
+
+    boost::optional<boost::beast::http::response<boost::beast::http::string_body,
+                                                 boost::beast::http::basic_fields<allocator_type>>>
       err_response;
 
-    ::foxy::uri_parts uri_parts;
+    foxy::uri_parts uri_parts;
 
     bool close_tunnel;
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
 
-    explicit state(TunnelHandler const&    handler,
-                   ::foxy::server_session& server_,
-                   ::foxy::client_session& client_)
+    explicit state(TunnelHandler const&  handler,
+                   foxy::server_session& server_,
+                   foxy::client_session& client_)
       : server(server_)
       , client(client_)
-      , parser(std::piecewise_construct,
+      , parser(boost::in_place_init,
+               std::piecewise_construct,
                std::make_tuple(),
                std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , err_response(std::piecewise_construct,
+      , err_response(boost::in_place_init,
+                     std::piecewise_construct,
                      std::make_tuple(),
                      std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , close_tunnel{false}
@@ -81,9 +87,7 @@ public:
   tunnel_op(tunnel_op&&)      = default;
 
   template <class DeducedHandler>
-  tunnel_op(::foxy::server_session& server,
-            ::foxy::client_session& client,
-            DeducedHandler&&        handler)
+  tunnel_op(foxy::server_session& server, foxy::client_session& client, DeducedHandler&& handler)
     : p_(std::forward<DeducedHandler>(handler), server, client)
   {
   }
@@ -151,12 +155,12 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
   BOOST_ASIO_CORO_REENTER(*this)
   {
     BOOST_ASIO_CORO_YIELD
-    s.server.async_read_header(s.parser, std::move(*this));
+    s.server.async_read_header(*s.parser, std::move(*this));
     if (ec) { goto upcall; }
 
     BOOST_ASIO_CORO_YIELD
     {
-      auto const& request = s.parser.get();
+      auto const& request = s.parser->get();
 
       s.uri_parts = foxy::parse_uri(request.target());
 
@@ -171,13 +175,13 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       // scheme
       //
       if (!is_absolute || !is_http) {
-        s.err_response.result(http::status::bad_request);
-        s.err_response.body() =
+        s.err_response->result(http::status::bad_request);
+        s.err_response->body() =
           "Currently only non-persistent proxying is supported.\nUse an absolute URI as your "
           "request target for the proxy.\n";
-        s.err_response.prepare_payload();
+        s.err_response->prepare_payload();
 
-        s.server.async_write(s.err_response, std::move(*this));
+        s.server.async_write(*s.err_response, std::move(*this));
 
       } else {
         std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
@@ -188,11 +192,11 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       }
     }
 
-    s.parser.get().keep_alive(false);
-    s.parser.get().target(s.uri_parts.path());
+    s.parser->get().keep_alive(false);
+    s.parser->get().target(s.uri_parts.path());
 
     BOOST_ASIO_CORO_YIELD
-    async_relay(s.server, s.client, std::move(s.parser),
+    async_relay(s.server, s.client, std::move(*s.parser),
                 bind_handler(std::move(*this), on_relay_t{}, _1, _2));
 
     if (ec) { goto upcall; }
@@ -214,14 +218,12 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
 template <class TunnelHandler>
 auto
-async_tunnel(::foxy::server_session& server,
-             ::foxy::client_session& client,
-             TunnelHandler&&         handler)
-  -> ::foxy::return_t<TunnelHandler, void(boost::system::error_code, bool)>
+async_tunnel(foxy::server_session& server, foxy::client_session& client, TunnelHandler&& handler)
+  -> foxy::return_t<TunnelHandler, void(boost::system::error_code, bool)>
 {
   boost::asio::async_completion<TunnelHandler, void(boost::system::error_code, bool)> init(handler);
 
-  tunnel_op<::foxy::completion_handler_t<TunnelHandler, void(boost::system::error_code, bool)>>(
+  tunnel_op<foxy::completion_handler_t<TunnelHandler, void(boost::system::error_code, bool)>>(
     server, client, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();

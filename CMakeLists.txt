@@ -115,9 +115,10 @@ if (FOXY_TESTING)
 
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
-    Boost 1.68
+    Boost 1.69
     REQUIRED
       coroutine
+      thread
   )
 
   add_library(test_utils INTERFACE)
@@ -149,6 +150,7 @@ if (FOXY_TESTING)
       test_utils
       Catch2::Catch2
       Boost::coroutine
+      Boost::thread
   )
 
   enable_testing()
