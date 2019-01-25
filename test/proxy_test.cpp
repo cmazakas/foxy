@@ -72,8 +72,7 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_result = response.result() == http::status::bad_request;
       auto const was_valid_body =
         response.body() ==
-        "Currently only non-persistent proxying is supported.\nUse an absolute URI as your "
-        "request target for the proxy.\n";
+        "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
 
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);

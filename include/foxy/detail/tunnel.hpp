@@ -56,7 +56,12 @@ private:
 
     foxy::uri_parts uri_parts;
 
-    bool close_tunnel;
+    bool is_authority = false;
+    bool is_connect   = false;
+    bool is_absolute  = false;
+    bool is_http      = false;
+
+    bool close_tunnel = false;
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
 
@@ -71,9 +76,8 @@ private:
                std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , err_response(boost::in_place_init,
                      std::piecewise_construct,
-                     std::make_tuple(),
+                     std::make_tuple(boost::asio::get_associated_allocator(handler)),
                      std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , close_tunnel{false}
       , work(server.get_executor())
     {
     }
@@ -154,56 +158,90 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
   auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
-    BOOST_ASIO_CORO_YIELD
-    s.server.async_read_header(*s.parser, std::move(*this));
-    if (ec) { goto upcall; }
+    while (true) {
+      s.parser.emplace(std::piecewise_construct, std::make_tuple(),
+                       std::make_tuple(get_allocator()));
 
-    BOOST_ASIO_CORO_YIELD
-    {
-      auto const& request = s.parser->get();
+      s.err_response.emplace(std::piecewise_construct, std::make_tuple(get_allocator()),
+                             std::make_tuple(get_allocator()));
 
-      s.uri_parts = foxy::parse_uri(request.target());
+      BOOST_ASIO_CORO_YIELD
+      s.server.async_read_header(*s.parser, std::move(*this));
 
-      auto const is_authority = s.uri_parts.is_authority();
-      auto const is_absolute  = s.uri_parts.is_absolute();
-      auto const is_http      = s.uri_parts.is_http();
-      auto const is_connect   = request.method() == http::verb::connect;
+      if (ec) { goto upcall; }
 
-      // right now, we're only going to support one-time relays
-      // in this case, we only forward messages that send in an absolute URL
-      // we take a little extra precaution around the user sending us a funky URI with an incorrect
-      // scheme
-      //
-      if (!is_absolute || !is_http) {
+      s.uri_parts = foxy::parse_uri(s.parser->get().target());
+
+      s.is_authority = s.uri_parts.is_authority();
+      s.is_connect   = s.parser->get().method() == http::verb::connect;
+      s.is_absolute  = s.uri_parts.is_absolute();
+      s.is_http      = s.uri_parts.is_http();
+
+      if (s.is_connect && s.is_authority && !s.parser->keep_alive()) {
+        s.close_tunnel = true;
+
         s.err_response->result(http::status::bad_request);
-        s.err_response->body() =
-          "Currently only non-persistent proxying is supported.\nUse an absolute URI as your "
-          "request target for the proxy.\n";
+        s.err_response->body() = "CONNECT semantics require a persistent connection";
         s.err_response->prepare_payload();
 
+        BOOST_ASIO_CORO_YIELD
         s.server.async_write(*s.err_response, std::move(*this));
 
-      } else {
+        if (ec) { goto upcall; }
+
+        break;
+      }
+
+      if ((s.is_connect && s.is_authority) || (s.is_absolute && s.is_http)) {
         std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
 
+        BOOST_ASIO_CORO_YIELD
         s.client.async_connect(static_cast<std::string>(s.uri_parts.host()),
                                static_cast<std::string>(s.uri_parts.port()),
                                bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+
+        if (ec) { goto upcall; }
+
+        if (s.is_absolute && s.is_http) {
+          s.parser->get().keep_alive(false);
+          s.parser->get().target(s.uri_parts.path());
+
+          BOOST_ASIO_CORO_YIELD
+          async_relay(s.server, s.client, std::move(*s.parser),
+                      bind_handler(std::move(*this), on_relay_t{}, _1, _2));
+
+          if (ec) { goto upcall; }
+
+          s.close_tunnel = true;
+          break;
+        }
+
+        s.close_tunnel = false;
+        break;
+
+      } else {
+        s.err_response->result(http::status::bad_request);
+        s.err_response->body() =
+          "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
+        s.err_response->prepare_payload();
+
+        BOOST_ASIO_CORO_YIELD
+        s.server.async_write(*s.err_response, std::move(*this));
+
+        if (ec) { goto upcall; }
+
+        if (!s.parser->get().keep_alive()) {
+          s.close_tunnel = true;
+          break;
+        }
+
+        continue;
       }
     }
 
-    s.parser->get().keep_alive(false);
-    s.parser->get().target(s.uri_parts.path());
-
-    BOOST_ASIO_CORO_YIELD
-    async_relay(s.server, s.client, std::move(*s.parser),
-                bind_handler(std::move(*this), on_relay_t{}, _1, _2));
-
-    if (ec) { goto upcall; }
-
     {
       auto guard = std::move(s.work);
-      return p_.invoke(boost::system::error_code(), true);
+      return p_.invoke(boost::system::error_code(), s.close_tunnel);
     }
 
   upcall:
@@ -212,7 +250,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       net::post(bind_handler(std::move(*this), ec, 0));
     }
     auto work = std::move(s.work);
-    p_.invoke(ec, true);
+    p_.invoke(ec, s.close_tunnel);
   }
 }
 

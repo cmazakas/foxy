@@ -142,6 +142,7 @@ async_connect_op::operator()(boost::system::error_code ec, bool close_tunnel) ->
       ::foxy::detail::async_tunnel(s.session, s.client, std::move(*this));
       if (ec) {
         // do shutdown stuff
+        break;
       }
 
       if (close_tunnel) { break; }
@@ -150,6 +151,7 @@ async_connect_op::operator()(boost::system::error_code ec, bool close_tunnel) ->
       ::foxy::detail::async_relay(s.session, s.client, std::move(*this));
       if (ec) {
         // do shutdown stuff
+        break;
       }
 
       if (close_tunnel) { break; }
