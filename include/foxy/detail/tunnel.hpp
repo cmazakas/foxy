@@ -240,8 +240,9 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
     }
 
     {
-      auto guard = std::move(s.work);
-      return p_.invoke(boost::system::error_code(), s.close_tunnel);
+      auto const guard        = std::move(s.work);
+      auto const close_tunnel = s.close_tunnel;
+      return p_.invoke(boost::system::error_code(), close_tunnel);
     }
 
   upcall:
@@ -249,8 +250,9 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       BOOST_ASIO_CORO_YIELD
       net::post(bind_handler(std::move(*this), ec, 0));
     }
-    auto work = std::move(s.work);
-    p_.invoke(ec, s.close_tunnel);
+    auto const work         = std::move(s.work);
+    auto const close_tunnel = s.close_tunnel;
+    p_.invoke(ec, close_tunnel);
   }
 }
 
