@@ -52,7 +52,7 @@ private:
 
     boost::optional<boost::beast::http::response<boost::beast::http::string_body,
                                                  boost::beast::http::basic_fields<allocator_type>>>
-      err_response;
+      response;
 
     foxy::uri_parts uri_parts;
 
@@ -74,10 +74,10 @@ private:
                std::piecewise_construct,
                std::make_tuple(),
                std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , err_response(boost::in_place_init,
-                     std::piecewise_construct,
-                     std::make_tuple(boost::asio::get_associated_allocator(handler)),
-                     std::make_tuple(boost::asio::get_associated_allocator(handler)))
+      , response(boost::in_place_init,
+                 std::piecewise_construct,
+                 std::make_tuple(boost::asio::get_associated_allocator(handler)),
+                 std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , work(server.get_executor())
     {
     }
@@ -146,7 +146,7 @@ tunnel_op<TunnelHandler>::operator()(on_relay_t, boost::system::error_code ec, b
 template <class TunnelHandler>
 auto
 tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
-                                     std::size_t const         bytes_transferred,
+                                     std::size_t               bytes_transferred,
                                      bool const                is_continuation) -> void
 {
   using namespace std::placeholders;
@@ -162,13 +162,17 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       s.parser.emplace(std::piecewise_construct, std::make_tuple(),
                        std::make_tuple(get_allocator()));
 
-      s.err_response.emplace(std::piecewise_construct, std::make_tuple(get_allocator()),
-                             std::make_tuple(get_allocator()));
+      s.response.emplace(std::piecewise_construct, std::make_tuple(get_allocator()),
+                         std::make_tuple(get_allocator()));
+
+      std::cout << "reading in client header...\n";
 
       BOOST_ASIO_CORO_YIELD
       s.server.async_read_header(*s.parser, std::move(*this));
 
       if (ec) { goto upcall; }
+
+      std::cout << "parsing URI now:" << s.parser->get().target() << "\n";
 
       s.uri_parts = foxy::parse_uri(s.parser->get().target());
 
@@ -178,65 +182,83 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       s.is_http      = s.uri_parts.is_http();
 
       if (s.is_connect && s.is_authority && !s.parser->keep_alive()) {
+        std::cout << "sending error response...\n";
+
         s.close_tunnel = true;
 
-        s.err_response->result(http::status::bad_request);
-        s.err_response->body() = "CONNECT semantics require a persistent connection";
-        s.err_response->prepare_payload();
+        s.response->result(http::status::bad_request);
+        s.response->body() = "CONNECT semantics require a persistent connection";
+        s.response->prepare_payload();
 
         BOOST_ASIO_CORO_YIELD
-        s.server.async_write(*s.err_response, std::move(*this));
-
-        if (ec) { goto upcall; }
-
-        break;
-      }
-
-      if ((s.is_connect && s.is_authority) || (s.is_absolute && s.is_http)) {
-        std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
-
-        BOOST_ASIO_CORO_YIELD
-        s.client.async_connect(static_cast<std::string>(s.uri_parts.host()),
-                               static_cast<std::string>(s.uri_parts.port()),
-                               bind_handler(std::move(*this), on_connect_t{}, _1, _2));
-
-        if (ec) { goto upcall; }
-
-        if (s.is_absolute && s.is_http) {
-          s.parser->get().keep_alive(false);
-          s.parser->get().target(s.uri_parts.path());
-
-          BOOST_ASIO_CORO_YIELD
-          async_relay(s.server, s.client, std::move(*s.parser),
-                      bind_handler(std::move(*this), on_relay_t{}, _1, _2));
-
-          if (ec) { goto upcall; }
-
-          s.close_tunnel = true;
-          break;
-        }
-
-        s.close_tunnel = false;
-        break;
-
+        s.server.async_write(*s.response, std::move(*this));
       } else {
-        s.err_response->result(http::status::bad_request);
-        s.err_response->body() =
-          "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
-        s.err_response->prepare_payload();
+        bytes_transferred = 0;
+      }
+
+      std::cout << "am I getting here????" << ec.message() << " : " << bytes_transferred << "\n";
+
+      if (ec) { goto upcall; }
+      if (bytes_transferred > 0) { break; }
+
+      BOOST_ASIO_CORO_YIELD
+      {
+        if ((s.is_connect && s.is_authority) || (s.is_absolute && s.is_http)) {
+          std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
+
+          s.client.async_connect(static_cast<std::string>(s.uri_parts.host()),
+                                 static_cast<std::string>(s.uri_parts.port()),
+                                 bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+        } else {
+          std::cout << "sending malformed response message\n";
+
+          s.response->result(http::status::bad_request);
+          s.response->body() =
+            "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
+          s.response->prepare_payload();
+
+          s.server.async_write(*s.response, std::move(*this));
+        }
+      }
+
+      if (ec) { goto upcall; }
+      if (bytes_transferred > 0) {
+        if (!s.parser->keep_alive()) {
+          break;
+        } else {
+          continue;
+        }
+      }
+
+      if (s.is_absolute && s.is_http) {
+        s.parser->get().keep_alive(false);
+        s.parser->get().target(s.uri_parts.path());
 
         BOOST_ASIO_CORO_YIELD
-        s.server.async_write(*s.err_response, std::move(*this));
-
-        if (ec) { goto upcall; }
-
-        if (!s.parser->get().keep_alive()) {
-          s.close_tunnel = true;
-          break;
-        }
-
-        continue;
+        async_relay(s.server, s.client, std::move(*s.parser),
+                    bind_handler(std::move(*this), on_relay_t{}, _1, _2));
       }
+
+      if (ec) { goto upcall; }
+      if (s.is_absolute && s.is_http) {
+        s.close_tunnel = true;
+        break;
+      }
+
+      std::cout << "going to write back the tunnel response now\n";
+
+      s.response->result(http::status::ok);
+
+      BOOST_ASIO_CORO_YIELD
+      s.server.async_write(*s.response, std::move(*this));
+
+      if (ec) {
+        s.close_tunnel = true;
+        goto upcall;
+      }
+
+      s.close_tunnel = false;
+      break;
     }
 
     {
