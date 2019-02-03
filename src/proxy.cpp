@@ -180,8 +180,22 @@ async_connect_op::operator()(boost::system::error_code ec, bool close_tunnel) ->
     s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
     s.session.stream.plain().close(ec);
 
-    s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-    s.client.stream.plain().close(ec);
+    if (s.client.stream.is_ssl()) {
+      BOOST_ASIO_CORO_YIELD
+      s.client.stream.ssl().async_shutdown(std::bind(std::move(*this), _1, true));
+
+      if (ec == boost::asio::error::eof) {
+        // Rationale:
+        // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+        ec.assign(0, ec.category());
+      }
+
+      if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
+
+    } else {
+      s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
+      s.client.stream.plain().close(ec);
+    }
   }
 }
 
