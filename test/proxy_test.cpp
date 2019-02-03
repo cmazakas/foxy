@@ -44,19 +44,12 @@ TEST_CASE("Our forward proxy")
 
       auto const reuse_addr = true;
 
-      // our initial test of the relay operation will be determining if we get back a valid response
-      // from a well-known website
-      //
       auto const request =
         http::request<http::empty_body>(http::verb::get, "lol-some-garbage-target", 11);
 
-      // create our proxy server and begin listening
-      //
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      // create a client that connects to it locally and feeds it requests
-      //
       auto client = foxy::client_session(io);
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -96,19 +89,12 @@ TEST_CASE("Our forward proxy")
 
       auto const reuse_addr = true;
 
-      // our initial test of the relay operation will be determining if we get back a valid response
-      // from a well-known website
-      //
       auto const request =
         http::request<http::empty_body>(http::verb::get, "http://www.google.com:80/", 11);
 
-      // create our proxy server and begin listening
-      //
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      // create a client that connects to it locally and feeds it requests
-      //
       auto client = foxy::client_session(io);
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -176,7 +162,7 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_result = response.result() == http::status::ok;
       auto const was_valid_body   = response.body().size() > 0;
 
-      std::cout << response.body() << "\n\n";
+      // std::cout << response.body() << "\n\n";
 
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);
@@ -272,6 +258,8 @@ TEST_CASE("Our forward proxy")
       client.async_request(request2, res_parser2, yield);
 
       auto response = res_parser2.release();
+
+      std::cout << response.body() << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body   = (response.body().size() > 0);
