@@ -187,7 +187,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         s.close_tunnel = true;
 
         s.response->result(http::status::bad_request);
-        s.response->body() = "CONNECT semantics require a persistent connection";
+        s.response->body() = "CONNECT semantics require a persistent connection\n\n";
         s.response->prepare_payload();
 
         BOOST_ASIO_CORO_YIELD
@@ -195,8 +195,6 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       } else {
         bytes_transferred = 0;
       }
-
-      std::cout << "am I getting here????" << ec.message() << " : " << bytes_transferred << "\n";
 
       if (ec) { goto upcall; }
       if (bytes_transferred > 0) { break; }
