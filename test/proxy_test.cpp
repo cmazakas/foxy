@@ -259,10 +259,11 @@ TEST_CASE("Our forward proxy")
 
       auto response = res_parser2.release();
 
-      // std::cout << response.body() << "\n\n";
+      // std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
-      auto const was_valid_body   = (response.body().size() > 0);
+      auto const was_valid_body =
+        (response.body().size() > 0) && boost::string_view(response.body()).ends_with("</html>");
 
       auto ec = boost::system::error_code();
       client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
@@ -312,7 +313,8 @@ TEST_CASE("Our forward proxy")
       std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
-      auto const was_valid_body   = (response.body().size() > 0);
+      auto const was_valid_body =
+        (response.body().size() > 0) && boost::string_view(response.body()).ends_with("</html>");
 
       auto ec = boost::system::error_code();
       client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);

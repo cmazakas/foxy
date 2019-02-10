@@ -29,8 +29,7 @@ TEST_CASE("Our client session class")
   {
     asio::io_context io;
 
-    auto session_handle =
-      boost::make_unique<foxy::client_session>(io);
+    auto session_handle = boost::make_unique<foxy::client_session>(io);
 
     auto& session = *session_handle;
 
@@ -38,18 +37,14 @@ TEST_CASE("Our client session class")
 
     session.async_connect(
       "www.google.com", "80",
-      [&valid_request, &session, sh = std::move(session_handle)]
-      (error_code ec, tcp::endpoint) mutable -> void
-      {
+      [&valid_request, &session, sh = std::move(session_handle)](error_code ec,
+                                                                 tcp::endpoint) mutable -> void {
         if (ec) {
-          session
-            .stream
-            .plain()
-            .shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+          session.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
           return;
         }
 
-        auto parser_handle  = boost::make_unique<http::response_parser<http::string_body>>();
+        auto parser_handle = boost::make_unique<http::response_parser<http::string_body>>();
         auto request_handle =
           boost::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
 
@@ -58,24 +53,17 @@ TEST_CASE("Our client session class")
 
         session.async_request(
           request, parser,
-          [
-            &valid_request, &session, &parser, &request,
-            ph = std::move(parser_handle),
-            rh = std::move(request_handle),
-            sh = std::move(sh)
-          ](error_code ec) -> void
-          {
+          [&valid_request, &session, &parser, &request, ph = std::move(parser_handle),
+           rh = std::move(request_handle), sh = std::move(sh)](error_code ec) -> void {
             auto response = parser.release();
 
-            auto is_valid_status = (response.result_int() == 200);
-            auto is_valid_body   = (response.body().size() > 0);
+            auto const is_valid_status = (response.result_int() == 200);
+            auto const is_valid_body   = (response.body().size() > 0) &&
+                                       boost::string_view(response.body()).ends_with("</html>");
 
             valid_request = is_valid_body && is_valid_status;
 
-            session
-              .stream
-              .plain()
-              .shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+            session.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
           });
       });
 
@@ -90,20 +78,17 @@ TEST_CASE("Our client session class")
     auto opts    = foxy::session_opts();
     opts.timeout = std::chrono::milliseconds{250};
 
-    auto session_handle =
-      boost::make_unique<foxy::client_session>(io, std::move(opts));
+    auto session_handle = boost::make_unique<foxy::client_session>(io, std::move(opts));
 
     auto& session = *session_handle;
 
     auto timed_out = false;
 
-    session.async_connect(
-      "www.google.com", "1337",
-      [&timed_out, &session, sh = std::move(session_handle)]
-      (error_code ec, tcp::endpoint) mutable -> void
-      {
-        timed_out = (ec == boost::asio::error::operation_aborted);
-      });
+    session.async_connect("www.google.com", "1337",
+                          [&timed_out, &session, sh = std::move(session_handle)](
+                            error_code ec, tcp::endpoint) mutable -> void {
+                            timed_out = (ec == boost::asio::error::operation_aborted);
+                          });
 
     io.run();
     REQUIRE(timed_out);
