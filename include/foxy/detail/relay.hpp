@@ -14,12 +14,15 @@
 #include <foxy/type_traits.hpp>
 #include <foxy/detail/export_connect_fields.hpp>
 
+#include <boost/beast/http/message.hpp>
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/serializer.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/buffer_body.hpp>
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/error.hpp>
+
+#include <boost/system/error_code.hpp>
 
 #include <array>
 #include <iostream>
@@ -48,6 +51,9 @@ public:
   using empty_body  = boost::beast::http::empty_body;
   using fields      = boost::beast::http::basic_fields<allocator_type>;
 
+  using request  = boost::beast::http::request<buffer_body, fields>;
+  using response = boost::beast::http::response<buffer_body, fields>;
+
 private:
   struct state
   {
@@ -59,10 +65,14 @@ private:
     parser<true, buffer_body, allocator_type> req_parser;
     serializer<true, buffer_body, fields>     req_sr;
     fields                                    req_fields;
+    request&                                  req;
 
     parser<false, buffer_body, allocator_type> res_parser;
     serializer<false, buffer_body, fields>     res_sr;
     fields                                     res_fields;
+    response&                                  res;
+
+    boost::system::error_code ec;
 
     bool close_tunnel;
 
@@ -78,11 +88,13 @@ private:
                    std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , req_sr(req_parser.get())
       , req_fields(boost::asio::get_associated_allocator(handler))
+      , req(req_parser.get())
       , res_parser(std::piecewise_construct,
                    std::make_tuple(),
                    std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , res_sr(res_parser.get())
       , res_fields(boost::asio::get_associated_allocator(handler))
+      , res(res_parser.get())
       , close_tunnel{false}
       , work(server.get_executor())
     {
@@ -97,11 +109,13 @@ private:
       , req_parser(std::move(req_parser_))
       , req_sr(req_parser.get())
       , req_fields(boost::asio::get_associated_allocator(handler))
+      , req(req_parser.get())
       , res_parser(std::piecewise_construct,
                    std::make_tuple(),
                    std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , res_sr(res_parser.get())
       , res_fields(boost::asio::get_associated_allocator(handler))
+      , res(res_parser.get())
       , close_tunnel{false}
       , work(server.get_executor())
     {
@@ -178,104 +192,99 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     //
     BOOST_ASIO_CORO_YIELD
     {
-      auto& req = s.req_parser.get();
+      s.close_tunnel        = s.close_tunnel || !s.req.keep_alive();
+      auto const is_chunked = s.req.chunked();
 
-      s.close_tunnel = s.close_tunnel || !req.keep_alive();
+      ::foxy::detail::export_connect_fields<fields>(s.req, s.req_fields);
 
-      auto const is_chunked = req.chunked();
-
-      ::foxy::detail::export_connect_fields<fields>(req, s.req_fields);
-
-      if (s.close_tunnel) { req.keep_alive(false); }
-      if (is_chunked) { req.chunked(true); }
+      if (s.close_tunnel) { s.req.keep_alive(false); }
+      if (is_chunked) { s.req.chunked(true); }
 
       s.client.async_write_header(s.req_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
 
     do {
+      s.ec = {};
+
       if (!s.req_parser.is_done()) {
+        s.req.body().data = s.buffer.data();
+        s.req.body().size = s.buffer.size();
+
         BOOST_ASIO_CORO_YIELD
-        {
-          auto&      body             = s.req_parser.get().body();
-          auto const available_octets = s.buffer.size();
+        s.server.async_read(s.req_parser, std::move(*this));
 
-          body.data = s.buffer.data();
-          body.size = available_octets;
-
-          s.server.async_read(s.req_parser, std::move(*this));
-        }
         if (ec == http::error::need_buffer) { ec = {}; }
-        if (ec) { goto upcall; }
+        if (ec) { s.ec = ec; }
 
-        s.req_parser.get().body().size = s.buffer.size() - s.req_parser.get().body().size;
-        s.req_parser.get().body().data = s.buffer.data();
-        s.req_parser.get().body().more = !s.req_parser.is_done();
+        s.req.body().size = s.buffer.size() - s.req.body().size;
+        s.req.body().data = s.buffer.data();
+        s.req.body().more = !s.req_parser.is_done();
 
       } else {
-        s.req_parser.get().body().data = nullptr;
-        s.req_parser.get().body().size = 0;
+        s.req.body().data = nullptr;
+        s.req.body().size = 0;
       }
 
       BOOST_ASIO_CORO_YIELD
       s.client.async_write(s.req_sr, std::move(*this));
+
       if (ec == http::error::need_buffer) { ec = {}; }
-      if (ec) { goto upcall; }
+      if (ec || s.ec) { goto upcall; }
+
     } while (!s.req_parser.is_done() && !s.req_sr.is_done());
 
+    // TODO: if there's an actual here when reading the response header, send a 502 back to the
+    // client; once the header is sent, it doesn't make sense to send a 502 on top of the already
+    // serialized header
+    //
     BOOST_ASIO_CORO_YIELD
     s.client.async_read_header(s.res_parser, std::move(*this));
     if (ec) { goto upcall; }
 
-    // HTTP RFC 7230 - Section 6.6 - Tear-down
-    // https://tools.ietf.org/html/rfc7230#section-6.6
-    // A server that receives a "close" connection option MUST initiate a
-    // close of the connection (see below) after it sends the final response
-    // to the request that contained "close".  The server SHOULD send a
-    // "close" connection option in its final response on that connection.
-    // The server MUST NOT process any further requests received on that
-    // connection.
-    //
     BOOST_ASIO_CORO_YIELD
     {
-      auto& res = s.res_parser.get();
+      s.close_tunnel = s.close_tunnel || !s.res.keep_alive();
 
-      s.close_tunnel = s.close_tunnel || !res.keep_alive();
+      auto const is_chunked = s.res.chunked();
 
-      auto const is_chunked = res.chunked();
+      ::foxy::detail::export_connect_fields<fields>(s.res, s.res_fields);
 
-      ::foxy::detail::export_connect_fields<fields>(res, s.res_fields);
-
-      if (s.close_tunnel) { res.keep_alive(false); }
-      if (is_chunked) { res.chunked(true); }
+      if (s.close_tunnel) { s.res.keep_alive(false); }
+      if (is_chunked) { s.res.chunked(true); }
 
       s.server.async_write_header(s.res_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
 
     do {
+      s.ec = {};
+
       if (!s.res_parser.is_done()) {
-        s.res_parser.get().body().data = s.buffer.data();
-        s.res_parser.get().body().size = s.buffer.size();
+        s.res.body().data = s.buffer.data();
+        s.res.body().size = s.buffer.size();
 
         BOOST_ASIO_CORO_YIELD
         s.client.async_read(s.res_parser, std::move(*this));
-        if (ec == http::error::need_buffer) { ec = {}; }
-        if (ec) { goto upcall; }
 
-        s.res_parser.get().body().size = s.buffer.size() - s.res_parser.get().body().size;
-        s.res_parser.get().body().data = s.buffer.data();
-        s.res_parser.get().body().more = !s.res_parser.is_done();
+        if (ec == http::error::need_buffer) { ec = {}; }
+        if (ec) { s.ec = ec; }
+
+        s.res.body().size = s.buffer.size() - s.res.body().size;
+        s.res.body().data = s.buffer.data();
+        s.res.body().more = !s.res_parser.is_done();
 
       } else {
-        s.res_parser.get().body().data = nullptr;
-        s.res_parser.get().body().size = 0;
+        s.res.body().data = nullptr;
+        s.res.body().size = 0;
       }
 
       BOOST_ASIO_CORO_YIELD
       s.server.async_write(s.res_sr, std::move(*this));
+
       if (ec == http::error::need_buffer) { ec = {}; }
-      if (ec) { goto upcall; }
+      if (ec || s.ec) { goto upcall; }
+
     } while (!s.res_parser.is_done() && !s.res_sr.is_done());
 
     {
