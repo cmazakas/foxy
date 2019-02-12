@@ -174,7 +174,8 @@ foxy::uri_parts::is_http() const noexcept -> bool
 auto
 foxy::uri_parts::is_authority() const noexcept -> bool
 {
-  return scheme().empty() && !host().empty();
+  return scheme().empty() && !host().empty() && path().empty() && query().empty() &&
+         fragment().empty();
 }
 
 auto

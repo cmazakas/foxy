@@ -202,9 +202,13 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
         BOOST_ASIO_CORO_YIELD
         {
-          auto port = s.uri_parts.port().size() == 0
-                        ? static_cast<std::string>(s.uri_parts.scheme())
-                        : static_cast<std::string>(s.uri_parts.port());
+          auto const scheme = s.uri_parts.scheme().size() == 0
+                                ? (s.client.stream.is_ssl() ? boost::string_view("https")
+                                                            : boost::string_view("http"))
+                                : s.uri_parts.scheme();
+
+          auto port = s.uri_parts.port().size() == 0 ? static_cast<std::string>(scheme)
+                                                     : static_cast<std::string>(s.uri_parts.port());
 
           s.client.async_connect(static_cast<std::string>(s.uri_parts.host()), std::move(port),
                                  bind_handler(std::move(*this), on_connect_t{}, _1, _2));

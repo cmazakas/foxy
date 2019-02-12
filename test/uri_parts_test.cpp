@@ -100,7 +100,7 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.fragment() == "lol");
 
     CHECK(!uri_parts.is_http());
-    CHECK(uri_parts.is_authority());
+    CHECK(!uri_parts.is_authority());
     CHECK(!uri_parts.is_absolute());
   }
 
