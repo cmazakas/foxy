@@ -264,10 +264,8 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         }
 
         if (ec) { goto upcall; }
-        if (s.is_absolute && s.is_http) {
-          s.close_tunnel = true;
-          break;
-        }
+        s.close_tunnel = true;
+        break;
       }
 
       std::cout << "going to write back the tunnel response now\n";
