@@ -192,55 +192,78 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
         BOOST_ASIO_CORO_YIELD
         s.server.async_write(*s.response, std::move(*this));
-      } else {
-        bytes_transferred = 0;
+
+        if (ec) { goto upcall; }
+        break;
       }
 
-      if (ec) { goto upcall; }
-      if (bytes_transferred > 0) { break; }
+      if ((s.is_connect && s.is_authority) || (s.is_absolute && s.is_http)) {
+        std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
 
-      BOOST_ASIO_CORO_YIELD
-      {
-        if ((s.is_connect && s.is_authority) || (s.is_absolute && s.is_http)) {
-          std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
+        BOOST_ASIO_CORO_YIELD
+        {
+          auto port = s.uri_parts.port().size() == 0
+                        ? static_cast<std::string>(s.uri_parts.scheme())
+                        : static_cast<std::string>(s.uri_parts.port());
 
-          s.client.async_connect(static_cast<std::string>(s.uri_parts.host()),
-                                 static_cast<std::string>(s.uri_parts.port()),
+          s.client.async_connect(static_cast<std::string>(s.uri_parts.host()), std::move(port),
                                  bind_handler(std::move(*this), on_connect_t{}, _1, _2));
-        } else {
-          std::cout << "sending malformed response message\n";
+        }
 
+        if (ec) {
           s.response->result(http::status::bad_request);
           s.response->body() =
-            "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
+            "Unable to connect to the remote at: " + static_cast<std::string>(s.uri_parts.host()) +
+            "\nError code: " + ec.message() + "\n\n";
+
           s.response->prepare_payload();
 
+          BOOST_ASIO_CORO_YIELD
           s.server.async_write(*s.response, std::move(*this));
-        }
-      }
 
-      if (ec) { goto upcall; }
-      if (bytes_transferred > 0) {
-        if (!s.parser->keep_alive()) {
+          if (ec) { goto upcall; }
+          if (s.parser->get().keep_alive()) { continue; }
           break;
-        } else {
-          continue;
         }
+
+      } else {
+        std::cout << "sending malformed response message\n";
+
+        s.response->result(http::status::bad_request);
+        s.response->body() =
+          "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
+        s.response->prepare_payload();
+
+        BOOST_ASIO_CORO_YIELD
+        s.server.async_write(*s.response, std::move(*this));
+
+        if (ec) { goto upcall; }
+        if (s.parser.get().keep_alive()) { continue; }
+        break;
       }
 
       if (s.is_absolute && s.is_http) {
         s.parser->get().keep_alive(false);
-        s.parser->get().target(s.uri_parts.path());
 
         BOOST_ASIO_CORO_YIELD
-        async_relay(s.server, s.client, std::move(*s.parser),
-                    bind_handler(std::move(*this), on_relay_t{}, _1, _2));
-      }
+        {
+          auto target =
+            s.uri_parts.path().size() == 0
+              ? (s.parser->get().method() == http::verb::options ? boost::string_view("*")
+                                                                 : boost::string_view("/"))
+              : s.uri_parts.path();
 
-      if (ec) { goto upcall; }
-      if (s.is_absolute && s.is_http) {
-        s.close_tunnel = true;
-        break;
+          s.parser->get().target(target);
+
+          async_relay(s.server, s.client, std::move(*s.parser),
+                      bind_handler(std::move(*this), on_relay_t{}, _1, _2));
+        }
+
+        if (ec) { goto upcall; }
+        if (s.is_absolute && s.is_http) {
+          s.close_tunnel = true;
+          break;
+        }
       }
 
       std::cout << "going to write back the tunnel response now\n";
