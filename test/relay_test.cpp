@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -80,14 +79,16 @@ TEST_CASE("Our async HTTP relay")
     // this proves that our client instance successfully wrote the request to
     // the remote
     //
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\n\r\n");
+    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nVia: 1.1 foxy\r\n\r\n");
 
     // this proves that our internal server instance successfully writes the
     // response back to the proxy client
     //
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
-          "Content-Length: 58\r\n\r\n"
+          "Content-Length: 58\r\n"
+          "Via: 1.1 foxy\r\n"
+          "\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n");
   }
 
@@ -130,12 +131,13 @@ TEST_CASE("Our async HTTP relay")
 
     io.run();
 
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nConnection: close\r\n\r\n");
+    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nConnection: close\r\nVia: 1.1 foxy\r\n\r\n");
 
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
           "Connection: close\r\n"
+          "Via: 1.1 foxy\r\n"
           "\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n");
   }
@@ -175,12 +177,13 @@ TEST_CASE("Our async HTTP relay")
 
     io.run();
 
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\n\r\n");
+    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nVia: 1.1 foxy\r\n\r\n");
 
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
           "Connection: close\r\n"
+          "Via: 1.1 foxy\r\n"
           "\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n");
   }
@@ -230,6 +233,7 @@ TEST_CASE("Our async HTTP relay")
     CHECK(req_stream.str() ==
           "POST / HTTP/1.1\r\n"
           "Transfer-Encoding: chunked\r\n"
+          "Via: 1.1 foxy\r\n"
           "\r\n"
           "5d\r\n"
           "Unholy Gravebirth is a good song but it can be a little off-putting "
@@ -243,6 +247,7 @@ TEST_CASE("Our async HTTP relay")
     CHECK(res_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
           "Transfer-Encoding: chunked\r\n"
+          "Via: 1.1 foxy\r\n"
           "\r\n"
           "3a\r\n"
           "I bestow the heads of virgins and the first-born sons!!!!\n"
@@ -289,10 +294,13 @@ TEST_CASE("Our async HTTP relay")
 
     io.run();
 
-    CHECK(request_stream.str() == "GET http://www.google.com HTTP/1.1\r\nHost: localhost\r\n\r\n");
+    CHECK(request_stream.str() ==
+          "GET http://www.google.com HTTP/1.1\r\nHost: localhost\r\nVia: 1.1 foxy\r\n\r\n");
     CHECK(response_stream.str() ==
           "HTTP/1.1 200 OK\r\n"
-          "Content-Length: 21\r\n\r\n"
+          "Content-Length: 21\r\n"
+          "Via: 1.1 foxy\r\n"
+          "\r\n"
           "google res goes here!");
   }
 }

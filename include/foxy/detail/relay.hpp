@@ -200,6 +200,8 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
       if (s.close_tunnel) { s.req.keep_alive(false); }
       if (is_chunked) { s.req.chunked(true); }
 
+      s.req.insert(http::field::via, "1.1 foxy");
+
       s.client.async_write_header(s.req_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
@@ -252,6 +254,8 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       if (s.close_tunnel) { s.res.keep_alive(false); }
       if (is_chunked) { s.res.chunked(true); }
+
+      s.res.insert(http::field::via, "1.1 foxy");
 
       s.server.async_write_header(s.res_sr, std::move(*this));
     }
