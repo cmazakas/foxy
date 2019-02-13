@@ -50,7 +50,8 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client = foxy::client_session(io);
+      auto client         = foxy::client_session(io);
+      client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
       http::response_parser<http::string_body> parser;
@@ -95,7 +96,8 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client = foxy::client_session(io);
+      auto client         = foxy::client_session(io);
+      client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
       http::response_parser<http::string_body> parser;
@@ -110,7 +112,7 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_result = response.result() == http::status::ok;
       auto const was_valid_body   = response.body().size() > 0;
 
-      // std::cout << response.body() << "\n\n";
+      // std::cout << response << "\n\n";
 
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);
@@ -137,7 +139,8 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client = foxy::client_session(io);
+      auto client         = foxy::client_session(io);
+      client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
       auto const request =
@@ -162,7 +165,7 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_result = response.result() == http::status::ok;
       auto const was_valid_body   = response.body().size() > 0;
 
-      // std::cout << response.body() << "\n\n";
+      // std::cout << response << "\n\n";
 
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);
@@ -189,7 +192,8 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client = foxy::client_session(io);
+      auto client         = foxy::client_session(io);
+      client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
       auto request = http::request<http::empty_body>(http::verb::connect, "www.google.com:80", 11);
@@ -238,8 +242,7 @@ TEST_CASE("Our forward proxy")
       proxy->async_accept();
 
       auto client         = foxy::client_session(io);
-      client.opts.timeout = 5s;
-
+      client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
       auto request = http::request<http::empty_body>(http::verb::connect, "www.google.com:443", 11);
@@ -291,13 +294,13 @@ TEST_CASE("Our forward proxy")
       auto const reuse_addr = true;
 
       auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
-      auto opts = foxy::session_opts{ctx, 5s};
+      auto opts = foxy::session_opts{ctx, 30s};
 
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
       proxy->async_accept();
 
       auto client         = foxy::client_session(io);
-      client.opts.timeout = 5s;
+      client.opts.timeout = 30s;
 
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -310,7 +313,7 @@ TEST_CASE("Our forward proxy")
 
       auto response = res_parser.release();
 
-      std::cout << response << "\n\n";
+      // std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =

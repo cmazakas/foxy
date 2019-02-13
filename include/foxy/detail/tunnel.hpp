@@ -202,10 +202,8 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
         BOOST_ASIO_CORO_YIELD
         {
-          auto const scheme = s.uri_parts.scheme().size() == 0
-                                ? (s.client.stream.is_ssl() ? boost::string_view("https")
-                                                            : boost::string_view("http"))
-                                : s.uri_parts.scheme();
+          auto const scheme =
+            s.client.stream.is_ssl() ? boost::string_view("https") : boost::string_view("http");
 
           auto port = s.uri_parts.port().size() == 0 ? static_cast<std::string>(scheme)
                                                      : static_cast<std::string>(s.uri_parts.port());

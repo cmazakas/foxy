@@ -3,7 +3,6 @@
 ## Table of Contents
 
 * [Hello World](./hello-world.md#Hello-World)
-* [Asio and Beast](./asio-and-beast.md#Asio-and-Beast)
 
 ## About
 
@@ -19,7 +18,7 @@ Foxy features:
 * URI parser combinators (writen in
 [Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html))
 * support for Asio's universal async model of execution
-* simple/experimental TLS forward proxy
+* simple and experimental TLS forward proxy
 
 ## Motivation
 

@@ -122,7 +122,7 @@ TEST_CASE("Our forward proxy (part 2)")
 
       auto response = res_parser.release();
 
-      std::cout << response << "\n\n";
+      // std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =
