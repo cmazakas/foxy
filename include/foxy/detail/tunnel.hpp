@@ -249,13 +249,26 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
         BOOST_ASIO_CORO_YIELD
         {
-          auto target =
+          auto const path =
             s.uri_parts.path().size() == 0
               ? (s.parser->get().method() == http::verb::options ? boost::string_view("*")
                                                                  : boost::string_view("/"))
               : s.uri_parts.path();
 
+          auto target = static_cast<std::string>(path);
+          if (s.uri_parts.query().size() > 0) {
+            target += "?";
+            target += static_cast<std::string>(s.uri_parts.query());
+          }
+
+          auto hostname = static_cast<std::string>(s.uri_parts.host());
+          if (s.uri_parts.port().size() > 0) {
+            hostname += ":";
+            hostname += static_cast<std::string>(s.uri_parts.port());
+          }
+
           s.parser->get().target(target);
+          s.parser->get().set(http::field::host, hostname);
 
           async_relay(s.server, s.client, std::move(*s.parser),
                       bind_handler(std::move(*this), on_relay_t{}, _1, _2));
