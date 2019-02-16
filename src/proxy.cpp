@@ -140,19 +140,13 @@ async_connect_op::operator()(boost::system::error_code ec, bool close_tunnel) ->
     while (true) {
       BOOST_ASIO_CORO_YIELD
       ::foxy::detail::async_tunnel(s.session, s.client, std::move(*this));
-      if (ec) {
-        // do shutdown stuff
-        break;
-      }
+      if (ec) { break; }
 
       if (close_tunnel) { break; }
 
       BOOST_ASIO_CORO_YIELD
       ::foxy::detail::async_relay(s.session, s.client, std::move(*this));
-      if (ec) {
-        // do shutdown stuff
-        break;
-      }
+      if (ec) { break; }
 
       if (close_tunnel) { break; }
     }

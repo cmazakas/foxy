@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -30,21 +29,19 @@ namespace foxy
 {
 namespace detail
 {
-// export_connect_fields writes all the hop-by-hop headers in `src` to the
-// Fields container denoted by `dst`
+// export_connect_fields writes all the hop-by-hop headers in `src` to the Fields container denoted
+// by `dst`
 //
-// Using the passage below, we know the user is allowed to specify Connection
-// multiple times in the fields
+// Using the passage below, we know the user is allowed to specify Connection multiple times in the
+// fields
 //
 // HTTP RFC 7230: https://tools.ietf.org/html/rfc7230#section-3.2.2
-// A sender MUST NOT generate multiple header fields with the same field
-// name in a message unless either the entire field value for that
-// header field is defined as a comma-separated list [i.e., #(values)]
-// or the header field is a well-known exception (as noted below).
+// A sender MUST NOT generate multiple header fields with the same field name in a message unless
+// either the entire field value for that header field is defined as a comma-separated list [i.e.,
+// #(values)] or the header field is a well-known exception (as noted below).
 //
 // Connection ABNF:
-// Connection = *( "," OWS ) connection-option *( OWS "," [ OWS
-// connection-option ] )
+// Connection = *( "," OWS ) connection-option *( OWS "," [ OWS connection-option ] )
 //
 template <class Fields, class = std::enable_if_t<boost::beast::http::is_fields<Fields>::value>>
 void
@@ -89,8 +86,8 @@ foxy::detail::export_connect_fields(Fields& src, Fields& dst)
   range::sort(connect_opts);
   range::unique(connect_opts);
 
-  // iterate the `src` fields, moving any connect headers and the
-  // corresponding tokens to the `dst` fields
+  // iterate the `src` fields, moving any connect headers and the corresponding tokens to the `dst`
+  // fields
   //
   auto const hop_by_hops = std::array<http::field, 11>{http::field::connection,
                                                        http::field::keep_alive,

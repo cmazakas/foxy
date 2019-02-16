@@ -303,4 +303,112 @@ TEST_CASE("Our async HTTP relay")
           "\r\n"
           "google res goes here!");
   }
+
+  SECTION("should signal to close the tunnel for a potential request loop attack (request version)")
+  {
+    net::io_context io;
+
+    auto req_stream = test_stream(io);
+    auto res_stream = test_stream(io);
+
+    auto server_stream = test_stream(io);
+    auto client_stream = test_stream(io);
+
+    auto server = foxy::basic_session<test_stream>(std::move(server_stream));
+    auto client = foxy::basic_session<test_stream>(std::move(client_stream));
+
+    auto fields = http::fields();
+    fields.insert(http::field::via, "1.1 foxy");
+
+    auto request = http::request<http::string_body>(
+      http::verb::post, "/", 11,
+      "Unholy Gravebirth is a good song but it can be a little off-putting "
+      "when used in a test data\n",
+      fields);
+
+    request.prepare_payload();
+
+    auto response = http::response<http::string_body>(
+      http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n");
+
+    response.chunked(true);
+
+    beast::ostream(server.stream.plain().buffer()) << request;
+    beast::ostream(client.stream.plain().buffer()) << response;
+
+    server.stream.plain().connect(res_stream);
+    client.stream.plain().connect(req_stream);
+
+    REQUIRE(req_stream.str() == "");
+    REQUIRE(res_stream.str() == "");
+
+    auto close_tunnel = false;
+
+    net::spawn([&](net::yield_context yield) mutable {
+      close_tunnel = foxy::detail::async_relay(server, client, yield);
+    });
+
+    io.run();
+
+    CHECK(close_tunnel);
+    CHECK(req_stream.str() == "");
+    CHECK(res_stream.str() == "");
+  }
+
+  SECTION(
+    "should signal to close the tunnel for a potential request loop attack (response version)")
+  {
+    net::io_context io;
+
+    auto req_stream = test_stream(io);
+    auto res_stream = test_stream(io);
+
+    auto server_stream = test_stream(io);
+    auto client_stream = test_stream(io);
+
+    auto server = foxy::basic_session<test_stream>(std::move(server_stream));
+    auto client = foxy::basic_session<test_stream>(std::move(client_stream));
+
+    auto fields = http::fields();
+    fields.insert(http::field::via, "1.1 someserver, 1.1 foxy, 1.0 anotherserver");
+
+    auto request = http::request<http::string_body>(
+      http::verb::post, "/", 11,
+      "Unholy Gravebirth is a good song but it can be a little off-putting "
+      "when used in a test data\n");
+
+    request.prepare_payload();
+
+    auto response = http::response<http::string_body>(
+      http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n", fields);
+
+    response.chunked(true);
+
+    beast::ostream(server.stream.plain().buffer()) << request;
+    beast::ostream(client.stream.plain().buffer()) << response;
+
+    server.stream.plain().connect(res_stream);
+    client.stream.plain().connect(req_stream);
+
+    REQUIRE(req_stream.str() == "");
+    REQUIRE(res_stream.str() == "");
+
+    auto close_tunnel = false;
+
+    net::spawn([&](net::yield_context yield) mutable {
+      close_tunnel = foxy::detail::async_relay(server, client, yield);
+    });
+
+    io.run();
+
+    CHECK(close_tunnel);
+    CHECK(req_stream.str() ==
+          "POST / HTTP/1.1\r\n"
+          "Content-Length: 93\r\n"
+          "Via: 1.1 foxy\r\n"
+          "\r\n"
+          "Unholy Gravebirth is a good song but it can be a little off-putting "
+          "when used in a test data\n");
+    CHECK(res_stream.str() == "");
+  }
 }

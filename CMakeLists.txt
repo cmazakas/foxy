@@ -25,6 +25,7 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp

@@ -13,6 +13,7 @@
 #include <foxy/session.hpp>
 #include <foxy/type_traits.hpp>
 #include <foxy/detail/export_connect_fields.hpp>
+#include <foxy/detail/has_token.hpp>
 
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/http/parser.hpp>
@@ -195,6 +196,8 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
       s.close_tunnel        = s.close_tunnel || !s.req.keep_alive();
       auto const is_chunked = s.req.chunked();
 
+      if (::foxy::detail::has_foxy_via(s.req)) { goto upcall; }
+
       ::foxy::detail::export_connect_fields<fields>(s.req, s.req_fields);
 
       if (s.close_tunnel) { s.req.keep_alive(false); }
@@ -247,6 +250,8 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     BOOST_ASIO_CORO_YIELD
     {
       s.close_tunnel = s.close_tunnel || !s.res.keep_alive();
+
+      if (::foxy::detail::has_foxy_via(s.res)) { goto upcall; }
 
       auto const is_chunked = s.res.chunked();
 
