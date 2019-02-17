@@ -369,15 +369,19 @@ TEST_CASE("Our async HTTP relay")
     auto server = foxy::basic_session<test_stream>(std::move(server_stream));
     auto client = foxy::basic_session<test_stream>(std::move(client_stream));
 
-    auto fields = http::fields();
-    fields.insert(http::field::via, "1.1 someserver, 1.1 foxy, 1.0 anotherserver");
+    auto req_fields = http::fields();
+    req_fields.insert(http::field::via, "1.1 otherserver");
 
     auto request = http::request<http::string_body>(
       http::verb::post, "/", 11,
       "Unholy Gravebirth is a good song but it can be a little off-putting "
-      "when used in a test data\n");
+      "when used in a test data\n",
+      req_fields);
 
     request.prepare_payload();
+
+    auto fields = http::fields();
+    fields.insert(http::field::via, "1.1 someserver, 1.1 foxy, 1.0 anotherserver");
 
     auto response = http::response<http::string_body>(
       http::status::ok, 11, "I bestow the heads of virgins and the first-born sons!!!!\n", fields);
@@ -404,8 +408,9 @@ TEST_CASE("Our async HTTP relay")
     CHECK(close_tunnel);
     CHECK(req_stream.str() ==
           "POST / HTTP/1.1\r\n"
-          "Content-Length: 93\r\n"
+          "Via: 1.1 otherserver\r\n"
           "Via: 1.1 foxy\r\n"
+          "Content-Length: 93\r\n"
           "\r\n"
           "Unholy Gravebirth is a good song but it can be a little off-putting "
           "when used in a test data\n");
