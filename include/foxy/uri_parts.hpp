@@ -77,7 +77,8 @@ public:
   is_http() const noexcept -> bool;
 
   // is_authority returns whether or not the URI is in its authority form, i.e. the URI follows the
-  // ABNF of: authority path-abempty [ "?" query ] [ "#" fragment ]
+  // ABNF of:
+  // authority = [ userinfo "@" ] host [ ":" port ]
   // this method is useful when designing servers that support the CONNECT method
   //
   auto
