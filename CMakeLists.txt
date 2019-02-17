@@ -86,7 +86,6 @@ target_compile_definitions(
   PUBLIC
     BOOST_COROUTINES_NO_DEPRECATION_WARNING=1
     BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1
-    BOOST_ASIO_NO_DEPRECATED=1
 )
 
 target_compile_features(foxy PUBLIC cxx_std_14)
