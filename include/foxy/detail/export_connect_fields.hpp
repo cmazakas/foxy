@@ -59,11 +59,16 @@ foxy::detail::export_connect_fields(boost::beast::http::basic_fields<Allocator>&
   namespace http  = boost::beast::http;
   namespace range = boost::range;
 
-  using string_type = std::basic_string<char, std::char_traits<char>, Allocator>;
+  using string_type =
+    std::basic_string<char, std::char_traits<char>,
+                      typename std::allocator_traits<Allocator>::template rebind_alloc<char>>;
 
   // first collect all the Connection options into one coherent list
   //
-  auto connect_opts = std::vector<string_type, Allocator>(src.get_allocator());
+  auto connect_opts =
+    std::vector<string_type,
+                typename std::allocator_traits<Allocator>::template rebind_alloc<string_type>>(
+      src.get_allocator());
 
   connect_opts.reserve(128);
 
