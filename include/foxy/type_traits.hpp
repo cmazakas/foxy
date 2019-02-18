@@ -12,18 +12,11 @@
 
 #include <boost/asio/async_result.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/type_traits/make_void.hpp>
 #include <type_traits>
 
 namespace foxy
 {
-template <class... Ts>
-struct make_void
-{
-  typedef void type;
-};
-template <class... Ts>
-using void_t = typename make_void<Ts...>::type;
-
 namespace detail
 {
 template <class T, class = void>
@@ -32,7 +25,8 @@ struct is_closable_stream_throw : std::false_type
 };
 
 template <class T>
-struct is_closable_stream_throw<T, void_t<decltype(std::declval<T&>().close())>> : std::true_type
+struct is_closable_stream_throw<T, boost::void_t<decltype(std::declval<T&>().close())>>
+  : std::true_type
 {
 };
 
@@ -44,7 +38,7 @@ struct is_closable_stream_nothrow : std::false_type
 template <class T>
 struct is_closable_stream_nothrow<
   T,
-  void_t<decltype(std::declval<T&>().close(std::declval<boost::system::error_code&>()))>>
+  boost::void_t<decltype(std::declval<T&>().close(std::declval<boost::system::error_code&>()))>>
   : std::true_type
 {
 };
