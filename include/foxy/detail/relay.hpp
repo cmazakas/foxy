@@ -198,7 +198,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       if (::foxy::detail::has_foxy_via(s.req)) { goto upcall; }
 
-      ::foxy::detail::export_connect_fields<fields>(s.req, s.req_fields);
+      ::foxy::detail::export_connect_fields(s.req, s.req_fields);
 
       if (s.close_tunnel) { s.req.keep_alive(false); }
       if (is_chunked) { s.req.chunked(true); }
@@ -255,7 +255,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       auto const is_chunked = s.res.chunked();
 
-      ::foxy::detail::export_connect_fields<fields>(s.res, s.res_fields);
+      ::foxy::detail::export_connect_fields(s.res, s.res_fields);
 
       if (s.close_tunnel) { s.res.keep_alive(false); }
       if (is_chunked) { s.res.chunked(true); }

@@ -43,33 +43,27 @@ namespace detail
 // Connection ABNF:
 // Connection = *( "," OWS ) connection-option *( OWS "," [ OWS connection-option ] )
 //
-template <class Fields, class = std::enable_if_t<boost::beast::http::is_fields<Fields>::value>>
+template <class Allocator>
 void
-export_connect_fields(Fields& src, Fields& dst);
+export_connect_fields(boost::beast::http::basic_fields<Allocator>& src,
+                      boost::beast::http::basic_fields<Allocator>& dst);
 
 } // namespace detail
 } // namespace foxy
 
-template <class Fields, class X>
+template <class Allocator>
 void
-foxy::detail::export_connect_fields(Fields& src, Fields& dst)
+foxy::detail::export_connect_fields(boost::beast::http::basic_fields<Allocator>& src,
+                                    boost::beast::http::basic_fields<Allocator>& dst)
 {
   namespace http  = boost::beast::http;
   namespace range = boost::range;
 
-  using fields_allocator_type = typename Fields::allocator_type;
-
-  using string_allocator_type =
-    typename std::allocator_traits<fields_allocator_type>::template rebind_alloc<char>;
-
-  using string_type = std::basic_string<char, std::char_traits<char>, string_allocator_type>;
-
-  using vector_allocator_type =
-    typename std::allocator_traits<fields_allocator_type>::template rebind_alloc<string_type>;
+  using string_type = std::basic_string<char, std::char_traits<char>, Allocator>;
 
   // first collect all the Connection options into one coherent list
   //
-  auto connect_opts = std::vector<string_type, vector_allocator_type>(src.get_allocator());
+  auto connect_opts = std::vector<string_type, Allocator>(src.get_allocator());
 
   connect_opts.reserve(128);
 
@@ -101,8 +95,9 @@ foxy::detail::export_connect_fields(Fields& src, Fields& dst)
                                                        http::field::trailer,
                                                        http::field::transfer_encoding};
 
-  auto const is_connect_opt = [&connect_opts,
-                               &hop_by_hops](typename Fields::value_type const& field) -> bool {
+  auto const is_connect_opt =
+    [&connect_opts,
+     &hop_by_hops](typename http::basic_fields<Allocator>::value_type const& field) -> bool {
     if (range::find(hop_by_hops, field.name()) != hop_by_hops.end()) { return true; }
 
     for (auto const opt : connect_opts) {
