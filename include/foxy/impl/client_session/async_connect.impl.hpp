@@ -184,10 +184,10 @@ connect_op<ConnectHandler>::operator()(boost::system::error_code ec,
 
 template <class ConnectHandler>
 auto
-client_session::async_connect(std::string      host,
-                              std::string      service,
-                              ConnectHandler&& handler) & -> foxy::
-  return_t<ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
+client_session::async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
+  typename boost::asio::async_result<std::decay_t<ConnectHandler>,
+                                     void(boost::system::error_code,
+                                          boost::asio::ip::tcp::endpoint)>::return_type
 {
   boost::asio::async_completion<ConnectHandler,
                                 void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
@@ -195,8 +195,9 @@ client_session::async_connect(std::string      host,
 
   detail::timed_op_wrapper<
     boost::asio::ip::tcp::socket, detail::connect_op,
-    completion_handler_t<ConnectHandler,
-                         void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>,
+    typename boost::asio::async_completion<
+      ConnectHandler,
+      void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type,
     void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>(
     *this, std::move(init.completion_handler))
     .init(std::move(host), std::move(service));

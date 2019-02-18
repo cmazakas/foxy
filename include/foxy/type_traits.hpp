@@ -24,14 +24,6 @@ struct make_void
 template <class... Ts>
 using void_t = typename make_void<Ts...>::type;
 
-template <class CompletionToken, class Signature>
-using return_t =
-  typename boost::asio::async_result<std::decay_t<CompletionToken>, Signature>::return_type;
-
-template <class CompletionToken, class Signature>
-using completion_handler_t =
-  typename boost::asio::async_completion<CompletionToken, Signature>::completion_handler_type;
-
 namespace detail
 {
 template <class T, class = void>

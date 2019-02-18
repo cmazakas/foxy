@@ -59,9 +59,10 @@ public:
   //
   template <class ConnectHandler>
   auto
-  async_connect(std::string host, std::string service, ConnectHandler&& handler) & -> return_t<
-    ConnectHandler,
-    void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>;
+  async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<ConnectHandler>,
+                                       void(boost::system::error_code,
+                                            boost::asio::ip::tcp::endpoint)>::return_type;
 
   // async_request will serialize the provided Request to the connected remote and then use the
   // provided ResponseParser to parse the response The user is expected to retrieve the underlying
@@ -69,10 +70,9 @@ public:
   //
   template <class Request, class ResponseParser, class RequestHandler>
   auto
-  async_request(
-    Request&         request,
-    ResponseParser&  parser,
-    RequestHandler&& handler) & -> return_t<RequestHandler, void(boost::system::error_code)>;
+  async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<RequestHandler>,
+                                       void(boost::system::error_code)>::return_type;
 };
 
 } // namespace foxy

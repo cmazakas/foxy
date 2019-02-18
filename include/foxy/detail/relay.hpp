@@ -316,13 +316,14 @@ template <class Stream, class RelayHandler>
 auto
 async_relay(::foxy::basic_session<Stream>& server,
             ::foxy::basic_session<Stream>& client,
-            RelayHandler&&                 handler)
-  -> ::foxy::return_t<RelayHandler, void(boost::system::error_code, bool)>
+            RelayHandler&&                 handler) ->
+  typename boost::asio::async_result<std::decay_t<RelayHandler>,
+                                     void(boost::system::error_code, bool)>::return_type
 {
   boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
 
-  relay_op<Stream,
-           ::foxy::completion_handler_t<RelayHandler, void(boost::system::error_code, bool)>>(
+  relay_op<Stream, typename boost::asio::async_completion<
+                     RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
     server, client, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();
@@ -333,13 +334,14 @@ auto
 async_relay(::foxy::basic_session<Stream>& server,
             ::foxy::basic_session<Stream>& client,
             Parser&&                       parser,
-            RelayHandler&&                 handler)
-  -> ::foxy::return_t<RelayHandler, void(boost::system::error_code, bool)>
+            RelayHandler&&                 handler) ->
+  typename boost::asio::async_result<std::decay_t<RelayHandler>,
+                                     void(boost::system::error_code, bool)>::return_type
 {
   boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
 
-  relay_op<Stream,
-           ::foxy::completion_handler_t<RelayHandler, void(boost::system::error_code, bool)>>(
+  relay_op<Stream, typename boost::asio::async_completion<
+                     RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
     server, client, std::move(parser), std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();

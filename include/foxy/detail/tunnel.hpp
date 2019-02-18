@@ -314,12 +314,14 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
 template <class TunnelHandler>
 auto
-async_tunnel(foxy::server_session& server, foxy::client_session& client, TunnelHandler&& handler)
-  -> foxy::return_t<TunnelHandler, void(boost::system::error_code, bool)>
+async_tunnel(foxy::server_session& server, foxy::client_session& client, TunnelHandler&& handler) ->
+  typename boost::asio::async_result<std::decay_t<TunnelHandler>,
+                                     void(boost::system::error_code, bool)>::return_type
 {
   boost::asio::async_completion<TunnelHandler, void(boost::system::error_code, bool)> init(handler);
 
-  tunnel_op<foxy::completion_handler_t<TunnelHandler, void(boost::system::error_code, bool)>>(
+  tunnel_op<typename boost::asio::async_completion<
+    TunnelHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
     server, client, std::move(init.completion_handler))({}, 0, false);
 
   return init.result.get();

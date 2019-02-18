@@ -121,17 +121,19 @@ request_op<Request, ResponseParser, RequestHandler>::operator()(boost::system::e
 
 template <class Request, class ResponseParser, class RequestHandler>
 auto
-client_session::async_request(
-  Request&         request,
-  ResponseParser&  parser,
-  RequestHandler&& handler) & -> return_t<RequestHandler, void(boost::system::error_code)>
+client_session::async_request(Request&         request,
+                              ResponseParser&  parser,
+                              RequestHandler&& handler) & ->
+  typename boost::asio::async_result<std::decay_t<RequestHandler>,
+                                     void(boost::system::error_code)>::return_type
 {
   boost::asio::async_completion<RequestHandler, void(boost::system::error_code)> init(handler);
 
-  detail::timed_op_wrapper<boost::asio::ip::tcp::socket, detail::request_op,
-                           completion_handler_t<RequestHandler, void(boost::system::error_code)>,
-                           void(boost::system::error_code)>(*this,
-                                                            std::move(init.completion_handler))
+  detail::timed_op_wrapper<
+    boost::asio::ip::tcp::socket, detail::request_op,
+    typename boost::asio::async_completion<
+      RequestHandler, void(boost::system::error_code)>::completion_handler_type,
+    void(boost::system::error_code)>(*this, std::move(init.completion_handler))
     .template init<Request, ResponseParser>(request, parser);
 
   return init.result.get();
