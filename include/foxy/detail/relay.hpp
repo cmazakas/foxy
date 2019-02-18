@@ -79,9 +79,9 @@ private:
 
     boost::asio::executor_work_guard<decltype(server.get_executor())> work;
 
-    explicit state(RelayHandler const&            handler,
-                   ::foxy::basic_session<Stream>& server_,
-                   ::foxy::basic_session<Stream>& client_)
+    state(RelayHandler const&            handler,
+          ::foxy::basic_session<Stream>& server_,
+          ::foxy::basic_session<Stream>& client_)
       : server(server_)
       , client(client_)
       , req_parser(std::piecewise_construct,
@@ -101,10 +101,10 @@ private:
     {
     }
 
-    explicit state(RelayHandler const&                        handler,
-                   ::foxy::basic_session<Stream>&             server_,
-                   ::foxy::basic_session<Stream>&             client_,
-                   parser<true, empty_body, allocator_type>&& req_parser_)
+    state(RelayHandler const&                        handler,
+          ::foxy::basic_session<Stream>&             server_,
+          ::foxy::basic_session<Stream>&             client_,
+          parser<true, empty_body, allocator_type>&& req_parser_)
       : server(server_)
       , client(client_)
       , req_parser(std::move(req_parser_))
