@@ -15,6 +15,7 @@
 #include <foxy/type_traits.hpp>
 #include <foxy/uri_parts.hpp>
 #include <foxy/detail/relay.hpp>
+#include <foxy/detail/detect_ssl.hpp>
 
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/string_body.hpp>
@@ -55,6 +56,8 @@ private:
       response;
 
     foxy::uri_parts uri_parts;
+
+    boost::tribool is_ssl;
 
     bool is_authority = false;
     bool is_connect   = false;
@@ -116,6 +119,10 @@ public:
   {
   };
 
+  struct on_detect_t
+  {
+  };
+
   auto
   operator()(boost::system::error_code ec,
              std::size_t const         bytes_transferred,
@@ -126,6 +133,9 @@ public:
 
   auto
   operator()(on_relay_t, boost::system::error_code ec, bool close_tunnel) -> void;
+
+  auto
+  operator()(on_detect_t, boost::system::error_code ec, boost::tribool is_ssl_) -> void;
 };
 
 template <class TunnelHandler>
@@ -140,6 +150,15 @@ template <class TunnelHandler>
 auto
 tunnel_op<TunnelHandler>::operator()(on_relay_t, boost::system::error_code ec, bool) -> void
 {
+  (*this)(ec, 0);
+}
+
+template <class TunnelHandler>
+auto
+tunnel_op<TunnelHandler>::
+operator()(on_detect_t, boost::system::error_code ec, boost::tribool is_ssl_) -> void
+{
+  p_->is_ssl = is_ssl_;
   (*this)(ec, 0);
 }
 
@@ -293,6 +312,12 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
       s.close_tunnel = false;
       break;
+    }
+
+    if (!ec && !s.close_tunnel) {
+      BOOST_ASIO_CORO_YIELD
+      async_detect_ssl(s.server.stream.plain(), s.server.buffer,
+                       bind_handler(std::move(*this), on_detect_t{}, _1, _2));
     }
 
     {

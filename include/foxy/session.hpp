@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -31,9 +30,7 @@ struct session_opts
   duration_type                               timeout = std::chrono::seconds{1};
 };
 
-template <class Stream,
-          class =
-            std::enable_if_t<boost::beast::is_async_stream<Stream>::value>>
+template <class Stream, class = std::enable_if_t<boost::beast::is_async_stream<Stream>::value>>
 struct basic_session
 {
 public:
@@ -60,43 +57,29 @@ public:
 
   template <class Parser, class ReadHandler>
   auto
-  async_read_header(
-    Parser& parser,
-    ReadHandler&&
-      handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler,
-                                                  void(
-                                                    boost::system::error_code,
-                                                    std::size_t));
+  async_read_header(Parser& parser, ReadHandler&& handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
+    ReadHandler,
+    void(boost::system::error_code, std::size_t));
 
   template <class Parser, class ReadHandler>
   auto
-  async_read(
-    Parser& parser,
-    ReadHandler&&
-      handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler,
-                                                  void(
-                                                    boost::system::error_code,
-                                                    std::size_t));
+  async_read(Parser& parser, ReadHandler&& handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
+    ReadHandler,
+    void(boost::system::error_code, std::size_t));
 
   template <class Serializer, class WriteHandler>
   auto
   async_write_header(
-    Serializer& serializer,
-    WriteHandler&&
-      handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler,
-                                                  void(
-                                                    boost::system::error_code,
-                                                    std::size_t));
+    Serializer&    serializer,
+    WriteHandler&& handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler,
+                                                               void(boost::system::error_code,
+                                                                    std::size_t));
 
   template <class Serializer, class WriteHandler>
   auto
-  async_write(
-    Serializer& serializer,
-    WriteHandler&&
-      handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler,
-                                                  void(
-                                                    boost::system::error_code,
-                                                    std::size_t));
+  async_write(Serializer& serializer, WriteHandler&& handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
+    WriteHandler,
+    void(boost::system::error_code, std::size_t));
 };
 
 using session = basic_session<boost::asio::ip::tcp::socket>;

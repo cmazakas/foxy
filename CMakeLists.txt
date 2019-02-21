@@ -24,6 +24,7 @@ add_library(
   foxy
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/detect_ssl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
