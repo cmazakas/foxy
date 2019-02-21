@@ -155,8 +155,7 @@ if (FOXY_TESTING)
       Boost::thread
   )
 
-  enable_testing()
-  include(ParseAndAddCatchTests)
-  ParseAndAddCatchTests(foxy_tests)
-
+  include(CTest)
+  include(Catch)
+  catch_discover_tests(foxy_tests)
 endif()
