@@ -3,5 +3,5 @@ set(BOOST_ROOT /home/exbigboss/boosts/68/install)
 set(Boost_USE_STATIC_LIBS ON)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_COMPILER "g++-7")
-
+add_compile_definitions("BOOST_ASIO_NO_DEPRECATED")
 include(/home/exbigboss/vcpkg/scripts/buildsystems/vcpkg.cmake)

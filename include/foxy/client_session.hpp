@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -12,6 +11,7 @@
 #define FOXY_CLIENT_SESSION_HPP_
 
 #include <foxy/session.hpp>
+#include <foxy/type_traits.hpp>
 #include <foxy/shared_handler_ptr.hpp>
 #include <foxy/detail/timed_op_wrapper.hpp>
 
@@ -53,35 +53,26 @@ public:
 
   explicit client_session(boost::asio::io_context& io, session_opts opts = {});
 
-  // async_connect wraps asio::async_connect method and will invoke
-  // asio::async_connect with the specified host and service parameters
-  // async_connect is SSL-aware and will automatically perform the async
-  // handshake for the user, using the SSL context found in the session's opts
+  // async_connect wraps asio::async_connect method and will invoke asio::async_connect with the
+  // specified host and service parameters async_connect is SSL-aware and will automatically perform
+  // the async handshake for the user, using the SSL context found in the session's opts
   //
   template <class ConnectHandler>
-  auto async_connect(
-    std::string host,
-    std::string service,
-    ConnectHandler&&
-      handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(ConnectHandler,
-                                                  void(
-                                                    boost::system::error_code,
-                                                    boost::asio::ip::tcp::
-                                                      endpoint));
+  auto
+  async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<ConnectHandler>,
+                                       void(boost::system::error_code,
+                                            boost::asio::ip::tcp::endpoint)>::return_type;
 
-  // async_request will serialize the provided Request to the connected remote
-  // and then use the provided ResponseParser to parse the response
-  // The user is expected to retrieve the underlying message via the Beast
-  // http::parser interface
+  // async_request will serialize the provided Request to the connected remote and then use the
+  // provided ResponseParser to parse the response The user is expected to retrieve the underlying
+  // message via the Beast http::parser interface
   //
   template <class Request, class ResponseParser, class RequestHandler>
-  auto async_request(
-    Request&        request,
-    ResponseParser& parser,
-    RequestHandler&&
-      handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(RequestHandler,
-                                                  void(
-                                                    boost::system::error_code));
+  auto
+  async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<RequestHandler>,
+                                       void(boost::system::error_code)>::return_type;
 };
 
 } // namespace foxy

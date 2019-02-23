@@ -1,5 +1,9 @@
 # Intro
 
+## Table of Contents
+
+* [Hello World](./hello-world.md#Hello-World)
+
 ## About
 
 Foxy is a C++14 library that aims to make idiomatic usage of
@@ -14,7 +18,7 @@ Foxy features:
 * URI parser combinators (writen in
 [Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html))
 * support for Asio's universal async model of execution
-* simple/experimental TLS forward proxy
+* simple and experimental TLS forward proxy
 
 ## Motivation
 

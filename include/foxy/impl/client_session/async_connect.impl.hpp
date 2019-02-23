@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,17 +11,16 @@
 #define FOXY_IMPL_CLIENT_SESSION_ASYNC_CONNECT_IMPL_HPP_
 
 #include <foxy/client_session.hpp>
+#include <foxy/type_traits.hpp>
 
 namespace foxy
 {
 namespace detail
 {
-
 template <class ConnectHandler>
 struct connect_op : boost::asio::coroutine
 {
 private:
-
   struct state
   {
     ::foxy::session&                             session;
@@ -33,16 +32,15 @@ private:
 
     boost::asio::executor_work_guard<decltype(session.get_executor())> work;
 
-    explicit state(
-      ConnectHandler const&   handler,
-      ::foxy::session&        session_,
-      std::string             host_,
-      std::string             service_)
-    : session(session_)
-    , host(std::move(host_))
-    , service(std::move(service_))
-    , resolver(session.stream.get_executor().context())
-    , work(session.get_executor())
+    explicit state(ConnectHandler const& handler,
+                   ::foxy::session&      session_,
+                   std::string           host_,
+                   std::string           service_)
+      : session(session_)
+      , host(std::move(host_))
+      , service(std::move(service_))
+      , resolver(session.stream.get_executor().context())
+      , work(session.get_executor())
     {
     }
   };
@@ -55,60 +53,59 @@ public:
   connect_op(connect_op&&)      = default;
 
   template <class DeducedHandler>
-  connect_op(
-    ::foxy::session& session,
-    std::string             host,
-    std::string             service,
-    DeducedHandler&&        handler)
-  : p_(
-    std::forward<DeducedHandler>(handler),
-    session, std::move(host), std::move(service))
+  connect_op(::foxy::session& session,
+             std::string      host,
+             std::string      service,
+             DeducedHandler&& handler)
+    : p_(std::forward<DeducedHandler>(handler), session, std::move(host), std::move(service))
   {
   }
 
-  using executor_type = boost::asio::associated_executor_t<
-    ConnectHandler,
-    decltype(std::declval<::foxy::session&>().get_executor())
-  >;
+  using executor_type =
+    boost::asio::associated_executor_t<ConnectHandler,
+                                       decltype(std::declval<::foxy::session&>().get_executor())>;
 
   using allocator_type = boost::asio::associated_allocator_t<ConnectHandler>;
 
-  auto get_executor() const noexcept -> executor_type
+  auto
+  get_executor() const noexcept -> executor_type
   {
     return boost::asio::get_associated_executor(p_.handler(), p_->session.get_executor());
   }
 
-  auto get_allocator() const noexcept -> allocator_type
+  auto
+  get_allocator() const noexcept -> allocator_type
   {
     return boost::asio::get_associated_allocator(p_.handler());
   }
 
-  struct on_resolve_t {};
-  struct on_connect_t {};
+  struct on_resolve_t
+  {
+  };
+  struct on_connect_t
+  {
+  };
 
-  auto operator()(
-    on_resolve_t,
-    boost::system::error_code                    ec,
-    boost::asio::ip::tcp::resolver::results_type results) -> void;
+  auto
+  operator()(on_resolve_t,
+             boost::system::error_code                    ec,
+             boost::asio::ip::tcp::resolver::results_type results) -> void;
 
-  auto operator()(
-    on_connect_t,
-    boost::system::error_code      ec,
-    boost::asio::ip::tcp::endpoint endpoint) -> void;
+  auto
+  operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::endpoint endpoint)
+    -> void;
 
-  auto operator()(
-    boost::system::error_code ec,
-    std::size_t const         bytes_transferred,
-    bool const                is_continuation = true) -> void;
+  auto
+  operator()(boost::system::error_code ec,
+             std::size_t const         bytes_transferred,
+             bool const                is_continuation = true) -> void;
 };
 
 template <class ConnectHandler>
 auto
-connect_op<ConnectHandler>::
-operator()(
-  on_resolve_t,
-  boost::system::error_code                    ec,
-  boost::asio::ip::tcp::resolver::results_type results) -> void
+connect_op<ConnectHandler>::operator()(on_resolve_t,
+                                       boost::system::error_code                    ec,
+                                       boost::asio::ip::tcp::resolver::results_type results) -> void
 {
   p_->results = std::move(results);
   (*this)(ec, 0);
@@ -116,11 +113,9 @@ operator()(
 
 template <class ConnectHandler>
 auto
-connect_op<ConnectHandler>::
-operator()(
-  on_connect_t,
-  boost::system::error_code      ec,
-  boost::asio::ip::tcp::endpoint endpoint) -> void
+connect_op<ConnectHandler>::operator()(on_connect_t,
+                                       boost::system::error_code      ec,
+                                       boost::asio::ip::tcp::endpoint endpoint) -> void
 {
   p_->endpoint = std::move(endpoint);
   (*this)(ec, 0);
@@ -128,11 +123,9 @@ operator()(
 
 template <class ConnectHandler>
 auto
-connect_op<ConnectHandler>::
-operator()(
-  boost::system::error_code ec,
-  std::size_t const         bytes_transferred,
-  bool const                is_continuation) -> void
+connect_op<ConnectHandler>::operator()(boost::system::error_code ec,
+                                       std::size_t const         bytes_transferred,
+                                       bool const                is_continuation) -> void
 {
   using namespace std::placeholders;
   using boost::beast::bind_handler;
@@ -142,33 +135,31 @@ operator()(
   {
     if (s.session.stream.is_ssl()) {
       if (!SSL_set_tlsext_host_name(s.session.stream.ssl().native_handle(), s.host.c_str())) {
-          ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
-          goto upcall;
+        ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
+        goto upcall;
       }
     }
 
     BOOST_ASIO_CORO_YIELD
-    s.resolver.async_resolve(
-      s.host, s.service, bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
+    s.resolver.async_resolve(s.host, s.service,
+                             bind_handler(std::move(*this), on_resolve_t{}, _1, _2));
 
     if (ec) { goto upcall; }
 
-
     BOOST_ASIO_CORO_YIELD
     {
-      auto& socket = s.session.stream.is_ssl() ? s.session.stream.ssl().next_layer() : s.session.stream.plain();
-      boost::asio::async_connect(
-        socket, s.results,
-        bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+      auto& socket =
+        s.session.stream.is_ssl() ? s.session.stream.ssl().next_layer() : s.session.stream.plain();
+      boost::asio::async_connect(socket, s.results,
+                                 bind_handler(std::move(*this), on_connect_t{}, _1, _2));
     }
 
     if (ec) { goto upcall; }
 
     if (s.session.stream.is_ssl()) {
       BOOST_ASIO_CORO_YIELD
-      s.session.stream.ssl().async_handshake(
-        boost::asio::ssl::stream_base::client,
-        bind_handler(std::move(*this), _1, 0));
+      s.session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::client,
+                                             bind_handler(std::move(*this), _1, 0));
 
       if (ec) { goto upcall; }
     }
@@ -189,34 +180,31 @@ operator()(
   }
 }
 
-} // detail
+} // namespace detail
 
 template <class ConnectHandler>
 auto
-client_session::async_connect(
-  std::string      host,
-  std::string      service,
-  ConnectHandler&& handler
-) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
-  ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint))
+client_session::async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
+  typename boost::asio::async_result<std::decay_t<ConnectHandler>,
+                                     void(boost::system::error_code,
+                                          boost::asio::ip::tcp::endpoint)>::return_type
 {
-  boost::asio::async_completion<
-    ConnectHandler, void(boost::system::error_code, boost::asio::ip::tcp::endpoint)
-  >
-  init(handler);
+  boost::asio::async_completion<ConnectHandler,
+                                void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
+    init(handler);
 
   detail::timed_op_wrapper<
-    boost::asio::ip::tcp::socket,
-    detail::connect_op,
-    BOOST_ASIO_HANDLER_TYPE(
+    boost::asio::ip::tcp::socket, detail::connect_op,
+    typename boost::asio::async_completion<
       ConnectHandler,
-      void(boost::system::error_code, boost::asio::ip::tcp::endpoint)),
-    void(boost::system::error_code, boost::asio::ip::tcp::endpoint)
-  >(*this, std::move(init.completion_handler)).init(std::move(host), std::move(service));
+      void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type,
+    void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>(
+    *this, std::move(init.completion_handler))
+    .init(std::move(host), std::move(service));
 
   return init.result.get();
 }
 
-} // foxy
+} // namespace foxy
 
 #endif // FOXY_IMPL_CLIENT_SESSION_ASYNC_CONNECT_IMPL_HPP_

@@ -12,7 +12,7 @@ ENV CC=gcc-7
 ENV CXX=g++-7
 
 RUN set -x && \
-    wget -O /tmp/cmake.tar.gz https://cmake.org/files/v3.12/cmake-3.12.2-Linux-x86_64.tar.gz && \
+    wget -O /tmp/cmake.tar.gz https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz && \
     tar -xzf /tmp/cmake.tar.gz
 
 RUN git clone https://github.com/Microsoft/vcpkg.git && \

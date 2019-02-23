@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
 // com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -48,33 +48,30 @@ TEST_CASE("Our SSL client session class")
 
     session.async_connect(
       "www.google.com", "https",
-      [&valid_request, &session, sh = std::move(session_handle)](
-        error_code ec, tcp::endpoint) mutable -> void {
-        auto parser_handle =
-          boost::make_unique<http::response_parser<http::string_body>>();
+      [&valid_request, &session, sh = std::move(session_handle)](error_code ec,
+                                                                 tcp::endpoint) mutable -> void {
+        auto parser_handle = boost::make_unique<http::response_parser<http::string_body>>();
         auto request_handle =
-          boost::make_unique<http::request<http::empty_body>>(http::verb::get,
-                                                              "/", 11);
+          boost::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
 
         auto& parser  = *parser_handle;
         auto& request = *request_handle;
 
         session.async_request(
           request, parser,
-          [&valid_request, &session, &parser, &request,
-           ph = std::move(parser_handle), rh = std::move(request_handle),
-           sh = std::move(sh)](error_code ec) mutable -> void {
+          [&valid_request, &session, &parser, &request, ph = std::move(parser_handle),
+           rh = std::move(request_handle), sh = std::move(sh)](error_code ec) mutable -> void {
             auto response = parser.release();
 
-            auto is_valid_status = (response.result_int() == 200);
-            auto is_valid_body   = (response.body().size() > 0);
+            auto const is_valid_status = (response.result_int() == 200);
+            auto const is_valid_body   = (response.body().size() > 0) &&
+                                       boost::string_view(response.body()).ends_with("</html>");
 
             valid_request = is_valid_body && is_valid_status;
 
             // do this to prove that the TLS session is stable after a move
             //
-            auto new_handler =
-              boost::make_unique<foxy::client_session>(std::move(session));
+            auto new_handler = boost::make_unique<foxy::client_session>(std::move(session));
 
             auto& other_session = *new_handler;
 
@@ -107,12 +104,11 @@ TEST_CASE("Our SSL client session class")
 
     auto timed_out = false;
 
-    session.async_connect(
-      "www.google.com", "1337",
-      [&timed_out, &session, sh = std::move(session_handle)](
-        error_code ec, tcp::endpoint) mutable -> void {
-        timed_out = (ec == boost::asio::error::operation_aborted);
-      });
+    session.async_connect("www.google.com", "1337",
+                          [&timed_out, &session, sh = std::move(session_handle)](
+                            error_code ec, tcp::endpoint) mutable -> void {
+                            timed_out = (ec == boost::asio::error::operation_aborted);
+                          });
 
     io.run();
     REQUIRE(timed_out);

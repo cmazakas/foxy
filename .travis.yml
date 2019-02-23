@@ -12,12 +12,12 @@ services:
   - docker
 
 before_install:
-  - docker pull leonineking1199/foxy:version3
-  - docker run -it -d -v $(pwd):$(pwd):rw --workdir=$(pwd) --name foxy leonineking1199/foxy:version3 bash
+  - docker pull leonineking1199/foxy:boost-1.69
+  - docker run -it -d -v $(pwd):$(pwd):rw --workdir=$(pwd) --name foxy leonineking1199/foxy:boost-1.69 bash
 
 script:
   - docker exec foxy mkdir build_debug
-  - docker exec foxy bash -c "cd build_debug && /cmake-3.12.2-Linux-x86_64/bin/cmake -DVCPKG_TARGET_TRIPLET=x64-linux-cxx14 -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake .. && /cmake-3.12.2-Linux-x86_64/bin/cmake --build . && /cmake-3.12.2-Linux-x86_64/bin/ctest ."
+  - docker exec foxy bash -c "cd build_debug && /cmake-3.13.4-Linux-x86_64/bin/cmake -DVCPKG_TARGET_TRIPLET=x64-linux-cxx14 -DCMAKE_TOOLCHAIN_FILE=../foxy-travis.cmake .. && /cmake-3.13.4-Linux-x86_64/bin/cmake --build . && /cmake-3.13.4-Linux-x86_64/bin/ctest ."
 
 notifications:
   email:

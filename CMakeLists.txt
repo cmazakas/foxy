@@ -7,12 +7,12 @@
 # Official repository: https://github.com/LeonineKing1199/foxy
 #
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 project(foxy LANGUAGES CXX)
 
 find_package(
-  Boost 1.68
+  Boost 1.69
   REQUIRED
     system
     date_time
@@ -24,7 +24,9 @@ add_library(
   foxy
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/detect_ssl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
@@ -115,9 +117,10 @@ if (FOXY_TESTING)
 
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
-    Boost 1.68
+    Boost 1.69
     REQUIRED
       coroutine
+      thread
   )
 
   add_library(test_utils INTERFACE)
@@ -134,10 +137,10 @@ if (FOXY_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/export_connect_fields_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/tunnel_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_parts_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
@@ -150,10 +153,10 @@ if (FOXY_TESTING)
       test_utils
       Catch2::Catch2
       Boost::coroutine
+      Boost::thread
   )
 
-  enable_testing()
-  include(ParseAndAddCatchTests)
-  ParseAndAddCatchTests(foxy_tests)
-
+  include(CTest)
+  include(Catch)
+  catch_discover_tests(foxy_tests)
 endif()

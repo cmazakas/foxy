@@ -7,8 +7,8 @@ Session-based Beast/Asio wrapper
 ## Requirements
 
 * C++14
-* CMake 3.12 and above
-* Latest Boost (currently 1.68)
+* CMake 3.13 and above
+* Latest Boost (currently 1.69)
 * OpenSSL
 * Catch2 (for testing)
 
