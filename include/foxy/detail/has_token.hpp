@@ -40,15 +40,12 @@ has_foxy_via(boost::beast::http::basic_fields<Allocator> const& fields) -> bool
 
   auto found = false;
   for (; begin != end; ++begin) {
-    std::cout << "parsing this value...\n" << begin->value() << "\n";
-
     auto       field_val_iter = begin->value().begin();
     auto const field_val_end  = begin->value().end();
 
     found = x3::parse(field_val_iter, field_val_end,
                       x3::no_case[*(x3::char_ - "1.1 foxy") >> x3::lit("1.1 foxy") >> *x3::char_]);
 
-    std::cout << "found: " << std::boolalpha << found << "\n\n";
     if (found) { break; }
   }
   return found;
