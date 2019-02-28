@@ -68,7 +68,7 @@ public:
   async_read_some(MutableBufferSequence const& buffers, CompletionToken&& token)
   {
     return boost::variant2::visit(
-      [&](auto& stream) mutable {
+      [&](auto& stream) {
         return stream.async_read_some(buffers, std::forward<CompletionToken>(token));
       },
       stream_);
@@ -79,7 +79,7 @@ public:
   async_write_some(ConstBufferSequence const& buffers, CompletionToken&& token)
   {
     return boost::variant2::visit(
-      [&](auto& stream) mutable {
+      [&](auto& stream) {
         return stream.async_write_some(buffers, std::forward<CompletionToken>(token));
       },
       stream_);
@@ -130,8 +130,7 @@ template <class Stream, class X>
 auto
 basic_multi_stream<Stream, X>::get_executor() -> boost::asio::io_context::executor_type
 {
-  return boost::variant2::visit([&](auto& stream) mutable { return stream.get_executor(); },
-                                stream_);
+  return boost::variant2::visit([](auto& stream) { return stream.get_executor(); }, stream_);
 }
 
 using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
