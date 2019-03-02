@@ -184,14 +184,10 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       s.response.emplace(std::piecewise_construct, std::make_tuple(get_allocator()),
                          std::make_tuple(get_allocator()));
 
-      std::cout << "reading in client header...\n";
-
       BOOST_ASIO_CORO_YIELD
       s.server.async_read_header(*s.parser, std::move(*this));
 
       if (ec) { goto upcall; }
-
-      std::cout << "parsing URI now:" << s.parser->get().target() << "\n";
 
       s.uri_parts = foxy::parse_uri(s.parser->get().target());
 
@@ -201,8 +197,6 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       s.is_http      = s.uri_parts.is_http();
 
       if (s.is_connect && s.is_authority && !s.parser->keep_alive()) {
-        std::cout << "sending error response...\n";
-
         s.close_tunnel = true;
 
         s.response->result(http::status::bad_request);
@@ -217,8 +211,6 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       }
 
       if ((s.is_connect && s.is_authority) || (s.is_absolute && s.is_http)) {
-        std::cout << "connecting to: \n" << s.uri_parts.host() << "\n\n";
-
         BOOST_ASIO_CORO_YIELD
         {
           auto const scheme =
@@ -248,8 +240,6 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         }
 
       } else {
-        std::cout << "sending malformed response message\n";
-
         s.response->result(http::status::bad_request);
         s.response->body() =
           "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
@@ -297,8 +287,6 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         s.close_tunnel = true;
         break;
       }
-
-      std::cout << "going to write back the tunnel response now\n";
 
       s.response->result(http::status::ok);
 
