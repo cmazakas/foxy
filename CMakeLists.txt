@@ -93,7 +93,7 @@ target_compile_definitions(
     BOOST_BEAST_ALLOW_DEPRECATED=1
 )
 
-target_compile_features(foxy PUBLIC cxx_std_14)
+target_compile_features(foxy PUBLIC cxx_generic_lambdas)
 
 target_include_directories(
   foxy
