@@ -13,5 +13,6 @@ auto
 foxy::uri::to_utf8_encoding(boost::locale::utf::code_point const code_point) -> std::uint32_t
 {
   if (code_point < 0x80) { return code_point; }
+  if (code_point < 0x0800) { return ((code_point & 0x7c0) << 2) + (code_point & 0x3f) + 0xc080; }
   return 0x0;
 }
