@@ -62,16 +62,14 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/pct_encode.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/uri_parts.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 
   # TODO: someday make this work
   #
   # ${CMAKE_CURRENT_SOURCE_DIR}/src/uri.cpp
-
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 )
 
 if (MSVC)

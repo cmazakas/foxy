@@ -22,13 +22,11 @@ Foxy features:
 
 ## Motivation
 
-Foxy aims to be competitive with the HTTP libraries offered by both Node.js and
-Go.
+Foxy aims to be competitive with the HTTP libraries offered by both Node.js and Go.
 
-While these languages are significantly higher-level than C++ is, their standard
-HTTP libraries are low-level from an abstract perspective. The success of these
-languages and their libraries has shown that the modern web development is
-favoring an ever-lower set of HTTP APIs.
+While these languages are significantly higher-level than C++ is, their standard HTTP libraries are
+low-level from an abstract perspective. The success of these languages and their libraries has shown
+that the modern web  development is favoring an ever-lower set of HTTP APIs.
 
 Foxy offers a low-level set of session-based primitives that empower users to create their own
 abstractions while also offering much more familiar APIs.
