@@ -42,6 +42,19 @@ utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> Ou
       ++sink;
       continue;
     }
+
+    if (code_point < 0x0800) {
+      auto const  encoded_point = ((code_point & 0x7c0) << 2) + (code_point & 0x3f) + 0xc080;
+      auto const* bytes         = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+      *sink = bytes[1];
+      ++sink;
+
+      *sink = bytes[0];
+      ++sink;
+
+      continue;
+    }
   }
   return sink;
 }
