@@ -73,33 +73,22 @@ TEST_CASE("Our percent encoding function/namespace should...")
         is_valid_encoding = is_valid_encoding && first_byte[7];
         is_valid_encoding = is_valid_encoding && first_byte[6];
         is_valid_encoding = is_valid_encoding && !first_byte[5];
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(first_byte[4]) == static_cast<bool>(code_point[10]));
+        is_valid_encoding = is_valid_encoding && (first_byte[4] == code_point[10]);
 
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(first_byte[3]) == static_cast<bool>(code_point[9]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(first_byte[2]) == static_cast<bool>(code_point[8]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(first_byte[1]) == static_cast<bool>(code_point[7]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(first_byte[0]) == static_cast<bool>(code_point[6]));
+        is_valid_encoding = is_valid_encoding && (first_byte[3] == code_point[9]);
+        is_valid_encoding = is_valid_encoding && (first_byte[2] == code_point[8]);
+        is_valid_encoding = is_valid_encoding && (first_byte[1] == code_point[7]);
+        is_valid_encoding = is_valid_encoding && (first_byte[0] == code_point[6]);
 
         is_valid_encoding = is_valid_encoding && second_byte[7];
         is_valid_encoding = is_valid_encoding && !second_byte[6];
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(second_byte[5]) == static_cast<bool>(code_point[5]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(second_byte[4]) == static_cast<bool>(code_point[4]));
+        is_valid_encoding = is_valid_encoding && (second_byte[5] == code_point[5]);
+        is_valid_encoding = is_valid_encoding && (second_byte[4] == code_point[4]);
 
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(second_byte[3]) == static_cast<bool>(code_point[3]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(second_byte[2]) == static_cast<bool>(code_point[2]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(second_byte[1]) == static_cast<bool>(code_point[1]));
-        is_valid_encoding = is_valid_encoding &&
-                            (static_cast<bool>(second_byte[0]) == static_cast<bool>(code_point[0]));
+        is_valid_encoding = is_valid_encoding && (second_byte[3] == code_point[3]);
+        is_valid_encoding = is_valid_encoding && (second_byte[2] == code_point[2]);
+        is_valid_encoding = is_valid_encoding && (second_byte[1] == code_point[1]);
+        is_valid_encoding = is_valid_encoding && (second_byte[0] == code_point[0]);
       }
 
       CHECK(is_valid_encoding);
