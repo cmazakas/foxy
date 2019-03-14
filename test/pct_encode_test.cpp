@@ -32,18 +32,40 @@ TEST_CASE("Our percent encoding function/namespace should...")
     // [U+0000,  U+007F]
     //
     {
-      auto all_ascii = std::string();
-      all_ascii.reserve(128);
+      auto const bytes_per_code_point = 1;
+      auto const code_point_begin     = utf::code_point{0x0000};
+      auto const code_point_end       = utf::code_point{0x0080};
 
-      for (std::uint8_t unicode_char = 0x00; unicode_char < 0x80; ++unicode_char) {
-        all_ascii.push_back(unicode_char);
+      auto code_points = std::vector<utf::code_point>();
+      code_points.reserve(code_point_end - code_point_begin);
+      for (utf::code_point code_point = code_point_begin; code_point < code_point_end;
+           ++code_point) {
+        code_points.push_back(code_point);
       }
 
-      auto out = std::string(128, '\0');
-      auto end = foxy::uri::utf8_encoding(all_ascii.begin(), all_ascii.end(), out.begin());
+      auto utf8_bytes = std::vector<std::uint8_t>();
+      utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      CHECK(std::distance(out.begin(), end) == 128);
-      CHECK(out == all_ascii);
+      foxy::uri::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+
+      auto is_valid_encoding = true;
+
+      for (std::size_t idx = 0; idx < code_points.size(); ++idx) {
+        auto const code_point = std::bitset<8>(code_points[idx]);
+
+        auto const first_byte = std::bitset<8>(utf8_bytes[(bytes_per_code_point * idx) + 0]);
+
+        is_valid_encoding = is_valid_encoding && !first_byte[7];
+        is_valid_encoding = is_valid_encoding && (first_byte[6] == code_point[6]);
+        is_valid_encoding = is_valid_encoding && (first_byte[5] == code_point[5]);
+        is_valid_encoding = is_valid_encoding && (first_byte[4] == code_point[4]);
+        is_valid_encoding = is_valid_encoding && (first_byte[3] == code_point[3]);
+        is_valid_encoding = is_valid_encoding && (first_byte[2] == code_point[2]);
+        is_valid_encoding = is_valid_encoding && (first_byte[1] == code_point[1]);
+        is_valid_encoding = is_valid_encoding && (first_byte[0] == code_point[0]);
+      }
+
+      CHECK(is_valid_encoding);
     }
 
     // [U+0080, U+0800]
