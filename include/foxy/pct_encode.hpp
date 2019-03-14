@@ -44,7 +44,7 @@ utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> Ou
     }
 
     if (code_point < 0x0800) {
-      auto const  encoded_point = ((code_point & 0x7c0) << 2) + (code_point & 0x3f) + 0xc080;
+      auto const  encoded_point = ((code_point & 0x07c0) << 2) + (code_point & 0x003f) + 0xc080;
       auto const* bytes         = reinterpret_cast<std::uint8_t const*>(&encoded_point);
 
       *sink = bytes[1];
@@ -55,10 +55,48 @@ utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> Ou
 
       continue;
     }
+
+    if (code_point < 0x10000) {
+      auto const encoded_point = ((code_point & 0xf000) << 4) + ((code_point & 0x0fc0) << 2) +
+                                 (code_point & 0x003f) + 0xe08080;
+      auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+      *sink = bytes[2];
+      ++sink;
+
+      *sink = bytes[1];
+      ++sink;
+
+      *sink = bytes[0];
+      ++sink;
+
+      continue;
+    }
+
+    if (code_point < 0x110000) {
+      auto const encoded_point = ((code_point & 0x1c0000) << 6) + ((code_point & 0x03f000) << 4) +
+                                 ((code_point & 0x000fc0) << 2) + (code_point & 0x00003f) +
+                                 0xf0808080;
+      auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+      *sink = bytes[3];
+      ++sink;
+
+      *sink = bytes[2];
+      ++sink;
+
+      *sink = bytes[1];
+      ++sink;
+
+      *sink = bytes[0];
+      ++sink;
+
+      continue;
+    }
   }
+
   return sink;
 }
-
 } // namespace uri
 } // namespace foxy
 
