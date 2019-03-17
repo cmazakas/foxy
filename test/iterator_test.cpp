@@ -34,4 +34,79 @@ TEST_CASE("Our Unicode code point iterator...")
 
     CHECK(ranges_match);
   }
+
+  SECTION("should follow the proper Iterator requirements")
+  {
+    // CopyConstructible
+    {
+      foxy::uri::code_point_iterator<char const*> const pos{nullptr, nullptr};
+
+      auto pos2(pos);
+    }
+
+    // MoveConstructible
+    {
+      foxy::uri::code_point_iterator<char const*> pos{nullptr, nullptr};
+
+      auto pos2(std::move(pos));
+      auto pos3(foxy::uri::code_point_iterator<char const*>{nullptr, nullptr});
+    }
+
+    // CopyAssignable
+    {
+      foxy::uri::code_point_iterator<char const*> pos{nullptr, nullptr};
+      foxy::uri::code_point_iterator<char const*> pos2{nullptr, nullptr};
+
+      pos2 = pos;
+    }
+
+    // MoveAssignable
+    {
+      foxy::uri::code_point_iterator<char const*> pos{nullptr, nullptr};
+      foxy::uri::code_point_iterator<char const*> pos2{nullptr, nullptr};
+
+      pos2 = std::move(pos);
+    }
+
+    // Destructible is proven by previous code compiling...
+
+    // Swappable
+    // Swappable in the case of Foxy's code_point_iterator will be essentially swapping the views
+    // owned by the other
+    // So this means, they should point to different strings (or different positions in the same
+    // view) and performing a swap will reset their traversal to the other's
+    //
+    {
+      using std::swap;
+      using foxy::uri::code_point::swap;
+
+      auto input1 = boost::u16string_view(u"hello, world!");
+      auto input2 = boost::u16string_view(u"hello, world!");
+
+      auto const code_points = //       'h'  'e'  'l'  'l'  'o'  ',' ' ' 'w'  'o'  'r'  'l'  'd' '!'
+        std::vector<utf::code_point>{104, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33};
+
+      auto const pts_view1 = foxy::uri::code_point_view<char16_t>(input1);
+      auto const pts_view2 = foxy::uri::code_point_view<char16_t>(input2);
+
+      auto begin1 = pts_view1.begin();
+      auto begin2 = pts_view2.begin();
+
+      CHECK(*begin1++ == 104);
+
+      CHECK(*begin2++ == 104);
+      CHECK(*begin2++ == 101);
+      CHECK(*begin2++ == 108);
+
+      swap(begin1, begin2);
+
+      CHECK(*begin1++ == 108);
+      CHECK(*begin1++ == 111);
+
+      CHECK(*begin2++ == 101);
+      CHECK(*begin2++ == 108);
+      CHECK(*begin2++ == 108);
+      CHECK(*begin2++ == 111);
+    }
+  }
 }
