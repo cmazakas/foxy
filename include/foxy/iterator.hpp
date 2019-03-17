@@ -10,6 +10,7 @@
 #ifndef FOXY_ITERATOR_HPP_
 #define FOXY_ITERATOR_HPP_
 
+#include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>
 #include <iterator>
 #include <cstddef>
@@ -23,7 +24,7 @@ struct code_point_iterator
 {
 public:
   using value_type        = boost::locale::utf::code_point;
-  using difference_type   = void;
+  using difference_type   = std::ptrdiff_t;
   using pointer           = void;
   using reference         = value_type;
   using iterator_category = std::input_iterator_tag;
@@ -81,6 +82,39 @@ make_code_point_iterator(Iterator const iterator, Iterator const end)
 {
   return code_point_iterator<Iterator>(iterator, end);
 }
+
+template <class Char, class Traits = std::char_traits<Char>>
+struct code_point_view
+{
+public:
+  using iterator_type = typename boost::basic_string_view<Char, Traits>::iterator;
+
+private:
+  boost::basic_string_view<Char, Traits> view_;
+
+public:
+  code_point_view()                       = default;
+  code_point_view(code_point_view const&) = default;
+  code_point_view(code_point_view&&)      = default;
+
+  code_point_view(boost::basic_string_view<Char, Traits> view)
+    : view_(view)
+  {
+  }
+
+  auto
+  begin() const noexcept -> code_point_iterator<iterator_type>
+  {
+    return make_code_point_iterator(view_.begin(), view_.end());
+  }
+
+  auto
+  end() const noexcept -> code_point_iterator<iterator_type>
+  {
+    return make_code_point_iterator(view_.end(), view_.end());
+  }
+};
+
 } // namespace uri
 } // namespace foxy
 

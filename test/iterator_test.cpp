@@ -28,11 +28,8 @@ TEST_CASE("Our Unicode code point iterator...")
     auto const expected = //       'h'  'e'  'l'  'l'  'o'  ',' ' ' 'w'  'o'  'r'  'l'  'd'  '!'
       std::vector<utf::code_point>{104, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33};
 
-    auto begin = foxy::uri::make_code_point_iterator(input.begin(), input.end());
-    auto end   = foxy::uri::make_code_point_iterator(input.end(), input.end());
-
-    auto const code_points = std::vector<utf::code_point>(begin, end);
-
+    auto const points_view  = foxy::uri::code_point_view<wchar_t>(input);
+    auto const code_points  = std::vector<utf::code_point>(points_view.begin(), points_view.end());
     auto const ranges_match = std::equal(expected.begin(), expected.end(), code_points.begin());
 
     CHECK(ranges_match);
