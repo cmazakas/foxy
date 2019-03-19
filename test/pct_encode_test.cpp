@@ -23,7 +23,7 @@
 
 namespace utf = boost::locale::utf;
 
-TEST_CASE("Our percent encoding function/namespace should...")
+TEST_CASE("Our percent encoding function/namespace...")
 {
   SECTION(
     "... should be able to convert any Unicode code point to its underlying UTF-8 binary "
@@ -244,5 +244,13 @@ TEST_CASE("Our percent encoding function/namespace should...")
 
       CHECK(is_valid_encoding);
     }
+  }
+
+  SECTION("...should actually pct encode")
+  {
+    auto const str = boost::wstring_view(L"€");
+    auto       out = std::string(256, '\0');
+
+    auto const out_end = foxy::uri::pct_encode(str, out.begin());
   }
 }

@@ -10,8 +10,18 @@
 #ifndef FOXY_PCT_ENCODE_HPP_
 #define FOXY_PCT_ENCODE_HPP_
 
+#include <foxy/iterator.hpp>
+
+#include <boost/spirit/include/karma_generate.hpp>
+#include <boost/spirit/include/karma_char.hpp>
+#include <boost/spirit/include/karma_numeric.hpp>
+
+#include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>
+
 #include <cstdint>
+#include <string>
+#include <array>
 
 namespace foxy
 {
@@ -103,6 +113,24 @@ utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> Ou
     auto const code_point = *curr;
 
     sink = utf8_encode(code_point, sink);
+  }
+
+  return sink;
+}
+
+template <class Char, class OutputIterator, class Traits = std::char_traits<Char>>
+auto
+pct_encode(boost::basic_string_view<Char, Traits> const input, OutputIterator sink)
+  -> OutputIterator
+{
+  auto const points = code_point_view<Char>(input);
+
+  for (auto const code_point : points) {
+    auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
+
+    auto const end = utf8_encode(code_point, buffer.begin());
+
+    for (auto pos = buffer.begin(); pos < end; ++pos) {}
   }
 
   return sink;
