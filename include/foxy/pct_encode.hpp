@@ -17,6 +17,70 @@ namespace foxy
 {
 namespace uri
 {
+template <class OutputIterator>
+auto
+utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink) -> OutputIterator
+{
+  if (code_point < 0x0080) {
+    *sink = code_point;
+    ++sink;
+    return sink;
+  }
+
+  if (code_point < 0x0800) {
+    auto const  encoded_point = ((code_point & 0x07c0) << 2) + (code_point & 0x003f) + 0xc080;
+    auto const* bytes         = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+    *sink = bytes[1];
+    ++sink;
+
+    *sink = bytes[0];
+    ++sink;
+
+    return sink;
+  }
+
+  if (code_point < 0x10000) {
+    auto const encoded_point = ((code_point & 0xf000) << 4) + ((code_point & 0x0fc0) << 2) +
+                               (code_point & 0x003f) + 0xe08080;
+    auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+    *sink = bytes[2];
+    ++sink;
+
+    *sink = bytes[1];
+    ++sink;
+
+    *sink = bytes[0];
+    ++sink;
+
+    return sink;
+  }
+
+  if (code_point < 0x110000) {
+    auto const encoded_point = ((code_point & 0x1c0000) << 6) + ((code_point & 0x03f000) << 4) +
+                               ((code_point & 0x000fc0) << 2) + (code_point & 0x00003f) +
+                               0xf0808080;
+    auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+    *sink = bytes[3];
+    ++sink;
+
+    *sink = bytes[2];
+    ++sink;
+
+    *sink = bytes[1];
+    ++sink;
+
+    *sink = bytes[0];
+    ++sink;
+
+    return sink;
+  }
+
+  return sink;
+}
+
 //
 // to_utf8_encoding takes the Boost.Locale type `utf::code_point` which is capable of holding any
 // Unicode code point. We convert the number to an unsigned 32 bit integer which represents the 1-4
@@ -37,62 +101,8 @@ utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> Ou
 {
   for (auto curr = begin; curr != end; ++curr) {
     auto const code_point = *curr;
-    if (code_point < 0x0080) {
-      *sink = code_point;
-      ++sink;
-      continue;
-    }
 
-    if (code_point < 0x0800) {
-      auto const  encoded_point = ((code_point & 0x07c0) << 2) + (code_point & 0x003f) + 0xc080;
-      auto const* bytes         = reinterpret_cast<std::uint8_t const*>(&encoded_point);
-
-      *sink = bytes[1];
-      ++sink;
-
-      *sink = bytes[0];
-      ++sink;
-
-      continue;
-    }
-
-    if (code_point < 0x10000) {
-      auto const encoded_point = ((code_point & 0xf000) << 4) + ((code_point & 0x0fc0) << 2) +
-                                 (code_point & 0x003f) + 0xe08080;
-      auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
-
-      *sink = bytes[2];
-      ++sink;
-
-      *sink = bytes[1];
-      ++sink;
-
-      *sink = bytes[0];
-      ++sink;
-
-      continue;
-    }
-
-    if (code_point < 0x110000) {
-      auto const encoded_point = ((code_point & 0x1c0000) << 6) + ((code_point & 0x03f000) << 4) +
-                                 ((code_point & 0x000fc0) << 2) + (code_point & 0x00003f) +
-                                 0xf0808080;
-      auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
-
-      *sink = bytes[3];
-      ++sink;
-
-      *sink = bytes[2];
-      ++sink;
-
-      *sink = bytes[1];
-      ++sink;
-
-      *sink = bytes[0];
-      ++sink;
-
-      continue;
-    }
+    sink = utf8_encode(code_point, sink);
   }
 
   return sink;
