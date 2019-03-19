@@ -68,8 +68,8 @@ public:
 
   auto operator*() -> value_type
   {
-    return boost::locale::utf::utf_traits<std::iterator_traits<Iterator>::value_type>::decode(
-      iterator_, end_);
+    return boost::locale::utf::utf_traits<
+      typename std::iterator_traits<Iterator>::value_type>::decode(iterator_, end_);
   }
 
   auto

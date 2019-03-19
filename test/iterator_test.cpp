@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 #include <catch2/catch.hpp>
 
@@ -107,6 +108,55 @@ TEST_CASE("Our Unicode code point iterator...")
       CHECK(*begin2++ == 108);
       CHECK(*begin2++ == 108);
       CHECK(*begin2++ == 111);
+    }
+
+    // EqualityComparable
+    //
+    {
+      auto input = boost::u16string_view(u"hello, world!");
+
+      auto points_view = foxy::uri::code_point_view<char16_t>(input);
+
+      auto iter1 = points_view.begin();
+      auto iter2 = points_view.begin();
+
+      auto end = points_view.end();
+
+      CHECK(iter1 == iter2);
+      CHECK(iter1 != end);
+      CHECK(iter2 != end);
+    }
+
+    // ensure `std::iterator_traits` has what it needs
+    //
+    {
+      static_assert(
+        std::is_same<
+          typename std::iterator_traits<foxy::uri::code_point_iterator<char const*>>::value_type,
+          utf::code_point>::value,
+        "Invalid value_type");
+
+      static_assert(std::is_same<typename std::iterator_traits<
+                                   foxy::uri::code_point_iterator<char const*>>::difference_type,
+                                 std::ptrdiff_t>::value,
+                    "Invalid difference_type");
+
+      static_assert(
+        std::is_same<
+          typename std::iterator_traits<foxy::uri::code_point_iterator<char const*>>::reference,
+          utf::code_point>::value,
+        "Invalid reference type");
+
+      static_assert(
+        std::is_same<
+          typename std::iterator_traits<foxy::uri::code_point_iterator<char const*>>::pointer,
+          void>::value,
+        "Invalid pointer type");
+
+      static_assert(std::is_same<typename std::iterator_traits<
+                                   foxy::uri::code_point_iterator<char const*>>::iterator_category,
+                                 std::input_iterator_tag>::value,
+                    "Invalid pointer type");
     }
   }
 }
