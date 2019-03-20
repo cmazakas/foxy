@@ -252,5 +252,9 @@ TEST_CASE("Our percent encoding function/namespace...")
     auto       out = std::string(256, '\0');
 
     auto const out_end = foxy::uri::pct_encode(str, out.begin());
+
+    auto const out_view = boost::string_view(out.data(), out_end - out.begin());
+
+    CHECK(out_view == "%e2%82%ac");
   }
 }

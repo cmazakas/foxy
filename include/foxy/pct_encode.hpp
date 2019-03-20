@@ -13,7 +13,8 @@
 #include <foxy/iterator.hpp>
 
 #include <boost/spirit/include/karma_generate.hpp>
-#include <boost/spirit/include/karma_char.hpp>
+#include <boost/spirit/include/karma_string.hpp>
+#include <boost/spirit/include/karma_sequence.hpp>
 #include <boost/spirit/include/karma_numeric.hpp>
 
 #include <boost/utility/string_view.hpp>
@@ -22,6 +23,7 @@
 #include <cstdint>
 #include <string>
 #include <array>
+#include <iostream>
 
 namespace foxy
 {
@@ -123,14 +125,27 @@ auto
 pct_encode(boost::basic_string_view<Char, Traits> const input, OutputIterator sink)
   -> OutputIterator
 {
+  namespace karma = boost::spirit::karma;
+  namespace utf   = boost::locale::utf;
+
   auto const points = code_point_view<Char>(input);
 
   for (auto const code_point : points) {
+    std::cout << "this is the code point: " << std::hex << code_point << "\n";
+
+    if (code_point == utf::illegal || code_point == utf::incomplete) { return sink; }
+
+    // no need to encode the ASCII set
+    //
+    if (code_point < 0x0080) { continue; }
+
     auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
 
     auto const end = utf8_encode(code_point, buffer.begin());
 
-    for (auto pos = buffer.begin(); pos < end; ++pos) {}
+    for (auto pos = buffer.begin(); pos < end; ++pos) {
+      karma::generate(sink, karma::lit("%") << karma::hex, *pos);
+    }
   }
 
   return sink;
