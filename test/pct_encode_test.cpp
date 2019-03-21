@@ -248,13 +248,48 @@ TEST_CASE("Our percent encoding function/namespace...")
 
   SECTION("...should actually pct encode")
   {
-    auto const str = boost::wstring_view(L"€");
-    auto       out = std::string(256, '\0');
+    {
+      auto const str = boost::wstring_view(L"\u20ac");
+      auto       out = std::string(256, '\0');
 
-    auto const out_end = foxy::uri::pct_encode(str, out.begin());
+      auto const out_end = foxy::uri::pct_encode(str, out.begin());
 
-    auto const out_view = boost::string_view(out.data(), out_end - out.begin());
+      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
 
-    CHECK(out_view == "%e2%82%ac");
+      CHECK(out_view == "%e2%82%ac");
+    }
+
+    {
+      auto const str = boost::string_view(u8"\u20ac");
+      auto       out = std::string(256, '\0');
+
+      auto const out_end = foxy::uri::pct_encode(str, out.begin());
+
+      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
+
+      CHECK(out_view == "%e2%82%ac");
+    }
+
+    {
+      auto const str = boost::u16string_view(u"\u20ac");
+      auto       out = std::string(256, '\0');
+
+      auto const out_end = foxy::uri::pct_encode(str, out.begin());
+
+      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
+
+      CHECK(out_view == "%e2%82%ac");
+    }
+
+    {
+      auto const str = boost::u32string_view(U"\u20ac");
+      auto       out = std::string(256, '\0');
+
+      auto const out_end = foxy::uri::pct_encode(str, out.begin());
+
+      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
+
+      CHECK(out_view == "%e2%82%ac");
+    }
   }
 }
