@@ -12,8 +12,8 @@ cmake_minimum_required(VERSION 3.13)
 project(foxy LANGUAGES CXX)
 
 find_package(
-  Boost 1.69
-  REQUIRED
+  Boost 1.70
+  CONFIG REQUIRED
     system
     date_time
 )
@@ -87,6 +87,7 @@ target_compile_definitions(
   PUBLIC
     BOOST_COROUTINES_NO_DEPRECATION_WARNING=1
     BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1
+    BOOST_BEAST_ALLOW_DEPRECATED=1
 )
 
 target_compile_features(foxy PUBLIC cxx_std_14)
@@ -117,8 +118,8 @@ if (FOXY_TESTING)
 
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
-    Boost 1.69
-    REQUIRED
+    Boost 1.70
+    CONFIG REQUIRED
       coroutine
       thread
   )
