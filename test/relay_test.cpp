@@ -26,7 +26,37 @@ namespace net   = boost::asio;
 namespace beast = boost::beast;
 namespace http  = boost::beast::http;
 
-using test_stream = beast::test::stream;
+namespace
+{
+struct test_stream : public beast::test::stream
+{
+  test_stream(net::io_context& io)
+    : beast::test::stream(io)
+  {
+  }
+
+  test_stream(test_stream&&) = default;
+
+  // boost::asio::ssl::stream needs these
+  // DEPRECATED
+  template <class>
+  friend class boost::asio::ssl::stream;
+  // DEPRECATED
+  using lowest_layer_type = beast::test::stream;
+  // DEPRECATED
+  lowest_layer_type&
+  lowest_layer() noexcept
+  {
+    return *this;
+  }
+  // DEPRECATED
+  lowest_layer_type const&
+  lowest_layer() const noexcept
+  {
+    return *this;
+  }
+};
+} // namespace
 
 TEST_CASE("Our async HTTP relay")
 {
