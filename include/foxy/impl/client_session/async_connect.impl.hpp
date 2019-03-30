@@ -193,8 +193,9 @@ client_session::async_connect(std::string host, std::string service, ConnectHand
                                 void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
     init(handler);
 
-  detail::timed_op_wrapper<
-    boost::asio::ip::tcp::socket, detail::connect_op,
+  ::foxy::detail::timed_op_wrapper<
+    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
+    detail::connect_op,
     typename boost::asio::async_completion<
       ConnectHandler,
       void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type,

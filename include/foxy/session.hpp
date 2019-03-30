@@ -19,6 +19,7 @@
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/core/handler_ptr.hpp>
 
 namespace foxy
 {
@@ -82,7 +83,8 @@ public:
     void(boost::system::error_code, std::size_t));
 };
 
-using session = basic_session<boost::asio::ip::tcp::socket>;
+using session = basic_session<
+  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>>;
 
 } // namespace foxy
 

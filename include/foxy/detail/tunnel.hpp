@@ -37,7 +37,10 @@ struct tunnel_op : boost::asio::coroutine
 public:
   using executor_type = boost::asio::associated_executor_t<
     TunnelHandler,
-    decltype((std::declval<foxy::basic_session<boost::asio::ip::tcp::socket>&>().get_executor()))>;
+    decltype((std::declval<foxy::basic_session<
+                boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                 boost::asio::io_context::executor_type>>&>()
+                .get_executor()))>;
 
   using allocator_type = boost::asio::associated_allocator_t<TunnelHandler>;
 
@@ -304,8 +307,8 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
     if (!ec && !s.close_tunnel) {
       BOOST_ASIO_CORO_YIELD
-      async_detect_ssl(s.server.stream.plain(), s.server.buffer,
-                       bind_handler(std::move(*this), on_detect_t{}, _1, _2));
+      ::foxy::detail::async_detect_ssl(s.server.stream.plain(), s.server.buffer,
+                                       bind_handler(std::move(*this), on_detect_t{}, _1, _2));
     }
 
     {

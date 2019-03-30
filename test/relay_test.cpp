@@ -16,7 +16,7 @@
 
 #include <boost/beast/http.hpp>
 #include <boost/beast/core/ostream.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
+#include <boost/beast/_experimental/test/stream.hpp>
 
 #include <iostream>
 

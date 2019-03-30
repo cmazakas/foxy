@@ -130,7 +130,8 @@ client_session::async_request(Request&         request,
   boost::asio::async_completion<RequestHandler, void(boost::system::error_code)> init(handler);
 
   detail::timed_op_wrapper<
-    boost::asio::ip::tcp::socket, detail::request_op,
+    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
+    detail::request_op,
     typename boost::asio::async_completion<
       RequestHandler, void(boost::system::error_code)>::completion_handler_type,
     void(boost::system::error_code)>(*this, std::move(init.completion_handler))
