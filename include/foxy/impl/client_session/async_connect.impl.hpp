@@ -54,11 +54,12 @@ public:
 
   template <class DeducedHandler>
   connect_op(::foxy::session& session,
+             DeducedHandler&& handler,
              std::string      host,
-             std::string      service,
-             DeducedHandler&& handler)
+             std::string      service)
     : p_(std::forward<DeducedHandler>(handler), session, std::move(host), std::move(service))
   {
+    (*this)({}, 0, false);
   }
 
   using executor_type =
@@ -167,7 +168,7 @@ connect_op<ConnectHandler>::operator()(boost::system::error_code ec,
     {
       auto endpoint = std::move(s.endpoint);
       auto work     = std::move(s.work);
-      return p_.invoke(boost::system::error_code(), std::move(endpoint));
+      return p_.invoke(boost::system::error_code{}, std::move(endpoint));
     }
 
   upcall:
@@ -175,8 +176,9 @@ connect_op<ConnectHandler>::operator()(boost::system::error_code ec,
       BOOST_ASIO_CORO_YIELD
       boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
     }
+
     auto work = std::move(s.work);
-    p_.invoke(ec, boost::asio::ip::tcp::endpoint());
+    return p_.invoke(ec, boost::asio::ip::tcp::endpoint{});
   }
 }
 
@@ -189,21 +191,28 @@ client_session::async_connect(std::string host, std::string service, ConnectHand
                                      void(boost::system::error_code,
                                           boost::asio::ip::tcp::endpoint)>::return_type
 {
+  // using handler_type = typename boost::asio::async_completion<
+  //   ConnectHandler,
+  //   void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type;
+
   boost::asio::async_completion<ConnectHandler,
                                 void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
     init(handler);
 
-  ::foxy::detail::timed_op_wrapper<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    detail::connect_op,
-    typename boost::asio::async_completion<
-      ConnectHandler,
-      void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type,
-    void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>(
-    *this, std::move(init.completion_handler))
-    .init(std::move(host), std::move(service));
+  return ::foxy::detail::timer_wrap<::foxy::detail::connect_op>(*this, init, std::move(host),
+                                                                std::move(service));
 
-  return init.result.get();
+  // ::foxy::detail::timed_op_wrapper<
+  //   boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+  //   boost::asio::io_context::executor_type>, detail::connect_op, typename
+  //   boost::asio::async_completion<
+  //     ConnectHandler,
+  //     void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type,
+  //   void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>(
+  //   *this, std::move(init.completion_handler))
+  //   .init(std::move(host), std::move(service));
+  //
+  // return init.result.get();
 }
 
 } // namespace foxy
