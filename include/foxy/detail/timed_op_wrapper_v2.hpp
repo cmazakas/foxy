@@ -16,7 +16,6 @@ namespace foxy
 {
 namespace detail
 {
-
 template <class Stream, template <class> class Op, class Handler, class Signature>
 struct timed_op_wrapper_v2;
 
