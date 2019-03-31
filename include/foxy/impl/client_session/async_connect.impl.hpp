@@ -191,28 +191,12 @@ client_session::async_connect(std::string host, std::string service, ConnectHand
                                      void(boost::system::error_code,
                                           boost::asio::ip::tcp::endpoint)>::return_type
 {
-  // using handler_type = typename boost::asio::async_completion<
-  //   ConnectHandler,
-  //   void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type;
-
   boost::asio::async_completion<ConnectHandler,
                                 void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
     init(handler);
 
   return ::foxy::detail::timer_wrap<::foxy::detail::connect_op>(*this, init, std::move(host),
                                                                 std::move(service));
-
-  // ::foxy::detail::timed_op_wrapper<
-  //   boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-  //   boost::asio::io_context::executor_type>, detail::connect_op, typename
-  //   boost::asio::async_completion<
-  //     ConnectHandler,
-  //     void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>::completion_handler_type,
-  //   void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>(
-  //   *this, std::move(init.completion_handler))
-  //   .init(std::move(host), std::move(service));
-  //
-  // return init.result.get();
 }
 
 } // namespace foxy
