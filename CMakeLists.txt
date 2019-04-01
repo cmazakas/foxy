@@ -7,7 +7,7 @@
 # Official repository: https://github.com/LeonineKing1199/foxy
 #
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 project(foxy LANGUAGES CXX)
 
@@ -115,8 +115,9 @@ if (MSVC)
   target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
 endif()
 
-if (FOXY_TESTING)
+include(CTest)
 
+if (BUILD_TESTING)
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
     Boost 1.70
@@ -158,7 +159,6 @@ if (FOXY_TESTING)
       Boost::thread
   )
 
-  include(CTest)
   include(Catch)
   catch_discover_tests(foxy_tests)
 endif()
