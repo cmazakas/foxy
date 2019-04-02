@@ -14,10 +14,10 @@ namespace foxy
 {
 namespace detail
 {
-template <class Stream, template <class> class Op, class Handler, class Signature>
+template <class Stream, template <class...> class Op, class Handler, class Signature>
 struct timed_op_wrapper_v2;
 
-template <class Stream, template <class> class Op, class Handler, class Ret, class... Args>
+template <class Stream, template <class...> class Op, class Handler, class Ret, class... Args>
 struct timed_op_wrapper_v2<Stream, Op, Handler, Ret(Args...)>
 {
 public:
@@ -156,13 +156,11 @@ public:
     auto work = std::move(s.work);
 
     auto f = [&](auto&&... args) { p_.invoke(std::forward<decltype(args)>(args)...); };
-
-    std::cout << "invoking final handler...\n";
     boost::hof::unpack(f)(std::move(args));
   }
 };
 
-template <template <class> class Op,
+template <template <class...> class Op,
           class Stream,
           class CompletionToken,
           class Signature,

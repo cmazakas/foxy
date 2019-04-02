@@ -45,6 +45,10 @@ struct connect_op
   ::foxy::session& session;
   state&           s;
 
+  connect_op()                  = default;
+  connect_op(connect_op const&) = default;
+  connect_op(connect_op&&)      = default;
+
   connect_op(::foxy::session& session_, Handler handler, std::string host, std::string service)
     : boost::beast::stable_async_base<Handler,
                                       boost::asio::associated_executor_t<
