@@ -5,9 +5,7 @@
 #include <foxy/detail/close_stream.hpp>
 
 #include <boost/beast/core/bind_handler.hpp>
-
 #include <boost/system/error_code.hpp>
-
 #include <boost/hof/unpack.hpp>
 
 #include <tuple>
@@ -159,6 +157,7 @@ public:
 
     auto f = [&](auto&&... args) { p_.invoke(std::forward<decltype(args)>(args)...); };
 
+    std::cout << "invoking final handler...\n";
     boost::hof::unpack(f)(std::move(args));
   }
 };
