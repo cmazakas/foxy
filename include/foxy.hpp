@@ -1,8 +1,8 @@
-// // github.com/LeonineKing1199/foxy
+//
 // Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -17,6 +17,9 @@
 #include <foxy/server_session.hpp>
 #include <foxy/session.hpp>
 #include <foxy/shared_handler_ptr.hpp>
+#include <foxy/type_traits.hpp>
+#include <foxy/uri.hpp>
+#include <foxy/uri_parts.hpp>
 #include <foxy/utility.hpp>
 
 #endif // FOXY_HPP_
