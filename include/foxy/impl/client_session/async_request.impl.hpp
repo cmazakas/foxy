@@ -11,8 +11,6 @@
 #define FOXY_IMPL_CLIENT_SESSION_ASYNC_REQUEST_IMPL_HPP_
 
 #include <foxy/client_session.hpp>
-#include <boost/mp11/bind.hpp>
-#include <boost/beast/core/async_base.hpp>
 
 namespace foxy
 {

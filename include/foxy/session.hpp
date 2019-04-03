@@ -11,11 +11,16 @@
 #define FOXY_SESSION_HPP
 
 #include <foxy/multi_stream.hpp>
+#include <foxy/type_traits.hpp>
+// #include <foxy/detail/timed_op_wrapper_v2.hpp>
 
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/ssl/context.hpp>
 
+#include <boost/mp11/bind.hpp>
+
+#include <boost/beast/core/async_base.hpp>
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
@@ -78,9 +83,9 @@ public:
 
   template <class Serializer, class WriteHandler>
   auto
-  async_write(Serializer& serializer, WriteHandler&& handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(
-    WriteHandler,
-    void(boost::system::error_code, std::size_t));
+  async_write(Serializer& serializer, WriteHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<WriteHandler>,
+                                       void(boost::system::error_code, std::size_t)>::return_type;
 };
 
 using session = basic_session<
