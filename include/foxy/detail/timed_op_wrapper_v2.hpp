@@ -10,6 +10,7 @@
 #ifndef FOXY_DETAIL_TIMED_OP_WRAPPER_V2_HPP_
 #define FOXY_DETAIL_TIMED_OP_WRAPPER_V2_HPP_
 
+#include <foxy/session.hpp>
 #include <foxy/shared_handler_ptr.hpp>
 #include <foxy/detail/close_stream.hpp>
 

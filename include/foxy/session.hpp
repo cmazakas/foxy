@@ -12,7 +12,6 @@
 
 #include <foxy/multi_stream.hpp>
 #include <foxy/type_traits.hpp>
-// #include <foxy/detail/timed_op_wrapper_v2.hpp>
 
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -75,11 +74,9 @@ public:
 
   template <class Serializer, class WriteHandler>
   auto
-  async_write_header(
-    Serializer&    serializer,
-    WriteHandler&& handler) & -> BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler,
-                                                               void(boost::system::error_code,
-                                                                    std::size_t));
+  async_write_header(Serializer& serializer, WriteHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<WriteHandler>,
+                                       void(boost::system::error_code, std::size_t)>::return_type;
 
   template <class Serializer, class WriteHandler>
   auto

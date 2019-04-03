@@ -26,7 +26,7 @@ struct write_op
   ::foxy::basic_session<Stream>& session;
   Serializer&                    serializer;
 
-  write_op()                = delete;
+  write_op()                = default;
   write_op(write_op const&) = default;
   write_op(write_op&&)      = default;
 
@@ -52,9 +52,6 @@ struct write_op
       BOOST_ASIO_CORO_YIELD
       boost::beast::http::async_write(session.stream, serializer, std::move(*this));
 
-      if (ec) { goto upcall; }
-
-    upcall:
       this->complete(is_continuation, ec, bytes_transferred);
     }
   }
