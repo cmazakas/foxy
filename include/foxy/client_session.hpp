@@ -30,7 +30,6 @@
 
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
-#include <boost/beast/core/handler_ptr.hpp>
 #include <boost/beast/core/bind_handler.hpp>
 
 #include <boost/optional/optional.hpp>

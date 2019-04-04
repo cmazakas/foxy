@@ -23,7 +23,6 @@
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
-#include <boost/beast/core/handler_ptr.hpp>
 
 namespace foxy
 {
