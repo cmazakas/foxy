@@ -50,12 +50,10 @@ private:
     foxy::server_session& server;
     foxy::client_session& client;
 
-    boost::optional<
-      boost::beast::http::request_parser<boost::beast::http::empty_body, allocator_type>>
-      parser;
+    boost::optional<boost::beast::http::request_parser<boost::beast::http::empty_body>> parser;
 
-    boost::optional<boost::beast::http::response<boost::beast::http::string_body,
-                                                 boost::beast::http::basic_fields<allocator_type>>>
+    boost::optional<
+      boost::beast::http::response<boost::beast::http::string_body, boost::beast::http::fields>>
       response;
 
     foxy::uri_parts uri_parts;
@@ -76,14 +74,6 @@ private:
                    foxy::client_session& client_)
       : server(server_)
       , client(client_)
-      , parser(boost::in_place_init,
-               std::piecewise_construct,
-               std::make_tuple(),
-               std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , response(boost::in_place_init,
-                 std::piecewise_construct,
-                 std::make_tuple(boost::asio::get_associated_allocator(handler)),
-                 std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , work(server.get_executor())
     {
     }
@@ -181,11 +171,9 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
   BOOST_ASIO_CORO_REENTER(*this)
   {
     while (true) {
-      s.parser.emplace(std::piecewise_construct, std::make_tuple(),
-                       std::make_tuple(get_allocator()));
+      s.parser.emplace();
 
-      s.response.emplace(std::piecewise_construct, std::make_tuple(get_allocator()),
-                         std::make_tuple(get_allocator()));
+      s.response.emplace();
 
       BOOST_ASIO_CORO_YIELD
       s.server.async_read_header(*s.parser, std::move(*this));

@@ -312,10 +312,7 @@ TEST_CASE("Our async HTTP relay")
     server.stream.plain().connect(response_stream);
 
     net::spawn([&](net::yield_context yield) mutable {
-      auto const allocator = net::get_associated_allocator(yield);
-
-      http::request_parser<http::empty_body, std::decay_t<decltype(allocator)>> header_parser(
-        std::piecewise_construct, std::make_tuple(), std::make_tuple(allocator));
+      http::request_parser<http::empty_body> header_parser;
 
       server.async_read_header(header_parser, yield);
 
