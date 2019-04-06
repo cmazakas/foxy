@@ -23,7 +23,6 @@ find_package(OpenSSL REQUIRED)
 add_library(
   foxy
 
-
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
