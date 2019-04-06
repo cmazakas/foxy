@@ -7,8 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#ifndef FOXY_SESSION_HPP
-#define FOXY_SESSION_HPP
+#ifndef FOXY_SESSION_HPP_
+#define FOXY_SESSION_HPP_
 
 #include <foxy/multi_stream.hpp>
 #include <foxy/type_traits.hpp>
@@ -94,4 +94,4 @@ using session = basic_session<
 
 #include <foxy/impl/session.impl.hpp>
 
-#endif // FOXY_SESSION_HPP
+#endif // FOXY_SESSION_HPP_
