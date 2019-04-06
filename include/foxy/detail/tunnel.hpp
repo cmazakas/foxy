@@ -25,8 +25,6 @@
 
 #include <boost/optional/optional.hpp>
 
-#include <iostream>
-
 namespace foxy
 {
 namespace detail

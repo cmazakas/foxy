@@ -17,7 +17,6 @@
 #include <boost/beast/http.hpp>
 
 #include <memory>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -72,8 +71,6 @@ TEST_CASE("Our forward proxy (part 2)")
 
       auto response = res_parser2.release();
 
-      // std::cout << response << "\n\n";
-
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =
         (response.body().size() > 0) && boost::string_view(response.body()).ends_with("</html>");
@@ -121,8 +118,6 @@ TEST_CASE("Our forward proxy (part 2)")
       client.async_request(request, res_parser, yield);
 
       auto response = res_parser.release();
-
-      // std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =
@@ -172,8 +167,6 @@ TEST_CASE("Our forward proxy (part 2)")
       client.async_request(request, res_parser, yield);
 
       auto response = res_parser.release();
-
-      // std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =

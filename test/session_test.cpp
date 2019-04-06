@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -19,8 +18,6 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/_experimental/test/stream.hpp>
 #include <boost/beast/_experimental/test/fail_count.hpp>
-
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -169,19 +166,13 @@ TEST_CASE("Our basic_session class...")
       http::response_serializer<http::empty_body> serializer(res);
 
       session.async_write_header(serializer, yield[ec]);
-      if (ec) {
-        std::cout << ec.message() << "\n";
-        return;
-      }
+      if (ec) { return; }
 
       auto const is_serialization_done = peer_stream.buffer().size() > 0;
       auto const is_header_done        = serializer.is_header_done();
 
       session.async_write(serializer, yield[ec]);
-      if (ec) {
-        std::cout << ec.message() << "\n";
-        return;
-      }
+      if (ec) { return; }
 
       auto const is_done      = serializer.is_done();
       auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");

@@ -18,8 +18,6 @@
 #include <boost/beast/core/ostream.hpp>
 #include <boost/beast/_experimental/test/stream.hpp>
 
-#include <iostream>
-
 #include <catch2/catch.hpp>
 
 namespace net   = boost::asio;

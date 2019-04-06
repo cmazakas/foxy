@@ -39,7 +39,6 @@
 #include <utility>
 #include <memory>
 #include <functional>
-#include <iostream>
 
 namespace foxy
 {
