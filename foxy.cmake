@@ -1,5 +1,3 @@
-set(FOXY_TESTING ON)
-
 set(Boost_DIR "/Users/cmaza/cpp/boost-170/lib/cmake/Boost-1.70.0")
 
 add_compile_options("/permissive-")
