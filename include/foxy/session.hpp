@@ -34,10 +34,13 @@ struct session_opts
   duration_type                               timeout = std::chrono::seconds{1};
 };
 
-template <class Stream, class = std::enable_if_t<boost::beast::is_async_stream<Stream>::value>>
+template <class Stream>
 struct basic_session
 {
 public:
+  static_assert(boost::beast::is_async_stream<Stream>::value,
+                "Requirements on the Stream type were not met. Stream must be a Beast.AsyncStream");
+
   using stream_type = ::foxy::basic_multi_stream<Stream>;
   using buffer_type = boost::beast::flat_buffer;
   using timer_type  = boost::asio::steady_timer;

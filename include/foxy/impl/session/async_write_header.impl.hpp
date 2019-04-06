@@ -59,10 +59,10 @@ struct write_header_op
 
 } // namespace detail
 
-template <class Stream, class X>
+template <class Stream>
 template <class Serializer, class WriteHandler>
 auto
-basic_session<Stream, X>::async_write_header(Serializer& serializer, WriteHandler&& handler) & ->
+basic_session<Stream>::async_write_header(Serializer& serializer, WriteHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<WriteHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {

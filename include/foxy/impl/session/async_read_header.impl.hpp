@@ -60,10 +60,10 @@ struct read_header_op
 
 } // namespace detail
 
-template <class Stream, class X>
+template <class Stream>
 template <class Parser, class ReadHandler>
 auto
-basic_session<Stream, X>::async_read_header(Parser& parser, ReadHandler&& handler) & ->
+basic_session<Stream>::async_read_header(Parser& parser, ReadHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<ReadHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
