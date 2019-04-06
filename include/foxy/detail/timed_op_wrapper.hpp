@@ -93,7 +93,7 @@ public:
                                                              *this)({}, 0, false);
 
     s.session.timer.expires_after(s.session.opts.timeout);
-    s.session.timer.async_wait(bind_handler(*this, on_timer_t{}, _1));
+    s.session.timer.async_wait(bind_front_handler(*this, on_timer_t{}));
     (*this)(on_completion_t{}, {});
 
     p_.reset();
@@ -127,7 +127,7 @@ public:
         // operation accordingly
         //
         BOOST_ASIO_CORO_YIELD
-        s.session.timer.async_wait(boost::beast::bind_handler(*this, on_timer_t{}, _1));
+        s.session.timer.async_wait(boost::beast::bind_front_handler(*this, on_timer_t{}));
       }
     }
 

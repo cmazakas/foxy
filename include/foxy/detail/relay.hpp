@@ -14,7 +14,6 @@
 #include <foxy/type_traits.hpp>
 #include <foxy/detail/export_connect_fields.hpp>
 #include <foxy/detail/has_token.hpp>
-#include <foxy/detail/timed_op_wrapper_v2.hpp>
 
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/http/parser.hpp>
@@ -27,7 +26,6 @@
 #include <boost/system/error_code.hpp>
 
 #include <array>
-#include <iostream>
 
 namespace foxy
 {
@@ -140,9 +138,6 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
                                            std::size_t const         bytes_transferred,
                                            bool const                is_continuation) -> void
 {
-  using namespace std::placeholders;
-  using boost::beast::bind_handler;
-
   namespace http = boost::beast::http;
 
   BOOST_ASIO_CORO_REENTER(*this)

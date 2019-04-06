@@ -137,6 +137,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 {
   using namespace std::placeholders;
   using boost::beast::bind_handler;
+  using boost::beast::bind_front_handler;
 
   namespace net  = boost::asio;
   namespace http = boost::beast::http;
@@ -184,7 +185,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
                                                      : static_cast<std::string>(s.uri_parts.port());
 
           client.async_connect(static_cast<std::string>(s.uri_parts.host()), std::move(port),
-                               bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+                               bind_front_handler(std::move(*this), on_connect_t{}));
         }
 
         if (ec) {
@@ -244,7 +245,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
           s.parser->get().set(http::field::host, hostname);
 
           async_relay(server, client, std::move(*s.parser),
-                      bind_handler(std::move(*this), on_relay_t{}, _1, _2));
+                      bind_front_handler(std::move(*this), on_relay_t{}));
         }
 
         if (ec) { goto upcall; }
@@ -269,7 +270,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
     if (!ec && !s.close_tunnel) {
       BOOST_ASIO_CORO_YIELD
       ::foxy::detail::async_detect_ssl(server.stream.plain(), server.buffer,
-                                       bind_handler(std::move(*this), on_detect_t{}, _1, _2));
+                                       bind_front_handler(std::move(*this), on_detect_t{}));
     }
 
     {
