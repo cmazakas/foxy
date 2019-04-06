@@ -40,7 +40,6 @@ foxy::basic_session<Stream, X>::get_executor() -> executor_type
 
 } // namespace foxy
 
-#include <foxy/detail/timed_op_wrapper.hpp>
 #include <foxy/impl/session/async_read.impl.hpp>
 #include <foxy/impl/session/async_write.impl.hpp>
 #include <foxy/impl/session/async_read_header.impl.hpp>
