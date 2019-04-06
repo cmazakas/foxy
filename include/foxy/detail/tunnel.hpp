@@ -15,13 +15,14 @@
 #include <foxy/type_traits.hpp>
 #include <foxy/uri_parts.hpp>
 #include <foxy/detail/relay.hpp>
-#include <foxy/detail/detect_ssl.hpp>
 
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/http/status.hpp>
+
+#include <boost/beast/core/detect_ssl.hpp>
 
 #include <boost/optional/optional.hpp>
 
@@ -267,8 +268,8 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
     if (!ec && !s.close_tunnel) {
       BOOST_ASIO_CORO_YIELD
-      ::foxy::detail::async_detect_ssl(server.stream.plain(), server.buffer,
-                                       bind_front_handler(std::move(*this), on_detect_t{}));
+      boost::beast::async_detect_ssl(server.stream.plain(), server.buffer,
+                                     bind_front_handler(std::move(*this), on_detect_t{}));
     }
 
     {

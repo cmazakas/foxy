@@ -23,25 +23,8 @@ find_package(OpenSSL REQUIRED)
 add_library(
   foxy
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/detect_ssl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper_v2.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/uri_def.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
-
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
-
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/log.hpp
@@ -51,11 +34,32 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper_v2.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/uri_def.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/function.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/utility.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/detail/config.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/variant2/variant.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
