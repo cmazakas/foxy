@@ -164,3 +164,26 @@ if (BUILD_TESTING)
   include(Catch)
   catch_discover_tests(foxy_tests)
 endif()
+
+if (FOXY_BUILD_EXAMPLES)
+  find_package(
+    Boost 1.70
+    CONFIG REQUIRED
+      coroutine
+      thread
+  )
+
+  add_executable(
+    hello-world
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello_world/main.cpp
+  )
+
+  target_link_libraries(
+    hello-world
+    PRIVATE
+      foxy
+      Boost::coroutine
+      Boost::thread
+  )
+endif()

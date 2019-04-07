@@ -4,6 +4,8 @@
 
 Session-based Beast/Asio wrapper
 
+Read the docs [here](./docs/intro.md).
+
 ## Requirements
 
 * C++14
@@ -57,70 +59,6 @@ how this should be done.
 * timeouts for all `session` methods (`async_read`, `async_read_header`, ...)
 * transparent support for encrypted/non-encrypted streams
 * supports Asio's universal async model
-
-## Example Usage
-
-```cpp
-asio::io_context io;
-
-auto session_handle =
-  boost::make_unique<foxy::client_session>(io);
-
-auto& session = *session_handle;
-
-// manually readjust the specified timeout for each asynchronous operation on
-// the session
-//
-session.opts.timeout = std::chrono::seconds{10};
-
-auto valid_request = false;
-
-session.async_connect(
-  "www.google.com", "http",
-  [&valid_request, &session, sh = std::move(session_handle)]
-  (error_code ec, tcp::endpoint) mutable -> void
-  {
-    if (ec) {
-      session
-        .stream
-        .plain()
-        .shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-      return;
-    }
-
-    auto parser_handle  = boost::make_unique<http::response_parser<http::string_body>>();
-    auto request_handle =
-      boost::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
-
-    auto& parser  = *parser_handle;
-    auto& request = *request_handle;
-
-    session.async_request(
-      request, parser,
-      [
-        &valid_request, &session, &parser, &request,
-        ph = std::move(parser_handle),
-        rh = std::move(request_handle),
-        sh = std::move(sh)
-      ](error_code ec) -> void
-      {
-        auto response = parser.release();
-
-        auto is_valid_status = (response.result_int() == 200);
-        auto is_valid_body   = (response.body().size() > 0);
-
-        valid_request = is_valid_body && is_valid_status;
-
-        session
-          .stream
-          .plain()
-          .shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-      });
-  });
-
-io.run();
-REQUIRE(valid_request);
-```
 
 ## Current Status and Roadmap
 
