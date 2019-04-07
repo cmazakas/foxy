@@ -64,6 +64,7 @@ TEST_CASE("Our client session class")
             valid_request = is_valid_body && is_valid_status;
 
             session.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+            session.stream.plain().close(ec);
           });
       });
 
