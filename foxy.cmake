@@ -1,4 +1,6 @@
 set(Boost_DIR "/Users/cmaza/cpp/boost-170/lib/cmake/Boost-1.70.0")
+set(FOXY_BUILD_EXAMPLES ON)
+set(BUILD_TESTING ON)
 
 add_compile_options("/permissive-")
 add_link_options("/NODEFAULTLIB:library" "/debug:fastlink")
