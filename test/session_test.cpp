@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -17,27 +16,58 @@
 #include <boost/beast/core/ostream.hpp>
 
 #include <boost/beast/http.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
-#include <boost/beast/experimental/test/fail_count.hpp>
-
-#include <iostream>
+#include <boost/beast/_experimental/test/stream.hpp>
+#include <boost/beast/_experimental/test/fail_count.hpp>
 
 #include <catch2/catch.hpp>
 
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
 
-static_assert(
-  foxy::detail::is_closable_stream_throw<boost::beast::test::stream>::value,
-  "Incorrect implementation of foxy::detail::is_closable_stream_throw");
+static_assert(foxy::detail::is_closable_stream_throw<boost::beast::test::stream>::value,
+              "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
-static_assert(
-  foxy::detail::is_closable_stream_throw<asio::ip::tcp::socket>::value,
-  "Incorrect implementation of foxy::detail::is_closable_stream_throw");
+static_assert(foxy::detail::is_closable_stream_throw<
+                boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                 boost::asio::io_context::executor_type>>::value,
+              "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
-static_assert(
-  foxy::detail::is_closable_stream_nothrow<asio::ip::tcp::socket>::value,
-  "Incorrect implementation of foxy::detail::is_closable_stream_throw");
+static_assert(foxy::detail::is_closable_stream_nothrow<
+                boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                 boost::asio::io_context::executor_type>>::value,
+              "Incorrect implementation of foxy::detail::is_closable_stream_throw");
+
+namespace
+{
+struct test_stream : public boost::beast::test::stream
+{
+  test_stream(boost::asio::io_context& io)
+    : boost::beast::test::stream(io)
+  {
+  }
+
+  test_stream(test_stream&&) = default;
+
+  // boost::asio::ssl::stream needs these
+  // DEPRECATED
+  template <class>
+  friend class boost::asio::ssl::stream;
+  // DEPRECATED
+  using lowest_layer_type = boost::beast::test::stream;
+  // DEPRECATED
+  lowest_layer_type&
+  lowest_layer() noexcept
+  {
+    return *this;
+  }
+  // DEPRECATED
+  lowest_layer_type const&
+  lowest_layer() const noexcept
+  {
+    return *this;
+  }
+};
+} // namespace
 
 TEST_CASE("Our basic_session class...")
 {
@@ -48,17 +78,16 @@ TEST_CASE("Our basic_session class...")
     auto req = http::request<http::empty_body>(http::verb::get, "/", 11);
     req.set(http::field::host, "www.google.com");
 
-    auto test_stream = boost::beast::test::stream(io);
+    auto stream = test_stream(io);
 
-    boost::beast::ostream(test_stream.buffer()) << req;
+    boost::beast::ostream(stream.buffer()) << req;
 
     auto valid_parse  = false;
     auto valid_verb   = false;
     auto valid_target = false;
 
     asio::spawn([&](asio::yield_context yield) mutable {
-      auto session =
-        foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+      auto session = foxy::basic_session<test_stream>(std::move(stream));
 
       http::request_parser<http::empty_body> parser;
 
@@ -90,16 +119,15 @@ TEST_CASE("Our basic_session class...")
     req.body() = "I bestow the heads of virgins and the first-born sons!!!";
     req.prepare_payload();
 
-    auto test_stream = boost::beast::test::stream(io);
+    auto stream = test_stream(io);
 
-    boost::beast::ostream(test_stream.buffer()) << req;
+    boost::beast::ostream(stream.buffer()) << req;
 
     auto valid_parse = false;
     auto valid_body  = false;
 
     asio::spawn([&](asio::yield_context yield) mutable {
-      auto session =
-        foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+      auto session = foxy::basic_session<test_stream>(std::move(stream));
 
       http::request_parser<http::string_body> parser;
 
@@ -123,42 +151,33 @@ TEST_CASE("Our basic_session class...")
   {
     asio::io_context io;
 
-    auto test_stream = boost::beast::test::stream(io);
-    auto peer_stream = boost::beast::test::stream(io);
-    test_stream.connect(peer_stream);
+    auto stream      = test_stream(io);
+    auto peer_stream = test_stream(io);
+    stream.connect(peer_stream);
 
     auto valid_serialization = false;
 
     asio::spawn([&](asio::yield_context yield) mutable {
       auto ec = boost::system::error_code();
 
-      auto session =
-        foxy::basic_session<boost::beast::test::stream>(std::move(test_stream));
+      auto session = foxy::basic_session<test_stream>(std::move(stream));
 
       auto res = http::response<http::empty_body>(http::status::ok, 11);
       http::response_serializer<http::empty_body> serializer(res);
 
       session.async_write_header(serializer, yield[ec]);
-      if (ec) {
-        std::cout << ec.message() << "\n";
-        return;
-      }
+      if (ec) { return; }
 
       auto const is_serialization_done = peer_stream.buffer().size() > 0;
       auto const is_header_done        = serializer.is_header_done();
 
       session.async_write(serializer, yield[ec]);
-      if (ec) {
-        std::cout << ec.message() << "\n";
-        return;
-      }
+      if (ec) { return; }
 
-      auto const is_done = serializer.is_done();
-      auto const valid_output =
-        (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
+      auto const is_done      = serializer.is_done();
+      auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
 
-      valid_serialization =
-        is_serialization_done && is_header_done && is_done && valid_output;
+      valid_serialization = is_serialization_done && is_header_done && is_done && valid_output;
     });
 
     io.run();

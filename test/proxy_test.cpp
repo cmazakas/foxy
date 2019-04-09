@@ -17,7 +17,6 @@
 #include <boost/beast/http.hpp>
 
 #include <memory>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -112,8 +111,6 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_result = response.result() == http::status::ok;
       auto const was_valid_body   = response.body().size() > 0;
 
-      // std::cout << response << "\n\n";
-
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);
       proxy.reset();
@@ -164,8 +161,6 @@ TEST_CASE("Our forward proxy")
 
       auto const was_valid_result = response.result() == http::status::ok;
       auto const was_valid_body   = response.body().size() > 0;
-
-      // std::cout << response << "\n\n";
 
       was_valid_response = was_valid_result && was_valid_body;
       proxy->cancel(ec);
@@ -262,8 +257,6 @@ TEST_CASE("Our forward proxy")
 
       auto response = res_parser2.release();
 
-      // std::cout << response << "\n\n";
-
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =
         (response.body().size() > 0) && boost::string_view(response.body()).ends_with("</html>");
@@ -312,8 +305,6 @@ TEST_CASE("Our forward proxy")
       client.async_request(request, res_parser, yield);
 
       auto response = res_parser.release();
-
-      // std::cout << response << "\n\n";
 
       auto const was_valid_result = (response.result() == http::status::ok);
       auto const was_valid_body =

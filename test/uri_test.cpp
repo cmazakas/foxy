@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -12,7 +11,6 @@
 #include <boost/utility/string_view.hpp>
 #include <vector>
 #include <algorithm>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -275,11 +273,6 @@ TEST_CASE("Our URI module...")
         auto const match      = x3::parse(begin, end, foxy::uri::ip_v6_address());
         auto const full_match = match && (begin == end);
 
-        if (!full_match) {
-          std::cout << view << " is not a full-match!\n";
-          std::cout << view.substr(0, begin - view.begin()) << " was matched\n";
-        }
-
         return full_match;
       });
 
@@ -330,11 +323,6 @@ TEST_CASE("Our URI module...")
 
         auto const match      = x3::parse(begin, end, foxy::uri::uri());
         auto const full_match = match && (begin == end);
-
-        if (!full_match) {
-          std::cout << view << " is not a full-match!\n";
-          std::cout << view.substr(0, begin - view.begin()) << " was matched\n";
-        }
 
         return full_match;
       });

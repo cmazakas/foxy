@@ -16,9 +16,7 @@
 
 #include <boost/beast/http.hpp>
 #include <boost/beast/core/ostream.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
-
-#include <iostream>
+#include <boost/beast/_experimental/test/stream.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -26,7 +24,37 @@ namespace net   = boost::asio;
 namespace beast = boost::beast;
 namespace http  = boost::beast::http;
 
-using test_stream = beast::test::stream;
+namespace
+{
+struct test_stream : public beast::test::stream
+{
+  test_stream(net::io_context& io)
+    : beast::test::stream(io)
+  {
+  }
+
+  test_stream(test_stream&&) = default;
+
+  // boost::asio::ssl::stream needs these
+  // DEPRECATED
+  template <class>
+  friend class boost::asio::ssl::stream;
+  // DEPRECATED
+  using lowest_layer_type = beast::test::stream;
+  // DEPRECATED
+  lowest_layer_type&
+  lowest_layer() noexcept
+  {
+    return *this;
+  }
+  // DEPRECATED
+  lowest_layer_type const&
+  lowest_layer() const noexcept
+  {
+    return *this;
+  }
+};
+} // namespace
 
 TEST_CASE("Our async HTTP relay")
 {
@@ -282,10 +310,7 @@ TEST_CASE("Our async HTTP relay")
     server.stream.plain().connect(response_stream);
 
     net::spawn([&](net::yield_context yield) mutable {
-      auto const allocator = net::get_associated_allocator(yield);
-
-      http::request_parser<http::empty_body, std::decay_t<decltype(allocator)>> header_parser(
-        std::piecewise_construct, std::make_tuple(), std::make_tuple(allocator));
+      http::request_parser<http::empty_body> header_parser;
 
       server.async_read_header(header_parser, yield);
 

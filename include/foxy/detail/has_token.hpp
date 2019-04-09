@@ -20,8 +20,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include <iostream>
-
 namespace foxy
 {
 namespace detail

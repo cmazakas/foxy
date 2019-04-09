@@ -15,7 +15,6 @@
 #include <foxy/type_traits.hpp>
 #include <foxy/uri_parts.hpp>
 #include <foxy/detail/relay.hpp>
-#include <foxy/detail/detect_ssl.hpp>
 
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/string_body.hpp>
@@ -23,36 +22,26 @@
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/http/status.hpp>
 
-#include <boost/optional/optional.hpp>
+#include <boost/beast/core/detect_ssl.hpp>
 
-#include <iostream>
+#include <boost/optional/optional.hpp>
 
 namespace foxy
 {
 namespace detail
 {
 template <class TunnelHandler>
-struct tunnel_op : boost::asio::coroutine
+struct tunnel_op
+  : boost::beast::stable_async_base<TunnelHandler,
+                                    decltype(std::declval<::foxy::session&>().get_executor())>,
+    boost::asio::coroutine
 {
-public:
-  using executor_type = boost::asio::associated_executor_t<
-    TunnelHandler,
-    decltype((std::declval<foxy::basic_session<boost::asio::ip::tcp::socket>&>().get_executor()))>;
-
-  using allocator_type = boost::asio::associated_allocator_t<TunnelHandler>;
-
-private:
   struct state
   {
-    foxy::server_session& server;
-    foxy::client_session& client;
+    boost::optional<boost::beast::http::request_parser<boost::beast::http::empty_body>> parser;
 
     boost::optional<
-      boost::beast::http::request_parser<boost::beast::http::empty_body, allocator_type>>
-      parser;
-
-    boost::optional<boost::beast::http::response<boost::beast::http::string_body,
-                                                 boost::beast::http::basic_fields<allocator_type>>>
+      boost::beast::http::response<boost::beast::http::string_body, boost::beast::http::fields>>
       response;
 
     foxy::uri_parts uri_parts;
@@ -65,50 +54,27 @@ private:
     bool is_http      = false;
 
     bool close_tunnel = false;
-
-    boost::asio::executor_work_guard<decltype(server.get_executor())> work;
-
-    explicit state(TunnelHandler const&  handler,
-                   foxy::server_session& server_,
-                   foxy::client_session& client_)
-      : server(server_)
-      , client(client_)
-      , parser(boost::in_place_init,
-               std::piecewise_construct,
-               std::make_tuple(),
-               std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , response(boost::in_place_init,
-                 std::piecewise_construct,
-                 std::make_tuple(boost::asio::get_associated_allocator(handler)),
-                 std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , work(server.get_executor())
-    {
-    }
   };
 
-  boost::beast::handler_ptr<state, TunnelHandler> p_;
+  ::foxy::server_session& server;
+  ::foxy::client_session& client;
+  state&                  s;
 
 public:
   tunnel_op()                 = delete;
   tunnel_op(tunnel_op const&) = default;
   tunnel_op(tunnel_op&&)      = default;
 
-  template <class DeducedHandler>
-  tunnel_op(foxy::server_session& server, foxy::client_session& client, DeducedHandler&& handler)
-    : p_(std::forward<DeducedHandler>(handler), server, client)
+  tunnel_op(foxy::server_session& server_, TunnelHandler handler, foxy::client_session& client_)
+    : boost::beast::stable_async_base<TunnelHandler,
+                                      decltype(std::declval<::foxy::session&>().get_executor())>(
+        std::move(handler),
+        server_.get_executor())
+    , server(server_)
+    , client(client_)
+    , s(boost::beast::allocate_stable<state>(*this))
   {
-  }
-
-  auto
-  get_executor() const noexcept -> executor_type
-  {
-    return boost::asio::get_associated_executor(p_.handler(), p_->server.get_executor());
-  }
-
-  auto
-  get_allocator() const noexcept -> allocator_type
-  {
-    return boost::asio::get_associated_allocator(p_.handler());
+    (*this)({}, 0, false);
   }
 
   struct on_connect_t
@@ -158,7 +124,7 @@ auto
 tunnel_op<TunnelHandler>::
 operator()(on_detect_t, boost::system::error_code ec, boost::tribool is_ssl_) -> void
 {
-  p_->is_ssl = is_ssl_;
+  s.is_ssl = is_ssl_;
   (*this)(ec, 0);
 }
 
@@ -170,22 +136,20 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 {
   using namespace std::placeholders;
   using boost::beast::bind_handler;
+  using boost::beast::bind_front_handler;
 
   namespace net  = boost::asio;
   namespace http = boost::beast::http;
 
-  auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
     while (true) {
-      s.parser.emplace(std::piecewise_construct, std::make_tuple(),
-                       std::make_tuple(get_allocator()));
+      s.parser.emplace();
 
-      s.response.emplace(std::piecewise_construct, std::make_tuple(get_allocator()),
-                         std::make_tuple(get_allocator()));
+      s.response.emplace();
 
       BOOST_ASIO_CORO_YIELD
-      s.server.async_read_header(*s.parser, std::move(*this));
+      server.async_read_header(*s.parser, std::move(*this));
 
       if (ec) { goto upcall; }
 
@@ -204,7 +168,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         s.response->prepare_payload();
 
         BOOST_ASIO_CORO_YIELD
-        s.server.async_write(*s.response, std::move(*this));
+        server.async_write(*s.response, std::move(*this));
 
         if (ec) { goto upcall; }
         break;
@@ -214,13 +178,13 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         BOOST_ASIO_CORO_YIELD
         {
           auto const scheme =
-            s.client.stream.is_ssl() ? boost::string_view("https") : boost::string_view("http");
+            client.stream.is_ssl() ? boost::string_view("https") : boost::string_view("http");
 
           auto port = s.uri_parts.port().size() == 0 ? static_cast<std::string>(scheme)
                                                      : static_cast<std::string>(s.uri_parts.port());
 
-          s.client.async_connect(static_cast<std::string>(s.uri_parts.host()), std::move(port),
-                                 bind_handler(std::move(*this), on_connect_t{}, _1, _2));
+          client.async_connect(static_cast<std::string>(s.uri_parts.host()), std::move(port),
+                               bind_front_handler(std::move(*this), on_connect_t{}));
         }
 
         if (ec) {
@@ -232,7 +196,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
           s.response->prepare_payload();
 
           BOOST_ASIO_CORO_YIELD
-          s.server.async_write(*s.response, std::move(*this));
+          server.async_write(*s.response, std::move(*this));
 
           if (ec) { goto upcall; }
           if (s.parser->get().keep_alive()) { continue; }
@@ -246,7 +210,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
         s.response->prepare_payload();
 
         BOOST_ASIO_CORO_YIELD
-        s.server.async_write(*s.response, std::move(*this));
+        server.async_write(*s.response, std::move(*this));
 
         if (ec) { goto upcall; }
         if (s.parser.get().keep_alive()) { continue; }
@@ -279,8 +243,8 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
           s.parser->get().target(target);
           s.parser->get().set(http::field::host, hostname);
 
-          async_relay(s.server, s.client, std::move(*s.parser),
-                      bind_handler(std::move(*this), on_relay_t{}, _1, _2));
+          async_relay(server, client, std::move(*s.parser),
+                      bind_front_handler(std::move(*this), on_relay_t{}));
         }
 
         if (ec) { goto upcall; }
@@ -291,7 +255,7 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
       s.response->result(http::status::ok);
 
       BOOST_ASIO_CORO_YIELD
-      s.server.async_write(*s.response, std::move(*this));
+      server.async_write(*s.response, std::move(*this));
 
       if (ec) {
         s.close_tunnel = true;
@@ -304,24 +268,18 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
     if (!ec && !s.close_tunnel) {
       BOOST_ASIO_CORO_YIELD
-      async_detect_ssl(s.server.stream.plain(), s.server.buffer,
-                       bind_handler(std::move(*this), on_detect_t{}, _1, _2));
+      boost::beast::async_detect_ssl(server.stream.plain(), server.buffer,
+                                     bind_front_handler(std::move(*this), on_detect_t{}));
     }
 
     {
-      auto const guard        = std::move(s.work);
       auto const close_tunnel = s.close_tunnel;
-      return p_.invoke(boost::system::error_code(), close_tunnel);
+      return this->complete(is_continuation, boost::system::error_code(), close_tunnel);
     }
 
   upcall:
-    if (!is_continuation) {
-      BOOST_ASIO_CORO_YIELD
-      net::post(bind_handler(std::move(*this), ec, 0));
-    }
-    auto const work         = std::move(s.work);
     auto const close_tunnel = s.close_tunnel;
-    p_.invoke(ec, close_tunnel);
+    this->complete(is_continuation, ec, close_tunnel);
   }
 }
 
@@ -335,7 +293,7 @@ async_tunnel(foxy::server_session& server, foxy::client_session& client, TunnelH
 
   tunnel_op<typename boost::asio::async_completion<
     TunnelHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
-    server, client, std::move(init.completion_handler))({}, 0, false);
+    server, std::move(init.completion_handler), client);
 
   return init.result.get();
 }

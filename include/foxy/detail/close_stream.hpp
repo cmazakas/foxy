@@ -8,6 +8,9 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#ifndef FOXY_DETAIL_CLOSE_STREAM_HPP_
+#define FOXY_DETAIL_CLOSE_STREAM_HPP_
+
 #include <foxy/type_traits.hpp>
 
 namespace foxy
@@ -28,8 +31,7 @@ close(Stream& stream)
   }
 }
 
-template <class Stream,
-          std::enable_if_t<is_closable_stream_nothrow<Stream>::value, int> = 0>
+template <class Stream, std::enable_if_t<is_closable_stream_nothrow<Stream>::value, int> = 0>
 auto
 close(Stream& stream)
 {
@@ -39,3 +41,5 @@ close(Stream& stream)
 
 } // namespace detail
 } // namespace foxy
+
+#endif // FOXY_DETAIL_CLOSE_STREAM_HPP_

@@ -9,6 +9,7 @@
 
 #include <foxy/log.hpp>
 #include <boost/asio/ssl/error.hpp>
+#include <iostream>
 
 namespace net = boost::asio;
 

@@ -1,19 +1,19 @@
 #
 # Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
 #
-# Distributed under the Boost Software License, Version 1.0. (See accompanying
-# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+# Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+# or copy at http://www.boost.org/LICENSE_1_0.txt)
 #
 # Official repository: https://github.com/LeonineKing1199/foxy
 #
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 project(foxy LANGUAGES CXX)
 
 find_package(
-  Boost 1.69
-  REQUIRED
+  Boost 1.70
+  CONFIG REQUIRED
     system
     date_time
 )
@@ -23,25 +23,7 @@ find_package(OpenSSL REQUIRED)
 add_library(
   foxy
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/detect_ssl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/uri_def.hpp
-
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
-
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
-
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/log.hpp
@@ -51,11 +33,32 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper_v2.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/uri_def.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/function.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/utility.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/detail/config.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/variant2/variant.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
@@ -87,6 +90,7 @@ target_compile_definitions(
   PUBLIC
     BOOST_COROUTINES_NO_DEPRECATION_WARNING=1
     BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1
+    BOOST_BEAST_ALLOW_DEPRECATED=1
 )
 
 target_compile_features(foxy PUBLIC cxx_std_14)
@@ -113,12 +117,13 @@ if (MSVC)
   target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
 endif()
 
-if (FOXY_TESTING)
+include(CTest)
 
+if (BUILD_TESTING)
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
-    Boost 1.69
-    REQUIRED
+    Boost 1.70
+    CONFIG REQUIRED
       coroutine
       thread
   )
@@ -156,7 +161,29 @@ if (FOXY_TESTING)
       Boost::thread
   )
 
-  include(CTest)
   include(Catch)
   catch_discover_tests(foxy_tests)
+endif()
+
+if (FOXY_BUILD_EXAMPLES)
+  find_package(
+    Boost 1.70
+    CONFIG REQUIRED
+      coroutine
+      thread
+  )
+
+  add_executable(
+    hello-world
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/hello_world/main.cpp
+  )
+
+  target_link_libraries(
+    hello-world
+    PRIVATE
+      foxy
+      Boost::coroutine
+      Boost::thread
+  )
 endif()

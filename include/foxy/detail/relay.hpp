@@ -26,137 +26,104 @@
 #include <boost/system/error_code.hpp>
 
 #include <array>
-#include <iostream>
 
 namespace foxy
 {
 namespace detail
 {
 template <class Stream, class RelayHandler>
-struct relay_op : boost::asio::coroutine
+struct relay_op : boost::beast::stable_async_base<
+                    RelayHandler,
+                    decltype(std::declval<::foxy::basic_session<Stream>&>().get_executor())>,
+                  boost::asio::coroutine
 {
-public:
-  using executor_type = boost::asio::associated_executor_t<
-    RelayHandler,
-    decltype((std::declval<::foxy::basic_session<Stream>&>().get_executor()))>;
-
-  using allocator_type = boost::asio::associated_allocator_t<RelayHandler>;
-
-  template <bool isRequest, class Body, class Allocator>
-  using parser = boost::beast::http::parser<isRequest, Body, Allocator>;
+  template <bool isRequest, class Body>
+  using parser = boost::beast::http::parser<isRequest, Body>;
 
   template <bool isRequest, class Body, class Fields>
   using serializer = boost::beast::http::serializer<isRequest, Body, Fields>;
 
   using buffer_body = boost::beast::http::buffer_body;
   using empty_body  = boost::beast::http::empty_body;
-  using fields      = boost::beast::http::basic_fields<allocator_type>;
+  using fields      = boost::beast::http::fields;
 
   using request  = boost::beast::http::request<buffer_body, fields>;
   using response = boost::beast::http::response<buffer_body, fields>;
 
-private:
   struct state
   {
     std::array<char, 2048> buffer;
 
-    ::foxy::basic_session<Stream>& server;
-    ::foxy::basic_session<Stream>& client;
+    parser<true, buffer_body>             req_parser;
+    serializer<true, buffer_body, fields> req_sr;
+    fields                                req_fields;
+    request&                              req;
 
-    parser<true, buffer_body, allocator_type> req_parser;
-    serializer<true, buffer_body, fields>     req_sr;
-    fields                                    req_fields;
-    request&                                  req;
-
-    parser<false, buffer_body, allocator_type> res_parser;
-    serializer<false, buffer_body, fields>     res_sr;
-    fields                                     res_fields;
-    response&                                  res;
+    parser<false, buffer_body>             res_parser;
+    serializer<false, buffer_body, fields> res_sr;
+    fields                                 res_fields;
+    response&                              res;
 
     boost::system::error_code ec;
 
     bool close_tunnel;
 
-    boost::asio::executor_work_guard<decltype(server.get_executor())> work;
-
-    state(RelayHandler const&            handler,
-          ::foxy::basic_session<Stream>& server_,
-          ::foxy::basic_session<Stream>& client_)
-      : server(server_)
-      , client(client_)
-      , req_parser(std::piecewise_construct,
-                   std::make_tuple(),
-                   std::make_tuple(boost::asio::get_associated_allocator(handler)))
-      , req_sr(req_parser.get())
-      , req_fields(boost::asio::get_associated_allocator(handler))
+    state()
+      : req_sr(req_parser.get())
       , req(req_parser.get())
-      , res_parser(std::piecewise_construct,
-                   std::make_tuple(),
-                   std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , res_sr(res_parser.get())
-      , res_fields(boost::asio::get_associated_allocator(handler))
       , res(res_parser.get())
       , close_tunnel{false}
-      , work(server.get_executor())
     {
     }
 
-    state(RelayHandler const&                        handler,
-          ::foxy::basic_session<Stream>&             server_,
-          ::foxy::basic_session<Stream>&             client_,
-          parser<true, empty_body, allocator_type>&& req_parser_)
-      : server(server_)
-      , client(client_)
-      , req_parser(std::move(req_parser_))
+    state(parser<true, empty_body>&& req_parser_)
+      : req_parser(std::move(req_parser_))
       , req_sr(req_parser.get())
-      , req_fields(boost::asio::get_associated_allocator(handler))
       , req(req_parser.get())
-      , res_parser(std::piecewise_construct,
-                   std::make_tuple(),
-                   std::make_tuple(boost::asio::get_associated_allocator(handler)))
       , res_sr(res_parser.get())
-      , res_fields(boost::asio::get_associated_allocator(handler))
       , res(res_parser.get())
       , close_tunnel{false}
-      , work(server.get_executor())
     {
     }
   };
 
-  boost::beast::handler_ptr<state, RelayHandler> p_;
+  ::foxy::basic_session<Stream>& server;
+  ::foxy::basic_session<Stream>& client;
+  state&                         s;
 
 public:
   relay_op()                = delete;
   relay_op(relay_op const&) = default;
   relay_op(relay_op&&)      = default;
 
-  template <class DeducedHandler>
-  relay_op(::foxy::basic_session<Stream>& server,
-           ::foxy::basic_session<Stream>& client,
-           DeducedHandler&&               handler)
-    : p_(std::forward<DeducedHandler>(handler), server, client)
+  relay_op(::foxy::basic_session<Stream>& server_,
+           RelayHandler                   handler,
+           ::foxy::basic_session<Stream>& client_)
+    : boost::beast::stable_async_base<RelayHandler,
+                                      decltype(std::declval<::foxy::basic_session<Stream>&>()
+                                                 .get_executor())>(std::move(handler),
+                                                                   server_.get_executor())
+    , server(server_)
+    , client(client_)
+    , s(boost::beast::allocate_stable<state>(*this))
   {
+    (*this)({}, 0, false);
   }
 
-  template <class DeducedHandler>
-  relay_op(::foxy::basic_session<Stream>&             server,
-           ::foxy::basic_session<Stream>&             client,
-           parser<true, empty_body, allocator_type>&& req_parser,
-           DeducedHandler&&                           handler)
-    : p_(std::forward<DeducedHandler>(handler), server, client, std::move(req_parser))
+  relay_op(::foxy::basic_session<Stream>& server_,
+           RelayHandler                   handler,
+           ::foxy::basic_session<Stream>& client_,
+           parser<true, empty_body>&&     req_parser)
+    : boost::beast::stable_async_base<RelayHandler,
+                                      decltype(std::declval<::foxy::basic_session<Stream>&>()
+                                                 .get_executor())>(std::move(handler),
+                                                                   server_.get_executor())
+    , server(server_)
+    , client(client_)
+    , s(boost::beast::allocate_stable<state>(*this, std::move(req_parser)))
   {
-  }
-
-  auto
-  get_executor() const noexcept -> executor_type
-  {
-    return boost::asio::get_associated_executor(p_.handler(), p_->server.get_executor());
-  }
-
-  auto
-  get_allocator() const noexcept -> allocator_type
-  {
-    return boost::asio::get_associated_allocator(p_.handler());
+    (*this)({}, 0, false);
   }
 
   auto
@@ -171,17 +138,13 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
                                            std::size_t const         bytes_transferred,
                                            bool const                is_continuation) -> void
 {
-  using namespace std::placeholders;
-  using boost::beast::bind_handler;
-
   namespace http = boost::beast::http;
 
-  auto& s = *p_;
   BOOST_ASIO_CORO_REENTER(*this)
   {
     if (!s.req_parser.is_header_done()) {
       BOOST_ASIO_CORO_YIELD
-      s.server.async_read_header(s.req_parser, std::move(*this));
+      server.async_read_header(s.req_parser, std::move(*this));
       if (ec) { goto upcall; }
     }
 
@@ -205,7 +168,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       s.req.insert(http::field::via, "1.1 foxy");
 
-      s.client.async_write_header(s.req_sr, std::move(*this));
+      client.async_write_header(s.req_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
 
@@ -217,7 +180,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
         s.req.body().size = s.buffer.size();
 
         BOOST_ASIO_CORO_YIELD
-        s.server.async_read(s.req_parser, std::move(*this));
+        server.async_read(s.req_parser, std::move(*this));
 
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { s.ec = ec; }
@@ -232,7 +195,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
       }
 
       BOOST_ASIO_CORO_YIELD
-      s.client.async_write(s.req_sr, std::move(*this));
+      client.async_write(s.req_sr, std::move(*this));
 
       if (ec == http::error::need_buffer) { ec = {}; }
       if (ec || s.ec) { goto upcall; }
@@ -244,7 +207,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     // serialized header
     //
     BOOST_ASIO_CORO_YIELD
-    s.client.async_read_header(s.res_parser, std::move(*this));
+    client.async_read_header(s.res_parser, std::move(*this));
     if (ec) { goto upcall; }
 
     BOOST_ASIO_CORO_YIELD
@@ -262,7 +225,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
 
       s.res.insert(http::field::via, "1.1 foxy");
 
-      s.server.async_write_header(s.res_sr, std::move(*this));
+      server.async_write_header(s.res_sr, std::move(*this));
     }
     if (ec) { goto upcall; }
 
@@ -274,7 +237,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
         s.res.body().size = s.buffer.size();
 
         BOOST_ASIO_CORO_YIELD
-        s.client.async_read(s.res_parser, std::move(*this));
+        client.async_read(s.res_parser, std::move(*this));
 
         if (ec == http::error::need_buffer) { ec = {}; }
         if (ec) { s.ec = ec; }
@@ -289,7 +252,7 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
       }
 
       BOOST_ASIO_CORO_YIELD
-      s.server.async_write(s.res_sr, std::move(*this));
+      server.async_write(s.res_sr, std::move(*this));
 
       if (ec == http::error::need_buffer) { ec = {}; }
       if (ec || s.ec) { goto upcall; }
@@ -297,18 +260,12 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
     } while (!s.res_parser.is_done() && !s.res_sr.is_done());
 
     {
-      auto       work         = std::move(s.work);
       auto const close_tunnel = s.close_tunnel;
-      return p_.invoke(boost::system::error_code(), close_tunnel);
+      return this->complete(is_continuation, boost::system::error_code(), close_tunnel);
     }
 
   upcall:
-    if (!is_continuation) {
-      BOOST_ASIO_CORO_YIELD
-      boost::asio::post(bind_handler(std::move(*this), ec, 0));
-    }
-    auto work = std::move(s.work);
-    p_.invoke(ec, true);
+    this->complete(is_continuation, ec, true);
   }
 }
 
@@ -324,7 +281,7 @@ async_relay(::foxy::basic_session<Stream>& server,
 
   relay_op<Stream, typename boost::asio::async_completion<
                      RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
-    server, client, std::move(init.completion_handler))({}, 0, false);
+    server, std::move(init.completion_handler), client);
 
   return init.result.get();
 }
@@ -342,7 +299,7 @@ async_relay(::foxy::basic_session<Stream>& server,
 
   relay_op<Stream, typename boost::asio::async_completion<
                      RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
-    server, client, std::move(parser), std::move(init.completion_handler))({}, 0, false);
+    server, std::move(init.completion_handler), client, std::move(parser));
 
   return init.result.get();
 }
