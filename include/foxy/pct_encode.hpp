@@ -21,6 +21,7 @@
 #include <boost/locale/utf.hpp>
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <array>
 
@@ -39,8 +40,10 @@ utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink
   }
 
   if (code_point < 0x0800) {
-    auto const  encoded_point = ((code_point & 0x07c0) << 2) + (code_point & 0x003f) + 0xc080;
-    auto const* bytes         = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+    auto const encoded_point = ((code_point & 0x07c0) << 2) + (code_point & 0x003f) + 0xc080;
+
+    auto bytes = std::array<unsigned char, 2>{0, 0};
+    std::memcpy(bytes.data(), &encoded_point, 2);
 
     *sink = bytes[1];
     ++sink;
@@ -54,7 +57,9 @@ utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink
   if (code_point < 0x10000) {
     auto const encoded_point = ((code_point & 0xf000) << 4) + ((code_point & 0x0fc0) << 2) +
                                (code_point & 0x003f) + 0xe08080;
-    auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+    auto bytes = std::array<unsigned char, 3>{0, 0, 0};
+    std::memcpy(bytes.data(), &encoded_point, 3);
 
     *sink = bytes[2];
     ++sink;
@@ -72,7 +77,9 @@ utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink
     auto const encoded_point = ((code_point & 0x1c0000) << 6) + ((code_point & 0x03f000) << 4) +
                                ((code_point & 0x000fc0) << 2) + (code_point & 0x00003f) +
                                0xf0808080;
-    auto const* bytes = reinterpret_cast<std::uint8_t const*>(&encoded_point);
+
+    auto bytes = std::array<unsigned char, 4>{0, 0, 0, 0};
+    std::memcpy(bytes.data(), &encoded_point, 4);
 
     *sink = bytes[3];
     ++sink;
@@ -92,7 +99,6 @@ utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink
   return sink;
 }
 
-//
 // to_utf8_encoding takes the Boost.Locale type `utf::code_point` which is capable of holding any
 // Unicode code point. We convert the number to an unsigned 32 bit integer which represents the 1-4
 // byte UTF-8 binary encoding scheme seen here:
