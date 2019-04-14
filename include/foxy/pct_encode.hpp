@@ -23,7 +23,6 @@
 #include <cstdint>
 #include <string>
 #include <array>
-#include <iostream>
 
 namespace foxy
 {
@@ -131,8 +130,6 @@ pct_encode(boost::basic_string_view<Char, Traits> const input, OutputIterator si
   auto const points = code_point_view<Char>(input);
 
   for (auto const code_point : points) {
-    std::cout << "this is the code point: " << std::hex << code_point << "\n";
-
     if (code_point == utf::illegal || code_point == utf::incomplete) { return sink; }
 
     // no need to encode the ASCII set

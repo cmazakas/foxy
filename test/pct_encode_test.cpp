@@ -17,8 +17,6 @@
 #include <vector>
 #include <bitset>
 
-#include <iostream>
-
 #include <catch2/catch.hpp>
 
 namespace utf = boost::locale::utf;
