@@ -45,7 +45,6 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper_v2.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/uri_def.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/function.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/utility.hpp

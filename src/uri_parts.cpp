@@ -60,23 +60,23 @@ parse_complete(boost::string_view const uri, foxy::uri_parts& parts) -> bool
   auto old   = iter;
   auto match = false;
 
-  match = x3::parse(iter, end, x3::raw[foxy::uri::scheme()] >> ":", parts.scheme_);
+  match = x3::parse(iter, end, x3::raw[foxy::uri::scheme] >> ":", parts.scheme_);
   if (!match) { goto upcall; }
 
   old = iter;
 
-  match = x3::parse(iter, end,
-                    x3::lit("//") >> -(foxy::uri::userinfo() >> "@") >> x3::raw[foxy::uri::host()],
-                    parts.host_);
+  match =
+    x3::parse(iter, end, x3::lit("//") >> -(foxy::uri::userinfo >> "@") >> x3::raw[foxy::uri::host],
+              parts.host_);
 
   // if we have a valid host, check for the port and then the path-abempty portion of the
   // hier-part
   //
   if (match) {
-    match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port()]), parts.port_);
+    match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port]), parts.port_);
     if (!match) { goto upcall; }
 
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty()], parts.path_);
+    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty], parts.path_);
     if (!match) { goto upcall; }
   }
 
@@ -95,15 +95,15 @@ parse_complete(boost::string_view const uri, foxy::uri_parts& parts) -> bool
 
   if (!match) {
     iter  = old;
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_empty()], parts.path_);
+    match = x3::parse(iter, end, x3::raw[foxy::uri::path_empty], parts.path_);
   }
 
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query()]), parts.query_);
+  match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query]), parts.query_);
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("#" >> x3::raw[foxy::uri::fragment()]), parts.fragment_);
+  match = x3::parse(iter, end, -("#" >> x3::raw[foxy::uri::fragment]), parts.fragment_);
 
   if (!match) { goto upcall; }
 
@@ -122,26 +122,26 @@ parse_authority(boost::string_view const uri, foxy::uri_parts& parts) -> bool
   auto old   = iter;
   auto match = false;
 
-  match = x3::parse(iter, end, -(foxy::uri::userinfo() >> "@") >> x3::raw[foxy::uri::host()],
-                    parts.host_);
+  match =
+    x3::parse(iter, end, -(foxy::uri::userinfo >> "@") >> x3::raw[foxy::uri::host], parts.host_);
 
   // if we have a valid host, check for the port and then the path-abempty portion of the
   // hier-part
   //
   if (match) {
-    match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port()]), parts.port_);
+    match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port]), parts.port_);
     if (!match) { goto upcall; }
 
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty()], parts.path_);
+    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty], parts.path_);
     if (!match) { goto upcall; }
   }
 
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query()]), parts.query_);
+  match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query]), parts.query_);
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("#" >> x3::raw[foxy::uri::fragment()]), parts.fragment_);
+  match = x3::parse(iter, end, -("#" >> x3::raw[foxy::uri::fragment]), parts.fragment_);
 
   if (!match) { goto upcall; }
 
