@@ -188,4 +188,18 @@ if (FOXY_BUILD_EXAMPLES)
       Boost::coroutine
       Boost::thread
   )
+
+  add_executable(
+    ip-parser
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/uri_combinators/ip_parser.cpp
+  )
+
+  target_link_libraries(
+    ip-parser
+    PRIVATE
+      foxy
+      Boost::coroutine
+      Boost::thread
+  )
 endif()

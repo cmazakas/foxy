@@ -3,6 +3,7 @@
 ## Table of Contents
 
 * [Hello World](./hello-world.md#Hello-World)
+* [URI Combinators](./uri-combinators.md#URI-Combinators)
 
 ## About
 
