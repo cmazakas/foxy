@@ -24,23 +24,22 @@ struct uri_parts
 public:
   using string_view = boost::string_view;
   using iterator    = typename string_view::iterator;
-  using range       = boost::iterator_range<iterator>;
 
   // these are kept public so that the uri_parts class can be used as a Fusion ForwardSequence
   //
-  range scheme_;
-  range host_;
-  range port_;
-  range path_;
-  range query_;
-  range fragment_;
+  string_view scheme_;
+  string_view host_;
+  string_view port_;
+  string_view path_;
+  string_view query_;
+  string_view fragment_;
 
   uri_parts()
-    : scheme_(nullptr, nullptr)
-    , host_(nullptr, nullptr)
-    , port_(nullptr, nullptr)
-    , query_(nullptr, nullptr)
-    , fragment_(nullptr, nullptr)
+    : scheme_(nullptr, 0)
+    , host_(nullptr, 0)
+    , port_(nullptr, 0)
+    , query_(nullptr, 0)
+    , fragment_(nullptr, 0)
   {
   }
 

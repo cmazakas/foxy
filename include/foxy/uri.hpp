@@ -13,6 +13,28 @@
 #include <boost/spirit/home/x3.hpp>
 #include <boost/utility/string_view.hpp>
 
+// all credit for the port of `foxy::uri::raw` goes to Kojoley from github:
+// https://github.com/boostorg/spirit/issues/487#issuecomment-481899288
+//
+// without them, this wouldn't have been at all possible for the library
+//
+namespace boost
+{
+namespace spirit
+{
+namespace x3
+{
+namespace traits
+{
+template <typename Char, typename Trait>
+struct is_range<boost::basic_string_view<Char, Trait>> : boost::mpl::true_
+{
+};
+} // namespace traits
+} // namespace x3
+} // namespace spirit
+} // namespace boost
+
 namespace foxy
 {
 // A (hopefully) conforming implementation of the ABNF found at:
@@ -23,6 +45,41 @@ namespace foxy
 namespace uri
 {
 namespace x3 = boost::spirit::x3;
+
+template <class Subject>
+struct raw_directive : x3::raw_directive<Subject>
+{
+  using x3::raw_directive<Subject>::raw_directive;
+
+  template <typename Iterator, typename Context, typename RContext, typename Attribute>
+  bool
+  parse(Iterator&       first,
+        Iterator const& last,
+        Context const&  context,
+        RContext&       rcontext,
+        Attribute&      attr) const
+  {
+    x3::skip_over(first, last, context);
+    Iterator saved = first;
+    if (this->subject.parse(first, last, context, rcontext, x3::unused)) {
+      attr = {saved, typename Attribute::size_type(first - saved)};
+      return true;
+    }
+    return false;
+  }
+};
+
+struct raw_gen
+{
+  template <class Subject>
+  raw_directive<typename x3::extension::as_parser<Subject>::value_type>
+  operator[](Subject subject) const
+  {
+    return {x3::as_parser(std::move(subject))};
+  }
+};
+
+auto const raw = raw_gen{};
 
 using char_set = x3::char_set<boost::spirit::char_encoding::ascii>;
 

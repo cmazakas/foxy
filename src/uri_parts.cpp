@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -16,37 +15,37 @@ namespace x3 = boost::spirit::x3;
 auto
 foxy::uri_parts::scheme() const -> string_view
 {
-  return string_view(scheme_.begin(), scheme_.end() - scheme_.begin());
+  return scheme_;
 }
 
 auto
 foxy::uri_parts::host() const -> string_view
 {
-  return string_view(host_.begin(), host_.end() - host_.begin());
+  return host_;
 }
 
 auto
 foxy::uri_parts::port() const -> string_view
 {
-  return string_view(port_.begin(), port_.end() - port_.begin());
+  return port_;
 }
 
 auto
 foxy::uri_parts::path() const -> string_view
 {
-  return string_view(path_.begin(), path_.end() - path_.begin());
+  return path_;
 }
 
 auto
 foxy::uri_parts::query() const -> string_view
 {
-  return string_view(query_.begin(), query_.end() - query_.begin());
+  return query_;
 }
 
 auto
 foxy::uri_parts::fragment() const -> string_view
 {
-  return string_view(fragment_.begin(), fragment_.end() - fragment_.begin());
+  return fragment_;
 }
 
 namespace
@@ -60,23 +59,23 @@ parse_complete(boost::string_view const uri, foxy::uri_parts& parts) -> bool
   auto old   = iter;
   auto match = false;
 
-  match = x3::parse(iter, end, x3::raw[foxy::uri::scheme] >> ":", parts.scheme_);
+  match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::scheme] >> ":", parts.scheme_);
   if (!match) { goto upcall; }
 
   old = iter;
 
-  match =
-    x3::parse(iter, end, x3::lit("//") >> -(foxy::uri::userinfo >> "@") >> x3::raw[foxy::uri::host],
-              parts.host_);
+  match = x3::parse(
+    iter, end, x3::lit("//") >> -(foxy::uri::userinfo >> "@") >> foxy::uri::raw[foxy::uri::host],
+    parts.host_);
 
   // if we have a valid host, check for the port and then the path-abempty portion of the
   // hier-part
   //
   if (match) {
-    match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port]), parts.port_);
+    match = x3::parse(iter, end, -(":" >> foxy::uri::raw[foxy::uri::port]), parts.port_);
     if (!match) { goto upcall; }
 
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty], parts.path_);
+    match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_abempty], parts.path_);
     if (!match) { goto upcall; }
   }
 
@@ -85,25 +84,25 @@ parse_complete(boost::string_view const uri, foxy::uri_parts& parts) -> bool
   //
   // if (!match) {
   //   iter = old;
-  //   x3::parse(iter, end, x3::raw[foxy::uri::path_absolute()], parts.path_);
+  //   x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_absolute()], parts.path_);
   // }
 
   // if (!match) {
   //   iter  = old;
-  //   match = x3::parse(iter, end, x3::raw[foxy::uri::path_rootless()], parts.path_);
+  //   match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_rootless()], parts.path_);
   // }
 
   if (!match) {
     iter  = old;
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_empty], parts.path_);
+    match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_empty], parts.path_);
   }
 
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query]), parts.query_);
+  match = x3::parse(iter, end, -("?" >> foxy::uri::raw[foxy::uri::query]), parts.query_);
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("#" >> x3::raw[foxy::uri::fragment]), parts.fragment_);
+  match = x3::parse(iter, end, -("#" >> foxy::uri::raw[foxy::uri::fragment]), parts.fragment_);
 
   if (!match) { goto upcall; }
 
@@ -122,26 +121,26 @@ parse_authority(boost::string_view const uri, foxy::uri_parts& parts) -> bool
   auto old   = iter;
   auto match = false;
 
-  match =
-    x3::parse(iter, end, -(foxy::uri::userinfo >> "@") >> x3::raw[foxy::uri::host], parts.host_);
+  match = x3::parse(iter, end, -(foxy::uri::userinfo >> "@") >> foxy::uri::raw[foxy::uri::host],
+                    parts.host_);
 
   // if we have a valid host, check for the port and then the path-abempty portion of the
   // hier-part
   //
   if (match) {
-    match = x3::parse(iter, end, -(":" >> x3::raw[foxy::uri::port]), parts.port_);
+    match = x3::parse(iter, end, -(":" >> foxy::uri::raw[foxy::uri::port]), parts.port_);
     if (!match) { goto upcall; }
 
-    match = x3::parse(iter, end, x3::raw[foxy::uri::path_abempty], parts.path_);
+    match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_abempty], parts.path_);
     if (!match) { goto upcall; }
   }
 
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("?" >> x3::raw[foxy::uri::query]), parts.query_);
+  match = x3::parse(iter, end, -("?" >> foxy::uri::raw[foxy::uri::query]), parts.query_);
   if (!match) { goto upcall; }
 
-  match = x3::parse(iter, end, -("#" >> x3::raw[foxy::uri::fragment]), parts.fragment_);
+  match = x3::parse(iter, end, -("#" >> foxy::uri::raw[foxy::uri::fragment]), parts.fragment_);
 
   if (!match) { goto upcall; }
 
