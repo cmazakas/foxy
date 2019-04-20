@@ -8,7 +8,7 @@
 //
 
 #include <foxy/pct_encode.hpp>
-
+#include <boost/spirit/home/x3.hpp>
 #include <boost/locale/utf.hpp>
 
 #include <string>
@@ -16,10 +16,13 @@
 #include <iterator>
 #include <vector>
 #include <bitset>
+#include <array>
+#include <iostream>
 
 #include <catch2/catch.hpp>
 
 namespace utf = boost::locale::utf;
+namespace x3  = boost::spirit::x3;
 
 TEST_CASE("Our percent encoding function/namespace...")
 {
@@ -289,5 +292,33 @@ TEST_CASE("Our percent encoding function/namespace...")
 
       CHECK(out_view == "%e2%82%ac");
     }
+  }
+
+  SECTION("should properly encode portions of the 7-bit ASCII set")
+  {
+    auto ascii_chars = std::vector<char>(128);
+    for (int idx = 0; idx < 128; ++idx) { ascii_chars[idx] = static_cast<char>(idx); }
+
+    auto test_views = std::vector<boost::string_view>(128);
+    for (int idx = 0; idx < 128; ++idx) {
+      test_views[idx] = boost::string_view(ascii_chars.data() + idx, 1);
+    }
+
+    auto was_encoded = true;
+    for (int idx = 0; idx < 33; ++idx) {
+      auto const test_view = test_views[idx];
+
+      auto out = std::array<char, 3>{0};
+
+      auto const out_end = foxy::uri::pct_encode(test_view, out.data());
+
+      unsigned parsed_num = 0;
+      auto     pos        = out.begin();
+      x3::parse(pos, out.end(), "%" >> x3::hex, parsed_num);
+
+      was_encoded == was_encoded && (parsed_num == ascii_chars[idx]);
+    }
+
+    CHECK(was_encoded);
   }
 }

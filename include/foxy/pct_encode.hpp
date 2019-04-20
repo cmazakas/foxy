@@ -75,9 +75,9 @@ pct_encode(boost::basic_string_view<Char, Traits> const input, OutputIterator si
   for (auto const code_point : points) {
     if (code_point == utf::illegal || code_point == utf::incomplete) { return sink; }
 
-    // no need to encode the ASCII set
+    // no need to encode the normal ascii set
     //
-    if (code_point < 0x0080) { continue; }
+    if ((code_point > 32) && (code_point < 123)) { continue; }
 
     auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
 
