@@ -316,7 +316,8 @@ TEST_CASE("Our Unicode URI module...")
                                          U"http:",
                                          U"asdf:jkl;",
                                          U"foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof",
-                                         U"http://ay%40lmao:password@[fe80::]/p@th?q=@lol"};
+                                         U"http://ay%40lmao:password@[fe80::]/p@th?q=@lol",
+                                         U"http://\u017C\u00F3\u0142\u0107.pl/"};
 
     auto const all_match =
       std::all_of(valid_inputs.begin(), valid_inputs.end(), [](auto const view) -> bool {
