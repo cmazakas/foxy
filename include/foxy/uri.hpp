@@ -349,6 +349,289 @@ x3::rule<class uri_reference> const uri_reference     = "uri_reference";
 auto const                          uri_reference_def = uri | relative_ref;
 BOOST_SPIRIT_DEFINE(uri_reference);
 
+namespace unicode
+{
+// sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+//
+x3::rule<class sub_delims> const sub_delims     = "sub_delims";
+auto const                       sub_delims_def = x3::unicode::char_(U"!$&'()*+,;=");
+BOOST_SPIRIT_DEFINE(sub_delims);
+
+// gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+//
+x3::rule<class gen_delims> const gen_delims     = "gen_delims";
+auto const                       gen_delims_def = x3::unicode::char_(U":/?#[]@");
+BOOST_SPIRIT_DEFINE(gen_delims);
+
+// reserved = gen-delims / sub-delims
+//
+x3::rule<class reserved> const reserved     = "reserved";
+auto const                     reserved_def = gen_delims | sub_delims;
+BOOST_SPIRIT_DEFINE(reserved);
+
+// unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+//
+x3::rule<class unreserved> const unreserved = "unreserved";
+auto const unreserved_def = x3::unicode::alpha | x3::unicode::digit | x3::unicode::char_(U"-._~");
+BOOST_SPIRIT_DEFINE(unreserved);
+
+// pct-encoded = "%" HEXDIG HEXDIG
+//
+x3::rule<class pct_encoded> const pct_encoded = "pct_encoded";
+auto const pct_encoded_def = x3::unicode::lit(U"%") >> x3::unicode::xdigit >> x3::unicode::xdigit;
+BOOST_SPIRIT_DEFINE(pct_encoded);
+
+// pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
+//
+x3::rule<class pchar> const pchar = "pchar";
+auto const pchar_def = unreserved | pct_encoded | sub_delims | x3::unicode::char_(U":@");
+BOOST_SPIRIT_DEFINE(pchar);
+
+// query = *( pchar / "/" / "?" )
+//
+x3::rule<class query> const query     = "query";
+auto const                  query_def = *(pchar | x3::unicode::char_(U"/?"));
+BOOST_SPIRIT_DEFINE(query);
+
+// fragment = *( pchar / "/" / "?" )
+//
+x3::rule<class fragment> const fragment     = "fragment";
+auto const                     fragment_def = *(pchar | x3::unicode::char_(U"/?"));
+BOOST_SPIRIT_DEFINE(fragment);
+
+// segment = *pchar
+//
+x3::rule<class segment> const segment     = "segment";
+auto const                    segment_def = *pchar;
+BOOST_SPIRIT_DEFINE(segment);
+
+// segment-nz = 1*pchar
+//
+x3::rule<class segment_nz> const segment_nz     = "segment_nz";
+auto const                       segment_nz_def = +pchar;
+BOOST_SPIRIT_DEFINE(segment_nz);
+
+// segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" )
+//  ; non-zero-length segment without any colon ":"
+//
+x3::rule<class segment_nz_nc> const segment_nz_nc = "segment_nz_nc";
+auto const segment_nz_nc_def = +(unreserved | pct_encoded | sub_delims | x3::unicode::char_(U'@'));
+BOOST_SPIRIT_DEFINE(segment_nz_nc);
+
+// path-empty = 0<pchar>
+//
+x3::rule<class path_empty> const path_empty     = "path_empty";
+auto const                       path_empty_def = x3::repeat(0)[pchar];
+BOOST_SPIRIT_DEFINE(path_empty);
+
+// path-rootless = segment-nz *( "/" segment )
+//
+x3::rule<class path_rootless> const path_rootless = "path_rootless";
+auto const path_rootless_def = segment_nz >> *(x3::unicode::char_(U'/') >> segment);
+BOOST_SPIRIT_DEFINE(path_rootless);
+
+// path-noscheme = segment-nz-nc *( "/" segment )
+//
+x3::rule<class path_noscheme> const path_noscheme = "path_noscheme";
+auto const path_noscheme_def = segment_nz_nc >> *(x3::unicode::char_(U'/') >> segment);
+BOOST_SPIRIT_DEFINE(path_noscheme);
+
+// path-absolute = "/" [ segment-nz *( "/" segment ) ]
+//
+x3::rule<class path_absolute> const path_absolute     = "path_absolute";
+auto const                          path_absolute_def = x3::unicode::char_(U'/') >>
+                               -(segment_nz >> *(x3::unicode::char_(U'/') >> segment));
+BOOST_SPIRIT_DEFINE(path_absolute);
+
+// path-abempty = *( "/" segment )
+//
+x3::rule<class path_abempty> const path_abempty     = "path_abempty";
+auto const                         path_abempty_def = *(x3::unicode::char_(U'/') >> segment);
+BOOST_SPIRIT_DEFINE(path_abempty);
+
+// path = path-abempty    ; begins with "/" or is empty
+//      / path-absolute   ; begins with "/" but not "//"
+//      / path-noscheme   ; begins with a non-colon segment
+//      / path-rootless   ; begins with a segment
+//      / path-empty      ; zero characters
+//
+x3::rule<class path> const path     = "path";
+auto const                 path_def = path_abempty // begins with "/" or is empty
+                      | path_absolute              // begins with "/" but not "//"
+                      | path_noscheme              // begins with a non-colon segment
+                      | path_rootless              // begins with a segment
+                      | path_empty;                // zero characters
+BOOST_SPIRIT_DEFINE(path);
+
+// reg-name = *( unreserved / pct-encoded / sub-delims )
+//
+x3::rule<class reg_name> const reg_name     = "reg_name";
+auto const                     reg_name_def = *(unreserved | pct_encoded | sub_delims);
+BOOST_SPIRIT_DEFINE(reg_name);
+
+//    dec-octet = DIGIT                 ; 0-9
+//              / %x31-39 DIGIT         ; 10-99
+//              / "1" 2DIGIT            ; 100-199
+//              / "2" %x30-34 DIGIT     ; 200-249
+//              / "25" %x30-35          ; 250-255
+//
+x3::rule<class dec_octet> const dec_octet = "dec_octet";
+auto const                      dec_octet_def =
+  (x3::unicode::lit(U"25") >> x3::unicode::char_(U"0-5")) |
+  (x3::unicode::lit(U"2") >> x3::unicode::char_(U"0-4") >> x3::unicode::digit) |
+  (x3::unicode::lit(U"1") >> x3::repeat(2)[x3::unicode::digit]) |
+  (x3::unicode::char_("1-9") >> x3::unicode::digit) | x3::unicode::digit;
+BOOST_SPIRIT_DEFINE(dec_octet);
+
+// IPv4address = dec-octet "." dec-octet "." dec-octet "." dec-octet
+//
+x3::rule<class ip_v4_address> const ip_v4_address = "ip_v4_address";
+auto const ip_v4_address_def                      = dec_octet >> x3::unicode::lit(U".") >> dec_octet
+                               >> x3::unicode::lit(U".") >> dec_octet
+                               >> x3::unicode::lit(U".") >> dec_octet;
+BOOST_SPIRIT_DEFINE(ip_v4_address);
+
+// h16 = 1*4HEXDIG
+//
+x3::rule<class h16> const h16     = "h16";
+auto const                h16_def = x3::repeat(1, 4)[x3::unicode::xdigit];
+BOOST_SPIRIT_DEFINE(h16);
+
+// ls32 = ( h16 ":" h16 ) / IPv4address
+//
+x3::rule<class ls32> const ls32     = "ls32";
+auto const                 ls32_def = (h16 >> x3::unicode::lit(U":") >> h16) | ip_v4_address;
+BOOST_SPIRIT_DEFINE(ls32);
+
+// IPv6address   =
+//
+x3::rule<class ip_v6_address> const ip_v6_address = "ip_v6_address";
+auto const                          ip_v6_address_def =
+  // 6( h16 ":" ) ls32
+  (x3::repeat(6)[h16 >> x3::unicode::lit(U":")] >> ls32) |
+
+  // "::" 5( h16 ":" ) ls32
+  (x3::unicode::lit(U"::") >> x3::repeat(5)[h16 >> x3::unicode::lit(U":")] >> ls32) |
+
+  // [ h16 ] "::" 4( h16 ":" ) ls32
+  (-h16 >> x3::unicode::lit(U"::") >> x3::repeat(4)[h16 >> x3::unicode::lit(U":")] >> ls32) |
+
+  // [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
+  (-(x3::repeat(0, 1)[h16 >> x3::unicode::lit(U":")] >> h16) >> x3::unicode::lit(U"::") >>
+   x3::repeat(3)[h16 >> x3::unicode::lit(U":")] >> ls32) |
+
+  // [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
+  (-(h16 >> x3::repeat(0, 2)[x3::unicode::lit(U":") >> h16]) >> x3::unicode::lit(U"::") >>
+   (ls32 >> x3::repeat(2)[x3::unicode::lit(U":") >> h16])) |
+
+  // [ *3( h16 ":" ) h16 ] "::" h16 ":" ls32
+  (-(h16 >> x3::repeat(0, 3)[x3::unicode::lit(U":") >> h16]) >> x3::unicode::lit(U"::") >> h16 >>
+   x3::unicode::lit(U":") >> ls32) |
+
+  // [ *4( h16 ":" ) h16 ] "::" ls32
+  (-(h16 >> x3::repeat(0, 4)[x3::unicode::lit(U":") >> h16]) >> x3::unicode::lit(U"::") >> ls32) |
+
+  // [ *5( h16 ":" ) h16 ] "::" h16
+  (-(h16 >> x3::repeat(0, 5)[x3::unicode::lit(U":") >> h16]) >> x3::unicode::lit(U"::") >> h16) |
+
+  // [ *6( h16 ":" ) h16 ] "::"
+  (-(h16 >> x3::repeat(0, 6)[x3::unicode::lit(U":") >> h16]) >> x3::unicode::lit(U"::"));
+BOOST_SPIRIT_DEFINE(ip_v6_address);
+
+// IPvFuture = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )
+//
+x3::rule<class ip_vfuture> const ip_vfuture     = "ip_vfuture";
+auto const                       ip_vfuture_def = x3::unicode::lit(U"v") >> +x3::unicode::xdigit >>
+                            x3::unicode::lit(U".") >>
+                            +(unreserved | sub_delims | x3::unicode::lit(U":"));
+BOOST_SPIRIT_DEFINE(ip_vfuture);
+
+// IP-literal = "[" ( IPv6address / IPvFuture  ) "]"
+//
+x3::rule<class ip_literal> const ip_literal     = "ip_literal";
+auto const                       ip_literal_def = x3::unicode::lit(U"[") >>
+                            (ip_v6_address | ip_vfuture) >> x3::unicode::lit(U"]");
+BOOST_SPIRIT_DEFINE(ip_literal);
+
+// port = *DIGIT
+//
+x3::rule<class port> const port     = "port";
+auto const                 port_def = *x3::unicode::digit;
+BOOST_SPIRIT_DEFINE(port);
+
+// host = IP-literal / IPv4address / reg-name
+//
+x3::rule<class host> const host     = "host";
+auto const                 host_def = ip_literal | ip_v4_address | reg_name;
+BOOST_SPIRIT_DEFINE(host);
+
+// userinfo = *( unreserved / pct-encoded / sub-delims / ":" )
+//
+x3::rule<class userinfo> const userinfo = "userinfo";
+auto const userinfo_def = *(unreserved | pct_encoded | sub_delims | x3::unicode::lit(U":"));
+BOOST_SPIRIT_DEFINE(userinfo);
+
+// authority = [ userinfo "@" ] host [ ":" port ]
+//
+x3::rule<class authority> const authority     = "authority";
+auto const                      authority_def = -(userinfo >> x3::unicode::lit(U"@")) >> host >>
+                           -(x3::unicode::lit(U":") >> port);
+BOOST_SPIRIT_DEFINE(authority);
+
+// scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+//
+x3::rule<class scheme> const scheme     = "scheme";
+auto const                   scheme_def = x3::unicode::alpha >>
+                        *(x3::unicode::alpha | x3::unicode::digit | x3::unicode::char_(U"+-."));
+BOOST_SPIRIT_DEFINE(scheme);
+
+// relative-part = "//" authority path-abempty
+//               / path-absolute
+//               / path-noscheme
+//               / path-empty
+//
+x3::rule<class relative_part> const relative_part = "relative_part";
+auto const relative_part_def = (x3::unicode::lit(U"//") >> authority >> path_abempty) |
+                               path_absolute | path_noscheme | path_empty;
+BOOST_SPIRIT_DEFINE(relative_part);
+
+// relative-ref = relative-part [ "?" query ] [ "#" fragment ]
+//
+x3::rule<class relative_ref> const relative_ref = "relative_ref";
+auto const relative_ref_def = relative_part >> -(x3::unicode::lit(U"?") >> query) >>
+                              -(x3::unicode::lit(U"#") >> fragment);
+BOOST_SPIRIT_DEFINE(relative_ref);
+
+// hier-part = "//" authority path-abempty
+//           / path-absolute
+//           / path-rootless
+//           / path-empty
+//
+x3::rule<class hier_part> const hier_part = "hier_part";
+auto const hier_part_def = (x3::unicode::lit(U"//") >> authority >> path_abempty) | path_absolute |
+                           path_rootless | path_empty;
+BOOST_SPIRIT_DEFINE(hier_part);
+
+// URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
+//
+x3::rule<class uri> const uri     = "uri";
+auto const                uri_def = scheme >> x3::unicode::lit(U":") >> hier_part >>
+                     -(x3::unicode::lit(U"?") >> query) >> -(x3::unicode::lit(U"#") >> fragment);
+BOOST_SPIRIT_DEFINE(uri);
+
+// absolute-URI = scheme ":" hier-part [ "?" query ]
+//
+x3::rule<class absolute_uri> const absolute_uri = "absolute_uri";
+auto const absolute_uri_def                     = scheme >> x3::unicode::lit(U":") >> hier_part >>
+                              -(x3::unicode::lit(U"?") >> query);
+BOOST_SPIRIT_DEFINE(absolute_uri);
+
+// URI-reference = URI / relative-ref
+//
+x3::rule<class uri_reference> const uri_reference     = "uri_reference";
+auto const                          uri_reference_def = uri | relative_ref;
+BOOST_SPIRIT_DEFINE(uri_reference);
+} // namespace unicode
 } // namespace uri
 } // namespace foxy
 
