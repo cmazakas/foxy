@@ -41,6 +41,7 @@ namespace foxy
 {
 // A (hopefully) conforming implementation of the ABNF found at:
 // https://tools.ietf.org/html/rfc3986#appendix-A
+//
 // written using Boost.Spirit.X3
 //
 
@@ -349,6 +350,9 @@ x3::rule<class uri_reference> const uri_reference     = "uri_reference";
 auto const                          uri_reference_def = uri | relative_ref;
 BOOST_SPIRIT_DEFINE(uri_reference);
 
+// A Unicode port of the above PEGs
+// Works on Unicode code point literals which in code is siply char32_t
+//
 namespace unicode
 {
 // sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
