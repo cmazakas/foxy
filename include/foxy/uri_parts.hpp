@@ -18,22 +18,9 @@ public:
   using string_view = boost::basic_string_view<CharT, std::char_traits<CharT>>;
   using iterator    = typename string_view::iterator;
 
-private:
-  string_view scheme_;
-  string_view host_;
-  string_view port_;
-  string_view path_;
-  string_view query_;
-  string_view fragment_;
-
-public:
   friend auto
   parse_uri(boost::basic_string_view<char, std::char_traits<char>> const uri)
     -> basic_uri_parts<char>;
-
-  friend auto
-  parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
-    -> basic_uri_parts<char32_t>;
 
   friend auto
   parse_complete(boost::basic_string_view<char, std::char_traits<char>> const uri,
@@ -43,6 +30,39 @@ public:
   parse_authority(boost::basic_string_view<char, std::char_traits<char>> const uri,
                   basic_uri_parts<char>&                                       parts) -> bool;
 
+  friend auto
+  parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
+    -> basic_uri_parts<char32_t>;
+
+  friend auto
+  parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                 basic_uri_parts<char32_t>& parts) -> bool;
+
+  friend auto
+  parse_authority(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                  basic_uri_parts<char32_t>& parts) -> bool;
+
+private:
+  string_view scheme_;
+  string_view host_;
+  string_view port_;
+  string_view path_;
+  string_view query_;
+  string_view fragment_;
+
+  static auto
+  is_http_impl(boost::basic_string_view<char, std::char_traits<char>> const scheme) -> bool
+  {
+    return scheme == "http" || scheme == "https";
+  }
+
+  static auto
+  is_http_impl(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const scheme) -> bool
+  {
+    return scheme == U"http" || scheme == U"https";
+  }
+
+public:
   basic_uri_parts()
     : scheme_(nullptr, 0)
     , host_(nullptr, 0)
@@ -101,7 +121,7 @@ public:
   auto
   is_http() const noexcept -> bool
   {
-    return scheme() == "http" || scheme() == "https";
+    return is_http_impl(scheme_);
   }
 
   auto
@@ -123,15 +143,22 @@ parse_uri(boost::basic_string_view<char, std::char_traits<char>> const uri)
   -> basic_uri_parts<char>;
 
 auto
-parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
-  -> basic_uri_parts<char32_t>;
-
-auto
 parse_complete(boost::basic_string_view<char, std::char_traits<char>> const uri,
                basic_uri_parts<char>&                                       parts) -> bool;
 
 auto
 parse_authority(boost::basic_string_view<char, std::char_traits<char>> const uri,
                 basic_uri_parts<char>&                                       parts) -> bool;
+auto
+parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
+  -> basic_uri_parts<char32_t>;
+
+auto
+parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+               basic_uri_parts<char32_t>&                                           parts) -> bool;
+
+auto
+parse_authority(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                basic_uri_parts<char32_t>&                                           parts) -> bool;
 
 } // namespace foxy
