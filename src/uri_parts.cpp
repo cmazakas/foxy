@@ -13,45 +13,8 @@
 namespace x3 = boost::spirit::x3;
 
 auto
-foxy::uri_parts::scheme() const -> string_view
-{
-  return scheme_;
-}
-
-auto
-foxy::uri_parts::host() const -> string_view
-{
-  return host_;
-}
-
-auto
-foxy::uri_parts::port() const -> string_view
-{
-  return port_;
-}
-
-auto
-foxy::uri_parts::path() const -> string_view
-{
-  return path_;
-}
-
-auto
-foxy::uri_parts::query() const -> string_view
-{
-  return query_;
-}
-
-auto
-foxy::uri_parts::fragment() const -> string_view
-{
-  return fragment_;
-}
-
-namespace
-{
-auto
-parse_complete(boost::string_view const uri, foxy::uri_parts& parts) -> bool
+foxy::parse_complete(boost::basic_string_view<char, std::char_traits<char>> const uri,
+                     foxy::basic_uri_parts<char>&                                 parts) -> bool
 {
   auto       iter = uri.begin();
   auto const end  = uri.end();
@@ -113,7 +76,8 @@ upcall:
 }
 
 auto
-parse_authority(boost::string_view const uri, foxy::uri_parts& parts) -> bool
+foxy::parse_authority(boost::basic_string_view<char, std::char_traits<char>> const uri,
+                      foxy::basic_uri_parts<char>&                                 parts) -> bool
 {
   auto       iter = uri.begin();
   auto const end  = uri.end();
@@ -150,35 +114,15 @@ upcall:
   return false;
 }
 
-} // namespace
-
 auto
-foxy::parse_uri(boost::string_view const uri) -> foxy::uri_parts
+foxy::parse_uri(boost::basic_string_view<char, std::char_traits<char>> const uri)
+  -> foxy::basic_uri_parts<char>
 {
-  auto parts = foxy::uri_parts();
-  if (parse_complete(uri, parts)) { return parts; }
+  auto parts = foxy::basic_uri_parts<char>();
+  if (foxy::parse_complete(uri, parts)) { return parts; }
 
-  parts = foxy::uri_parts();
-  if (parse_authority(uri, parts)) { return parts; }
+  parts = foxy::basic_uri_parts<char>();
+  if (foxy::parse_authority(uri, parts)) { return parts; }
 
-  return foxy::uri_parts();
-}
-
-auto
-foxy::uri_parts::is_http() const noexcept -> bool
-{
-  return scheme() == "http" || scheme() == "https";
-}
-
-auto
-foxy::uri_parts::is_authority() const noexcept -> bool
-{
-  return scheme().empty() && !host().empty() && path().empty() && query().empty() &&
-         fragment().empty();
-}
-
-auto
-foxy::uri_parts::is_absolute() const noexcept -> bool
-{
-  return !scheme().empty() && fragment().empty();
+  return foxy::basic_uri_parts<char>();
 }
