@@ -210,6 +210,24 @@ TEST_CASE("Our uri_parts function")
     CHECK(!uri_parts.is_absolute());
   }
 
+  SECTION("[unicode] should be able to decompose a well-formed URI in a native language")
+  {
+    auto const view = boost::u32string_view(U"http://\u017C\u00F3\u0142\u0107.pl/");
+
+    auto const uri_parts = foxy::parse_uri(view);
+
+    CHECK(uri_parts.scheme() == U"http");
+    CHECK(uri_parts.host() == U"\u017C\u00F3\u0142\u0107.pl");
+    CHECK(uri_parts.port() == U"");
+    CHECK(uri_parts.path() == U"/");
+    CHECK(uri_parts.query() == U"");
+    CHECK(uri_parts.fragment() == U"");
+
+    CHECK(uri_parts.is_http());
+    CHECK(!uri_parts.is_authority());
+    CHECK(uri_parts.is_absolute());
+  }
+
   SECTION("[unicode] should handle an empty URL")
   {
     auto const view = boost::u32string_view(U"http:");
