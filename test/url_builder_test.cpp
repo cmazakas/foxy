@@ -10,17 +10,15 @@
 
 TEST_CASE("Our URL builder class...")
 {
-  // SECTION("should properly encode the host portion of a URL")
-  // {
-  //   auto const host = boost::string_view("hello world!\n");
+  SECTION("should not encode pct-encoded and the sub-delims")
+  {
+    auto const host = boost::u32string_view(U"%20%13%24!$'()*+,;=");
 
-  //   auto out = std::string(256, '\0');
+    auto out = std::string(256, '\0');
 
-  //   auto const end = foxy::detail::encode_host(foxy::uri::code_point_view<char>(host),
-  //   out.begin());
+    auto const end          = foxy::detail::encode_host(host, out.begin());
+    auto const encoded_host = boost::string_view(out.data(), end - out.begin());
 
-  //   auto const encoded_host = boost::string_view(out.data(), end - out.begin());
-
-  //   CHECK(encoded_host == "hello%20world\n");
-  // }
+    CHECK(encoded_host == "%20%13%24!$'()*+,;=");
+  }
 }

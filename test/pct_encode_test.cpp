@@ -316,7 +316,7 @@ TEST_CASE("Our percent encoding function/namespace...")
       auto     pos        = out.begin();
       x3::parse(pos, out.end(), "%" >> x3::hex, parsed_num);
 
-      was_encoded == was_encoded && (parsed_num == ascii_chars[idx]);
+      was_encoded = was_encoded && (parsed_num == ascii_chars[idx]);
     }
 
     CHECK(was_encoded);
