@@ -21,4 +21,15 @@ TEST_CASE("Our URL builder class...")
 
     CHECK(encoded_host == "%20%13%24!$'()*+,;=");
   }
+
+  SECTION("should pct-encode misc. whitespace chars")
+  {
+    auto const host = boost::u32string_view(U"hello world!\n");
+    auto       out  = std::string(256, '\0');
+
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::detail::encode_host(host, out.begin()) - out.begin());
+
+    CHECK(encoded_host == "hello%20world!%0a");
+  }
 }
