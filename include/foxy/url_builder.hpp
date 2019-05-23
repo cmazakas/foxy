@@ -39,9 +39,13 @@ encode_host(boost::u32string_view const host, OutputIterator out) -> OutputItera
   }
 
   for (auto const code_point : host) {
+    pos = host.begin();
+
     // no need to encode the normal ascii set
     //
-    if ((code_point > 32) && (code_point < 127)) {
+    if ((code_point > 32) && (code_point < 127) &&
+        boost::u32string_view(U"\"#/<>?@[\\]^`{|}").find(code_point) ==
+          boost::u32string_view::npos) {
       out = utf::utf_traits<char>::encode(code_point, out);
       continue;
     }
