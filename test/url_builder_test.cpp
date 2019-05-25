@@ -89,4 +89,40 @@ TEST_CASE("Our URL builder class...")
 
     CHECK(encoded_host == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~");
   }
+
+  SECTION("should not pct-encode normal paths")
+  {
+    auto const path =
+      boost::u32string_view(U"/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~");
+
+    auto out = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::detail::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path == "/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~");
+  }
+
+  SECTION("should not make decisions about pct-encoding the / separator")
+  {
+    auto const path = boost::u32string_view(U"////1.234/432/@@");
+
+    auto out = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::detail::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path == "////1.234/432/@@");
+  }
+
+  SECTION("should pct-encode odd characters in the path")
+  {
+    auto const path = boost::u32string_view(U"/\"#<>?@[\\]^`{|}");
+    auto       out  = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::detail::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path == "/%22%23%3c%3e%3f@%5b%5c%5d%5e%60%7b%7c%7d");
+  }
 }
