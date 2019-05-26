@@ -10,7 +10,7 @@
 
 TEST_CASE("Our URL builder class...")
 {
-  SECTION("should not encode pct-encoded and the sub-delims")
+  SECTION("[host] should not encode pct-encoded and the sub-delims")
   {
     auto const host = boost::u32string_view(U"%20%13%24!$'()*+,;=");
 
@@ -22,7 +22,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "%20%13%24!$'()*+,;=");
   }
 
-  SECTION("should pct-encode misc. whitespace chars")
+  SECTION("[host] should pct-encode misc. whitespace chars")
   {
     auto const host = boost::u32string_view(U"hello world!\n");
     auto       out  = std::string(256, '\0');
@@ -33,7 +33,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "hello%20world!%0a");
   }
 
-  SECTION("should pct-encode a Polish hostname")
+  SECTION("[host] should pct-encode a Polish hostname")
   {
     auto const host = boost::u32string_view(U"www.\u017C\u00F3\u0142\u0107.pl");
     auto       out  = std::string(256, '\0');
@@ -44,7 +44,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "www.%c5%bc%c3%b3%c5%82%c4%87.pl");
   }
 
-  SECTION("should not pct-encode a valid IPv4 address")
+  SECTION("[host] should not pct-encode a valid IPv4 address")
   {
     auto const host = boost::u32string_view(U"127.0.0.1");
     auto       out  = std::string(256, '\0');
@@ -55,7 +55,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "127.0.0.1");
   }
 
-  SECTION("should not pct-encode a valid IP-literal [IPv6 edition]")
+  SECTION("[host] should not pct-encode a valid IP-literal [IPv6 edition]")
   {
     auto const host = boost::u32string_view(U"[::]");
     auto       out  = std::string(256, '\0');
@@ -66,7 +66,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "[::]");
   }
 
-  SECTION("should pct-encode seemingly random entries into the ASCII set")
+  SECTION("[host] should pct-encode seemingly random entries into the ASCII set")
   {
     auto const host = boost::u32string_view(U"\"#/<>?@[\\]^`{|}");
     auto       out  = std::string(256, '\0');
@@ -77,7 +77,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "%22%23%2f%3c%3e%3f%40%5b%5c%5d%5e%60%7b%7c%7d");
   }
 
-  SECTION("should not pct-encode the ALPHA | DIGIT | -._~")
+  SECTION("[host] should not pct-encode the ALPHA | DIGIT | -._~")
   {
     auto const host =
       boost::u32string_view(U"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~");
@@ -90,7 +90,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_host == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~");
   }
 
-  SECTION("should not pct-encode normal paths")
+  SECTION("[path] should not pct-encode normal paths")
   {
     auto const path = boost::u32string_view(
       U"/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=");
@@ -104,7 +104,7 @@ TEST_CASE("Our URL builder class...")
           "/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=");
   }
 
-  SECTION("should not make decisions about pct-encoding the / separator")
+  SECTION("[path] should not make decisions about pct-encoding the / separator")
   {
     auto const path = boost::u32string_view(U"////1.234/432/@@");
 
@@ -116,7 +116,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_path == "////1.234/432/@@");
   }
 
-  SECTION("should pct-encode odd characters in the path")
+  SECTION("[path] should pct-encode odd characters in the path")
   {
     auto const path = boost::u32string_view(U"/\"#<>?@[\\]^`{|}:::");
     auto       out  = std::string(256, '\0');
@@ -127,7 +127,7 @@ TEST_CASE("Our URL builder class...")
     CHECK(encoded_path == "/%22%23%3c%3e%3f@%5b%5c%5d%5e%60%7b%7c%7d:::");
   }
 
-  SECTION("shouldn't double-encode pct-encoded params in the path")
+  SECTION("[path] shouldn't double-encode pct-encoded params in the path")
   {
     auto const path = boost::u32string_view(U"/%20%21%22%23");
     auto       out  = std::string(256, '\0');
