@@ -47,9 +47,6 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper_v2.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/function.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/utility.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/mp11/detail/config.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/variant2/variant.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp

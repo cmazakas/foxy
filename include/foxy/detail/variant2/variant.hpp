@@ -17,10 +17,6 @@
 #pragma warning(disable : 4521 4522) // multiple copy operators
 #endif
 
-#include <foxy/detail/mp11/detail/config.hpp>
-#include <foxy/detail/mp11/function.hpp>
-#include <foxy/detail/mp11/utility.hpp>
-
 #ifndef BOOST_MP11_HPP_INCLUDED
 #include <boost/mp11.hpp>
 #endif
