@@ -18,21 +18,19 @@
 
 namespace foxy
 {
-namespace detail
+namespace uri
 {
 template <class OutputIterator>
 auto
 encode_host(boost::u32string_view const host, OutputIterator out) -> OutputIterator
 {
-  using namespace foxy::uri::unicode;
-
   namespace x3    = boost::spirit::x3;
   namespace utf   = boost::locale::utf;
   namespace karma = boost::spirit::karma;
 
   auto pos = host.begin();
 
-  auto match = x3::parse(pos, host.end(), ip_literal | ip_v4_address);
+  auto match = x3::parse(pos, host.end(), unicode::ip_literal | unicode::ip_v4_address);
   if (match) {
     for (auto const code_point : host) { out = utf::utf_traits<char>::encode(code_point, out); }
     return out;
@@ -67,8 +65,6 @@ template <class OutputIterator>
 auto
 encode_path(boost::u32string_view const host, OutputIterator out) -> OutputIterator
 {
-  using namespace foxy::uri::unicode;
-
   namespace x3    = boost::spirit::x3;
   namespace utf   = boost::locale::utf;
   namespace karma = boost::spirit::karma;
@@ -98,7 +94,7 @@ encode_path(boost::u32string_view const host, OutputIterator out) -> OutputItera
 
   return out;
 }
-} // namespace detail
+} // namespace uri
 } // namespace foxy
 
 #endif // FOXY_URL_BUILDER_HPP_
