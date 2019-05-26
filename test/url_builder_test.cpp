@@ -173,4 +173,16 @@ TEST_CASE("Our URL builder class...")
 
     CHECK(encoded_query == "?//%22%3a%23/%3c%3e?%40%5b%5c%5d%5e%60%7b%7c%7d");
   }
+
+  SECTION("[query] should pct-encode Russian chars")
+  {
+    auto const query =
+      boost::u32string_view(U"/q=\u0412\u0441\u0435\u043c \u043f\u0440\u0438\u0432\u0435\u0442");
+    auto out = std::string(256, '\0');
+
+    auto const encoded_query =
+      boost::string_view(out.data(), foxy::uri::encode_query(query, out.begin()) - out.begin());
+
+    CHECK(encoded_query == "/q=%d0%92%d1%81%d0%b5%d0%bc%20%d0%bf%d1%80%d0%b8%d0%b2%d0%b5%d1%82");
+  }
 }
