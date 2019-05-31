@@ -37,12 +37,11 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/url_builder.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/export_connect_fields.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/has_token.hpp
-
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/relay.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/timed_op_wrapper_v2.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/tunnel.hpp
@@ -148,7 +147,6 @@ if (BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/unicode_uri_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_parts_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/uri_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/url_builder_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/utility_test.cpp
   )
 
