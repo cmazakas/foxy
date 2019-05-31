@@ -8,25 +8,41 @@
 //
 
 #include <boost/utility/string_view.hpp>
-#include <boost/range/iterator_range_core.hpp>
-#include <boost/fusion/adapted/struct/adapt_struct.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
 
 namespace foxy
 {
-// uri_parts stores a set of `string_views` that identify each relevant portion of a URI as defined
-// by the RFC
-// uri_parts is not meant to be consumed directly and instead should be created by the factory
-// function `foxy::parse_uri`.
-//
-struct uri_parts
+template <class CharT>
+struct basic_uri_parts
 {
 public:
-  using string_view = boost::string_view;
+  using string_view = boost::basic_string_view<CharT, std::char_traits<CharT>>;
   using iterator    = typename string_view::iterator;
 
-  // these are kept public so that the uri_parts class can be used as a Fusion ForwardSequence
-  //
+  friend auto
+  parse_uri(boost::basic_string_view<char, std::char_traits<char>> const uri)
+    -> basic_uri_parts<char>;
+
+  friend auto
+  parse_complete(boost::basic_string_view<char, std::char_traits<char>> const uri,
+                 basic_uri_parts<char>&                                       parts) -> bool;
+
+  friend auto
+  parse_authority(boost::basic_string_view<char, std::char_traits<char>> const uri,
+                  basic_uri_parts<char>&                                       parts) -> bool;
+
+  friend auto
+  parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
+    -> basic_uri_parts<char32_t>;
+
+  friend auto
+  parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                 basic_uri_parts<char32_t>& parts) -> bool;
+
+  friend auto
+  parse_authority(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                  basic_uri_parts<char32_t>& parts) -> bool;
+
+private:
   string_view scheme_;
   string_view host_;
   string_view port_;
@@ -34,65 +50,115 @@ public:
   string_view query_;
   string_view fragment_;
 
-  uri_parts()
+  static auto
+  is_http_impl(boost::basic_string_view<char, std::char_traits<char>> const scheme) -> bool
+  {
+    return scheme == "http" || scheme == "https";
+  }
+
+  static auto
+  is_http_impl(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const scheme) -> bool
+  {
+    return scheme == U"http" || scheme == U"https";
+  }
+
+public:
+  basic_uri_parts()
     : scheme_(nullptr, 0)
     , host_(nullptr, 0)
     , port_(nullptr, 0)
+    , path_(nullptr, 0)
     , query_(nullptr, 0)
     , fragment_(nullptr, 0)
   {
   }
 
-  uri_parts(uri_parts const&) = default;
-  uri_parts(uri_parts&&)      = default;
+  basic_uri_parts(basic_uri_parts const&) = default;
+  basic_uri_parts(basic_uri_parts&&)      = default;
 
   auto
-  operator=(uri_parts const&) -> uri_parts& = default;
+  operator=(basic_uri_parts const&) -> basic_uri_parts& = default;
 
   auto
-  operator=(uri_parts&&) noexcept -> uri_parts& = default;
+  operator=(basic_uri_parts&&) noexcept -> basic_uri_parts& = default;
 
   auto
-  scheme() const -> string_view;
+  scheme() const noexcept -> string_view
+  {
+    return scheme_;
+  }
 
   auto
-  host() const -> string_view;
+  host() const noexcept -> string_view
+  {
+    return host_;
+  }
 
   auto
-  port() const -> string_view;
+  port() const noexcept -> string_view
+  {
+    return port_;
+  }
 
   auto
-  path() const -> string_view;
+  path() const noexcept -> string_view
+  {
+    return path_;
+  }
 
   auto
-  query() const -> string_view;
+  query() const noexcept -> string_view
+  {
+    return query_;
+  }
 
   auto
-  fragment() const -> string_view;
+  fragment() const noexcept -> string_view
+  {
+    return fragment_;
+  }
 
-  // is_http returns whether or not the given URI has a scheme of either "http" or "https"
-  //
   auto
-  is_http() const noexcept -> bool;
+  is_http() const noexcept -> bool
+  {
+    return is_http_impl(scheme_);
+  }
 
-  // is_authority returns whether or not the URI is in its authority form, i.e. the URI follows the
-  // ABNF of:
-  // authority = [ userinfo "@" ] host [ ":" port ]
-  // this method is useful when designing servers that support the CONNECT method
-  //
   auto
-  is_authority() const noexcept -> bool;
+  is_authority() const noexcept -> bool
+  {
+    return scheme().empty() && !host().empty() && path().empty() && query().empty() &&
+           fragment().empty();
+  }
 
-  // is_absolute returns whether or not the URI is of the form defined by the ABNF:
-  // absolute-URI  = scheme ":" hier-part [ "?" query ]
-  //
   auto
-  is_absolute() const noexcept -> bool;
+  is_absolute() const noexcept -> bool
+  {
+    return !scheme().empty() && fragment().empty();
+  }
 };
 
 auto
-parse_uri(uri_parts::string_view const uri_view) -> uri_parts;
+parse_uri(boost::basic_string_view<char, std::char_traits<char>> const uri)
+  -> basic_uri_parts<char>;
+
+auto
+parse_complete(boost::basic_string_view<char, std::char_traits<char>> const uri,
+               basic_uri_parts<char>&                                       parts) -> bool;
+
+auto
+parse_authority(boost::basic_string_view<char, std::char_traits<char>> const uri,
+                basic_uri_parts<char>&                                       parts) -> bool;
+auto
+parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
+  -> basic_uri_parts<char32_t>;
+
+auto
+parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+               basic_uri_parts<char32_t>&                                           parts) -> bool;
+
+auto
+parse_authority(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                basic_uri_parts<char32_t>&                                           parts) -> bool;
 
 } // namespace foxy
-
-BOOST_FUSION_ADAPT_STRUCT(foxy::uri_parts, scheme_, host_, port_, path_, query_, fragment_)

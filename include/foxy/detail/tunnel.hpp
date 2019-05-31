@@ -44,7 +44,7 @@ struct tunnel_op
       boost::beast::http::response<boost::beast::http::string_body, boost::beast::http::fields>>
       response;
 
-    foxy::uri_parts uri_parts;
+    foxy::basic_uri_parts<char> uri_parts;
 
     boost::tribool is_ssl;
 

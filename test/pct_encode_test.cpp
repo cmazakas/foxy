@@ -247,78 +247,179 @@ TEST_CASE("Our percent encoding function/namespace...")
     }
   }
 
-  SECTION("...should actually pct encode")
+  SECTION("[host] should not encode pct-encoded and the sub-delims")
   {
-    {
-      auto const str = boost::wstring_view(L"\u20ac");
-      auto       out = std::string(256, '\0');
+    auto const host = boost::u32string_view(U"%20%13%24!$'()*+,;=");
 
-      auto const out_end = foxy::uri::pct_encode(str, out.begin());
+    auto out = std::string(256, '\0');
 
-      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
+    auto const end          = foxy::uri::encode_host(host, out.begin());
+    auto const encoded_host = boost::string_view(out.data(), end - out.begin());
 
-      CHECK(out_view == "%e2%82%ac");
-    }
-
-    {
-      auto const str = boost::string_view(u8"\u20ac");
-      auto       out = std::string(256, '\0');
-
-      auto const out_end = foxy::uri::pct_encode(str, out.begin());
-
-      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
-
-      CHECK(out_view == "%e2%82%ac");
-    }
-
-    {
-      auto const str = boost::u16string_view(u"\u20ac");
-      auto       out = std::string(256, '\0');
-
-      auto const out_end = foxy::uri::pct_encode(str, out.begin());
-
-      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
-
-      CHECK(out_view == "%e2%82%ac");
-    }
-
-    {
-      auto const str = boost::u32string_view(U"\u20ac");
-      auto       out = std::string(256, '\0');
-
-      auto const out_end = foxy::uri::pct_encode(str, out.begin());
-
-      auto const out_view = boost::string_view(out.data(), out_end - out.begin());
-
-      CHECK(out_view == "%e2%82%ac");
-    }
+    CHECK(encoded_host == "%20%13%24!$'()*+,;=");
   }
 
-  SECTION("should properly encode portions of the 7-bit ASCII set")
+  SECTION("[host] should pct-encode misc. whitespace chars")
   {
-    auto ascii_chars = std::vector<char>(128);
-    for (int idx = 0; idx < 128; ++idx) { ascii_chars[idx] = static_cast<char>(idx); }
+    auto const host = boost::u32string_view(U"hello world!\n");
+    auto       out  = std::string(256, '\0');
 
-    auto test_views = std::vector<boost::string_view>(128);
-    for (int idx = 0; idx < 128; ++idx) {
-      test_views[idx] = boost::string_view(ascii_chars.data() + idx, 1);
-    }
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::uri::encode_host(host, out.begin()) - out.begin());
 
-    auto was_encoded = true;
-    for (int idx = 0; idx < 33; ++idx) {
-      auto const test_view = test_views[idx];
+    CHECK(encoded_host == "hello%20world!%0a");
+  }
 
-      auto out = std::array<char, 3>{0};
+  SECTION("[host] should pct-encode a Polish hostname")
+  {
+    auto const host = boost::u32string_view(U"www.\u017C\u00F3\u0142\u0107.pl");
+    auto       out  = std::string(256, '\0');
 
-      auto const out_end = foxy::uri::pct_encode(test_view, out.data());
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::uri::encode_host(host, out.begin()) - out.begin());
 
-      unsigned parsed_num = 0;
-      auto     pos        = out.begin();
-      x3::parse(pos, out.end(), "%" >> x3::hex, parsed_num);
+    CHECK(encoded_host == "www.%c5%bc%c3%b3%c5%82%c4%87.pl");
+  }
 
-      was_encoded == was_encoded && (parsed_num == ascii_chars[idx]);
-    }
+  SECTION("[host] should not pct-encode a valid IPv4 address")
+  {
+    auto const host = boost::u32string_view(U"127.0.0.1");
+    auto       out  = std::string(256, '\0');
 
-    CHECK(was_encoded);
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::uri::encode_host(host, out.begin()) - out.begin());
+
+    CHECK(encoded_host == "127.0.0.1");
+  }
+
+  SECTION("[host] should not pct-encode a valid IP-literal [IPv6 edition]")
+  {
+    auto const host = boost::u32string_view(U"[::]");
+    auto       out  = std::string(256, '\0');
+
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::uri::encode_host(host, out.begin()) - out.begin());
+
+    CHECK(encoded_host == "[::]");
+  }
+
+  SECTION("[host] should pct-encode seemingly random entries into the ASCII set")
+  {
+    auto const host = boost::u32string_view(U"\"#/<>?@[\\]^`{|}");
+    auto       out  = std::string(256, '\0');
+
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::uri::encode_host(host, out.begin()) - out.begin());
+
+    CHECK(encoded_host == "%22%23%2f%3c%3e%3f%40%5b%5c%5d%5e%60%7b%7c%7d");
+  }
+
+  SECTION("[host] should not pct-encode the ALPHA | DIGIT | -._~ | sub-delims")
+  {
+    auto const host = boost::u32string_view(
+      U"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=");
+
+    auto out = std::string(256, '\0');
+
+    auto const encoded_host =
+      boost::string_view(out.data(), foxy::uri::encode_host(host, out.begin()) - out.begin());
+
+    CHECK(encoded_host ==
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=");
+  }
+
+  SECTION("[path] should not pct-encode normal paths")
+  {
+    auto const path = boost::u32string_view(
+      U"/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=");
+
+    auto out = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::uri::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path ==
+          "/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=");
+  }
+
+  SECTION("[path] should not make decisions about pct-encoding the / separator")
+  {
+    auto const path = boost::u32string_view(U"////1.234/432/@@");
+
+    auto out = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::uri::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path == "////1.234/432/@@");
+  }
+
+  SECTION("[path] should pct-encode odd characters in the path")
+  {
+    auto const path = boost::u32string_view(U"/\"#<>?@[\\]^`{|}:::");
+    auto       out  = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::uri::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path == "/%22%23%3c%3e%3f@%5b%5c%5d%5e%60%7b%7c%7d:::");
+  }
+
+  SECTION("[path] shouldn't double-encode pct-encoded params in the path")
+  {
+    auto const path = boost::u32string_view(U"/%20%21%22%23");
+    auto       out  = std::string(256, '\0');
+
+    auto const encoded_path =
+      boost::string_view(out.data(), foxy::uri::encode_path(path, out.begin()) - out.begin());
+
+    CHECK(encoded_path == "/%20%21%22%23");
+  }
+
+  SECTION("[query] shouldn't double-encode pct-encoded params in the query")
+  {
+    auto const query = boost::u32string_view(U"?%20%21%22%23");
+    auto       out   = std::string(256, '\0');
+
+    auto const encoded_query =
+      boost::string_view(out.data(), foxy::uri::encode_query(query, out.begin()) - out.begin());
+
+    CHECK(encoded_query == "?%20%21%22%23");
+  }
+
+  SECTION("[query] shouldn't pct-encode the unreserved + sub-delims + /?")
+  {
+    auto const query = boost::u32string_view(
+      U"?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=/?");
+    auto out = std::string(256, '\0');
+
+    auto const encoded_query =
+      boost::string_view(out.data(), foxy::uri::encode_query(query, out.begin()) - out.begin());
+
+    CHECK(encoded_query ==
+          "?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!$&'()*+,;=/?");
+  }
+
+  SECTION("[query] should pct-encode seemingly random entries into the ASCII set")
+  {
+    auto const query = boost::u32string_view(U"?//\":#/<>?@[\\]^`{|}");
+    auto       out   = std::string(256, '\0');
+
+    auto const encoded_query =
+      boost::string_view(out.data(), foxy::uri::encode_query(query, out.begin()) - out.begin());
+
+    CHECK(encoded_query == "?//%22%3a%23/%3c%3e?%40%5b%5c%5d%5e%60%7b%7c%7d");
+  }
+
+  SECTION("[query] should pct-encode Russian chars")
+  {
+    auto const query =
+      boost::u32string_view(U"?q=\u0412\u0441\u0435\u043c \u043f\u0440\u0438\u0432\u0435\u0442");
+    auto out = std::string(256, '\0');
+
+    auto const encoded_query =
+      boost::string_view(out.data(), foxy::uri::encode_query(query, out.begin()) - out.begin());
+
+    CHECK(encoded_query == "?q=%d0%92%d1%81%d0%b5%d0%bc%20%d0%bf%d1%80%d0%b8%d0%b2%d0%b5%d1%82");
   }
 }
