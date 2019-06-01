@@ -80,7 +80,7 @@ TEST_CASE("Our forward proxy (part 2)")
       client.stream.plain().close(ec);
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
     });
 
     io.run();
@@ -128,7 +128,7 @@ TEST_CASE("Our forward proxy (part 2)")
       client.stream.plain().close(ec);
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
     });
 
     io.run();
@@ -177,7 +177,7 @@ TEST_CASE("Our forward proxy (part 2)")
       client.stream.plain().close(ec);
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
     });
 
     io.run();
