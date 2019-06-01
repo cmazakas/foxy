@@ -16,7 +16,11 @@
 
 #include <boost/beast/http.hpp>
 
+#include <vector>
 #include <memory>
+#include <thread>
+#include <string>
+#include <atomic>
 
 #include <catch2/catch.hpp>
 
@@ -182,5 +186,76 @@ TEST_CASE("Our forward proxy (part 2)")
 
     io.run();
     REQUIRE(was_valid_response);
+  }
+
+  SECTION("should work in multithreaded environments")
+  {
+    auto const urls =
+      std::vector<std::string>{"www.google.com", "www.facebook.com",  "www.youtube.com",
+                               "www.yahoo.com",  "www.wikipedia.org", "www.twitter.com",
+                               "www.amazon.com", "www.google.com",    "www.bing.com"};
+
+    auto const num_threads = 8;
+
+    asio::io_context io(num_threads);
+
+    auto const src_addr     = ip::make_address_v4("127.0.0.1");
+    auto const src_port     = static_cast<unsigned short>(1337);
+    auto const src_endpoint = tcp::endpoint(src_addr, src_port);
+
+    auto const reuse_addr = true;
+
+    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto opts = foxy::session_opts{ctx, 30s};
+
+    auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
+    proxy->async_accept();
+
+    auto const num_requests = urls.size() * num_threads;
+
+    std::atomic_int num_valid_responses{0};
+
+    auto const crawler = [&io, &urls, &num_valid_responses, proxy,
+                          num_requests](asio::yield_context yield) -> void {
+      auto client         = foxy::client_session(io);
+      client.opts.timeout = 30s;
+
+      for (auto const url : urls) {
+        client.async_connect("127.0.0.1", "1337", yield);
+
+        auto request = http::request<http::empty_body>(http::verb::get, "https://" + url + "/", 11);
+        request.set(http::field::host, url);
+
+        http::response_parser<http::string_body> res_parser;
+        client.async_request(request, res_parser, yield);
+
+        auto response = res_parser.release();
+
+        auto const was_valid_result = (response.result() != http::status::internal_server_error &&
+                                       response.result() != http::status::not_found);
+
+        auto ec = boost::system::error_code();
+        client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+        client.stream.plain().close(ec);
+
+        if (was_valid_result) {
+          auto const num_ops = ++num_valid_responses;
+          if (num_ops == num_requests) { proxy->cancel(); }
+        }
+      }
+    };
+
+    auto threads = std::vector<std::thread>();
+    threads.reserve(num_threads);
+
+    for (auto idx = 0; idx < num_threads; ++idx) { asio::spawn(crawler); }
+
+    for (auto idx = 0; idx < num_threads; ++idx) {
+      threads.emplace_back([&io] { io.run(); });
+    }
+
+    for (auto& t : threads) { t.join(); }
+
+    REQUIRE(num_valid_responses == num_requests);
   }
 }
