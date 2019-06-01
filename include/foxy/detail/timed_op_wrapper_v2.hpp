@@ -56,6 +56,7 @@ private:
   };
 
   ::foxy::basic_session<Stream>&             session_;
+  executor_type                              executor_;
   ::foxy::shared_handler_ptr<state, Handler> p_;
 
 public:
@@ -75,7 +76,8 @@ public:
                       DeducedHandler&&               handler,
                       ConstructorArgs&&... args)
     : session_(session)
-    , p_(std::forward<DeducedHandler>(handler), session_.get_executor())
+    , executor_(boost::asio::get_associated_executor(handler, session_.get_executor()))
+    , p_(std::forward<DeducedHandler>(handler), executor_)
   {
     // we will rely on the Op's constructor to be a non-blocking initiating function
     //
@@ -91,7 +93,7 @@ public:
   auto
   get_executor() const noexcept -> executor_type
   {
-    return boost::asio::get_associated_executor(p_.handler(), session_.get_executor());
+    return executor_;
   }
 
   auto
