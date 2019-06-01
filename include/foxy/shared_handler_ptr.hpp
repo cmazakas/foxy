@@ -11,7 +11,6 @@
 // TODO: make pull request for formal inclusion into Beast
 //
 
-
 //
 // Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
@@ -31,8 +30,8 @@
 #include <type_traits>
 #include <utility>
 
-namespace foxy {
-
+namespace foxy
+{
 /** A smart pointer container with associated completion handler.
 
     This is a smart pointer that retains shared ownership of an
@@ -66,167 +65,161 @@ namespace foxy {
 
     @tparam Handler The type of the completion handler.
 */
-template<class T, class Handler>
-class shared_handler_ptr
-{
-    struct P
-    {
-        T* t;
-        std::atomic<std::uint16_t> n;
+template <class T, class Handler>
+class shared_handler_ptr {
+  struct P
+  {
+    T*                         t;
+    std::atomic<std::uint16_t> n;
 
-        // There's no way to put the handler anywhere else
-        // without exposing ourselves to race conditions
-        // and all sorts of ugliness.
-        // See:
-        //  https://github.com/boostorg/beast/issues/215
-        Handler handler;
+    // There's no way to put the handler anywhere else
+    // without exposing ourselves to race conditions
+    // and all sorts of ugliness.
+    // See:
+    //  https://github.com/boostorg/beast/issues/215
+    Handler handler;
 
-        template<class DeducedHandler, class... Args>
-        P(DeducedHandler&& handler, Args&&... args);
-    };
+    template <class DeducedHandler, class... Args>
+    P(DeducedHandler&& handler, Args&&... args);
+  };
 
-    P* p_;
+  P* p_;
 
 public:
-    /// The type of element this object stores
-    using element_type = T;
+  /// The type of element this object stores
+  using element_type = T;
 
-    /// The type of handler this object stores
-    using handler_type = Handler;
+  /// The type of handler this object stores
+  using handler_type = Handler;
 
-    /// Copy assignment (disallowed).
-    shared_handler_ptr& operator=(shared_handler_ptr const&) = delete;
+  /// Copy assignment (disallowed).
+  shared_handler_ptr&
+  operator=(shared_handler_ptr const&) = delete;
 
-    /** Destructs the owned object if no more @ref shared_handler_ptr link to it.
+  /** Destructs the owned object if no more @ref shared_handler_ptr link to it.
 
-        If `*this` owns an object and it is the last @ref shared_handler_ptr
-        owning it, the object is destroyed and the memory deallocated
-        using the associated deallocator.
-    */
-    ~shared_handler_ptr();
+      If `*this` owns an object and it is the last @ref shared_handler_ptr
+      owning it, the object is destroyed and the memory deallocated
+      using the associated deallocator.
+  */
+  ~shared_handler_ptr();
 
-    /** Move constructor.
+  /** Move constructor.
 
-        When this call returns, the moved-from container
-        will have no owned object.
-    */
-    shared_handler_ptr(shared_handler_ptr&& other);
+      When this call returns, the moved-from container
+      will have no owned object.
+  */
+  shared_handler_ptr(shared_handler_ptr&& other);
 
-    /// Copy constructor
-    shared_handler_ptr(shared_handler_ptr const& other);
+  /// Copy constructor
+  shared_handler_ptr(shared_handler_ptr const& other);
 
-    /** Construct a new @ref shared_handler_ptr
+  /** Construct a new @ref shared_handler_ptr
 
-        This creates a new @ref shared_handler_ptr with an owned object
-        of type `T`. The allocator associated with the handler will
-        be used to allocate memory for the owned object. The constructor
-        for the owned object will be called thusly:
+      This creates a new @ref shared_handler_ptr with an owned object
+      of type `T`. The allocator associated with the handler will
+      be used to allocate memory for the owned object. The constructor
+      for the owned object will be called thusly:
 
-        @code
-            T(handler, std::forward<Args>(args)...)
-        @endcode
+      @code
+          T(handler, std::forward<Args>(args)...)
+      @endcode
 
-        @param handler The handler to associate with the owned
-        object. The argument will be moved.
+      @param handler The handler to associate with the owned
+      object. The argument will be moved.
 
-        @param args Optional arguments forwarded to
-        the owned object's constructor.
-    */
-    template<class... Args>
-    shared_handler_ptr(Handler&& handler, Args&&... args);
+      @param args Optional arguments forwarded to
+      the owned object's constructor.
+  */
+  template <class... Args>
+  shared_handler_ptr(Handler&& handler, Args&&... args);
 
-    /** Construct a new @ref shared_handler_ptr
+  /** Construct a new @ref shared_handler_ptr
 
-        This creates a new @ref shared_handler_ptr with an owned object
-        of type `T`. The allocator associated with the handler will
-        be used to allocate memory for the owned object. The constructor
-        for the owned object will be called thusly:
+      This creates a new @ref shared_handler_ptr with an owned object
+      of type `T`. The allocator associated with the handler will
+      be used to allocate memory for the owned object. The constructor
+      for the owned object will be called thusly:
 
-        @code
-            T(handler, std::forward<Args>(args)...)
-        @endcode
+      @code
+          T(handler, std::forward<Args>(args)...)
+      @endcode
 
-        @param handler The handler to associate with the owned
-        object. The argument will be copied.
+      @param handler The handler to associate with the owned
+      object. The argument will be copied.
 
-        @param args Optional arguments forwarded to
-        the owned object's constructor.
-    */
-    template<class... Args>
-    shared_handler_ptr(Handler const& handler, Args&&... args);
+      @param args Optional arguments forwarded to
+      the owned object's constructor.
+  */
+  template <class... Args>
+  shared_handler_ptr(Handler const& handler, Args&&... args);
 
-    /// Returns a reference to the handler
-    handler_type&
-    handler() const
-    {
-        return p_->handler;
-    }
+  /// Returns a reference to the handler
+  handler_type&
+  handler() const
+  {
+    return p_->handler;
+  }
 
-    /** Returns a pointer to the owned object.
-    */
-    T*
-    get() const
-    {
-        return p_->t;
-    }
+  /** Returns a pointer to the owned object.
+   */
+  T*
+  get() const
+  {
+    return p_->t;
+  }
 
-    /// Return a reference to the owned object.
-    T&
-    operator*() const
-    {
-        return *p_->t;
-    }
+  /// Return a reference to the owned object.
+  T& operator*() const { return *p_->t; }
 
-    /// Return a pointer to the owned object.
-    T*
-    operator->() const
-    {
-        return p_->t;
-    }
+  /// Return a pointer to the owned object.
+  T* operator->() const { return p_->t; }
 
-    /** Release ownership of the handler
+  /** Release ownership of the handler
 
-        Requires: `*this` owns an object
+      Requires: `*this` owns an object
 
-        Before this function returns,
-        the owned object is destroyed, satisfying the
-        deallocation-before-invocation Asio guarantee. All
-        instances of @ref shared_handler_ptr which refer to the
-        same owned object will be reset, including this instance.
+      Before this function returns,
+      the owned object is destroyed, satisfying the
+      deallocation-before-invocation Asio guarantee. All
+      instances of @ref shared_handler_ptr which refer to the
+      same owned object will be reset, including this instance.
 
-        @return The released handler.
-    */
-    handler_type
-    release_handler();
+      @return The released handler.
+  */
+  handler_type
+  release_handler();
 
-    /** Invoke the handler in the owned object.
+  /** Invoke the handler in the owned object.
 
-        This function invokes the handler in the owned object
-        with a forwarded argument list. Before the invocation,
-        the owned object is destroyed, satisfying the
-        deallocation-before-invocation Asio guarantee. All
-        instances of @ref shared_handler_ptr which refer to the
-        same owned object will be reset, including this instance.
+      This function invokes the handler in the owned object
+      with a forwarded argument list. Before the invocation,
+      the owned object is destroyed, satisfying the
+      deallocation-before-invocation Asio guarantee. All
+      instances of @ref shared_handler_ptr which refer to the
+      same owned object will be reset, including this instance.
 
-        @note Care must be taken when the arguments are themselves
-        stored in the owned object. Such arguments must first be
-        moved to the stack or elsewhere, and then passed, or else
-        undefined behavior will result.
-    */
-    template<class... Args>
-    void
-    invoke(Args&&... args);
+      @note Care must be taken when the arguments are themselves
+      stored in the owned object. Such arguments must first be
+      moved to the stack or elsewhere, and then passed, or else
+      undefined behavior will result.
+  */
+  template <class... Args>
+  void
+  invoke(Args&&... args);
 
-    /// Return `true` if `*this` owns an object
-    auto has_value() const noexcept -> bool
-    {
-        return p_->t != nullptr;
-    }
+  /// Return `true` if `*this` owns an object
+  auto
+  has_value() const noexcept -> bool
+  {
+    return p_->t != nullptr;
+  }
 
-    void reset() noexcept;
+  void
+  reset() noexcept;
 };
 
-} // foxy
+} // namespace foxy
 
 #include <foxy/impl/shared_handler_ptr.impl.hpp>
 
