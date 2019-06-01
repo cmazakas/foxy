@@ -46,9 +46,6 @@ namespace
 struct async_connect_op : boost::asio::coroutine
 {
 public:
-  using executor_type =
-    boost::asio::strand<decltype(std::declval<::foxy::session&>().get_executor())>;
-
   struct state
   {
     // our session with the current client
@@ -76,6 +73,9 @@ public:
     , strand(p_->session.get_executor().context().get_executor())
   {
   }
+
+  using executor_type =
+    boost::asio::strand<decltype(std::declval<::foxy::session&>().get_executor())>;
 
   auto
   get_executor() const noexcept -> executor_type
