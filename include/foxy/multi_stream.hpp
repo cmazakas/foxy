@@ -25,10 +25,12 @@
 
 namespace foxy
 {
-template <class Stream, class = std::enable_if_t<boost::beast::is_async_stream<Stream>::value>>
+template <class Stream>
 struct basic_multi_stream
 {
 public:
+  static_assert(boost::beast::is_async_stream<Stream>::value, "AsyncStream requirements not met");
+
   using stream_type     = Stream;
   using ssl_stream_type = boost::beast::ssl_stream<stream_type>;
   using executor_type   = boost::asio::io_context::executor_type;
@@ -89,46 +91,46 @@ public:
 // impl
 //
 
-template <class Stream, class X>
+template <class Stream>
 template <class Arg>
-basic_multi_stream<Stream, X>::basic_multi_stream(Arg&& arg)
+basic_multi_stream<Stream>::basic_multi_stream(Arg&& arg)
   : stream_(stream_type(std::forward<Arg>(arg)))
 {
 }
 
-template <class Stream, class X>
+template <class Stream>
 template <class Arg>
-basic_multi_stream<Stream, X>::basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx)
+basic_multi_stream<Stream>::basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx)
   : stream_(ssl_stream_type(std::forward<Arg>(arg), ctx))
 {
 }
 
-template <class Stream, class X>
+template <class Stream>
   auto
-  basic_multi_stream<Stream, X>::plain() &
+  basic_multi_stream<Stream>::plain() &
   noexcept -> stream_type&
 {
   return boost::variant2::get<stream_type>(stream_);
 }
 
-template <class Stream, class X>
+template <class Stream>
   auto
-  basic_multi_stream<Stream, X>::ssl() &
+  basic_multi_stream<Stream>::ssl() &
   noexcept -> ssl_stream_type&
 {
   return boost::variant2::get<ssl_stream_type>(stream_);
 }
 
-template <class Stream, class X>
+template <class Stream>
 auto
-basic_multi_stream<Stream, X>::is_ssl() const noexcept -> bool
+basic_multi_stream<Stream>::is_ssl() const noexcept -> bool
 {
   return stream_.index() == 1;
 }
 
-template <class Stream, class X>
+template <class Stream>
 auto
-basic_multi_stream<Stream, X>::get_executor() -> executor_type
+basic_multi_stream<Stream>::get_executor() -> executor_type
 {
   return boost::variant2::visit([](auto& stream) { return stream.get_executor(); }, stream_);
 }

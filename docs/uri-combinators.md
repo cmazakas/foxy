@@ -20,4 +20,4 @@ so "absolute-URI" becomes `foxy::uri::absolute_uri`.
 As a warm up exercise, we're going to write a custom IP address parser. This is useful in the case
 of accepting a user-defined argument on the command line when writing a server, for example.
 
-[To ToC](./index.md#Table-of-Contents)
+To [ToC](./index.md#Table-of-Contents)
