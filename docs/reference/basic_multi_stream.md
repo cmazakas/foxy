@@ -1,4 +1,9 @@
-# `foxy::basic_multi_stream`
+## `foxy::basic_multi_stream`
+
+## Synopsis
+
+A class templated over a user-supplied [`Stream`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/concepts/streams.html#beast.concepts.streams.AsyncStream)
+that emulates dynamic polymorphism by either reading/writing plain bytes or using SSL/TLS.
 
 ## Declaration
 ```c++
