@@ -19,6 +19,14 @@ using executor_type   = boost::asio::io_context::executor_type;
 
 ## Constructors
 
+#### Default Constructors
+```c++
+basic_multi_stream()                          = delete;
+basic_multi_stream(basic_multi_stream const&) = delete;
+basic_multi_stream(basic_multi_stream&&)      = default;
+```
+
+#### Plain
 ```c++
 template <class Arg>
 basic_multi_stream(Arg&& arg);
@@ -26,6 +34,7 @@ basic_multi_stream(Arg&& arg);
 
 Construct the underlying `stream_type` by forwarding `arg` to its constructor.
 
+#### SSL
 ```c++
 template <class Arg>
 basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx);
@@ -34,6 +43,8 @@ basic_multi_stream(Arg&& arg, boost::asio::ssl::context& ctx);
 Construct the underlying `ssl_stream_type` by forwarding `arg` and `ctx` to its constructor.
 
 ## Member Functions
+
+#### plain
 ```c++
 auto
 plain() & noexcept -> stream_type&;
@@ -42,6 +53,7 @@ plain() & noexcept -> stream_type&;
 Return a reference to the `stream_type` member of the internal variant. If the session is using SSL,
 this method invokes undefined behavior.
 
+#### ssl
 ```c++
 auto
 ssl() & noexcept -> ssl_stream_type&;
@@ -50,6 +62,7 @@ ssl() & noexcept -> ssl_stream_type&;
 Returns a reference to the `ssl_stream_type` member of the internal variant. If the session is not
 using SSL, this method invokes undefined behavior.
 
+#### is_ssl
 ```c++
 auto
 is_ssl() const noexcept -> bool;
@@ -58,6 +71,7 @@ is_ssl() const noexcept -> bool;
 Getter that returns returns whether or not the session was constructed with an SSL context and as
 such is in SSL mode.
 
+#### get_executor
 ```c++
 auto
 get_executor() -> executor_type;
@@ -65,6 +79,7 @@ get_executor() -> executor_type;
 
 Returns a copy of the underlying stream's `executor_type`.
 
+#### async_read_some
 ```c++
 template <class MutableBufferSequence, class CompletionToken>
 auto
@@ -75,6 +90,7 @@ Wrapper method that dispatches to the active stream's `async_read_some` method. 
 [AsycReadStream](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/AsyncReadStream.html)
 conditions.
 
+#### async_write_some
 ```c++
 template <class ConstBufferSequence, class CompletionToken>
 auto
