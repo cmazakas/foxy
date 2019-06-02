@@ -39,7 +39,7 @@ public:
   using acceptor_type = boost::asio::ip::tcp::acceptor;
   using endpoint_type = boost::asio::ip::tcp::endpoint;
   using stream_type   = multi_stream;
-  using executor_type = boost::asio::strand<stream_type::executor_type>;
+  using executor_type = boost::asio::strand<typename stream_type::executor_type>;
 
 private:
   stream_type          stream_;
