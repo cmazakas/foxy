@@ -101,4 +101,4 @@ Wrapper method that dispatches to the active stream's `async_write_some` method.
 [AsyncWriteStream](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/AsyncWriteStream.html)
 conditions.
 
-To [ToC](./index.md#Table-of-Contents)
+To [ToC](../index.md#Table-of-Contents)
