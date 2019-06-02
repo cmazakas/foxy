@@ -65,17 +65,16 @@ public:
     }
   };
 
-  std::unique_ptr<state>                                      p_;
-  boost::asio::strand<boost::asio::io_context::executor_type> strand;
+  using executor_type = boost::asio::strand<typename ::foxy::session::executor_type>;
+
+  std::unique_ptr<state> p_;
+  executor_type          strand;
 
   async_connect_op(foxy::multi_stream stream, foxy::session_opts const& client_opts)
     : p_(std::make_unique<state>(std::move(stream), client_opts))
-    , strand(p_->session.get_executor().context().get_executor())
+    , strand(p_->session.get_executor())
   {
   }
-
-  using executor_type =
-    boost::asio::strand<decltype(std::declval<::foxy::session&>().get_executor())>;
 
   auto
   get_executor() const noexcept -> executor_type
