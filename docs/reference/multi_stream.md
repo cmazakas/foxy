@@ -8,11 +8,8 @@ that emulates dynamic polymorphism by either reading/writing plain bytes or usin
 ## Declaration
 
 ```c++
-namespace foxy
-{
 template <class Stream>
 struct basic_multi_stream;
-}
 ```
 
 ## Exported Typedefs
