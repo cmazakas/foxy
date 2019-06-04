@@ -83,16 +83,18 @@ public:
   };
 
   auto
-  operator()(boost::system::error_code ec, bool close_tunnel) -> void
+  operator()(boost::system::error_code ec = {}, bool close_tunnel = false) -> void
   {
     auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(*this)
     {
+//      std::cout << std::boolalpha << "running in this thread? " << strand.running_in_this_thread() << "\n";
+
       while (true) {
         BOOST_ASIO_CORO_YIELD
         ::foxy::detail::async_tunnel(s.session, s.client, std::move(*this));
-        if (ec) { break; }
-
+        if (ec) { std::cout << ec.message() << "\n"; break; }
+std::cout << "done tunnelling/one-time relay\n";
         if (close_tunnel) { break; }
 
         BOOST_ASIO_CORO_YIELD
@@ -101,7 +103,7 @@ public:
 
         if (close_tunnel) { break; }
       }
-
+std::cout << "beginning shutdown\n";
       // http rfc 7230 section 6.6 Tear-down
       // -----------------------------------
       // To avoid the TCP reset problem, servers typically close a connection
@@ -126,8 +128,8 @@ public:
       s.session.stream.plain().close(ec);
 
       if (s.client.stream.is_ssl()) {
-        BOOST_ASIO_CORO_YIELD
-        s.client.stream.ssl().async_shutdown(std::bind(std::move(*this), _1, true));
+        // BOOST_ASIO_CORO_YIELD
+        // s.client.stream.ssl().async_shutdown(std::bind(std::move(*this), _1, true));
 
         if (ec == boost::asio::error::eof) {
           // Rationale:
@@ -137,10 +139,14 @@ public:
 
         if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
 
+        s.client.stream.ssl().next_layer().shutdown(tcp::socket::shutdown_both, ec);
+        s.client.stream.ssl().next_layer().close(ec);
+
       } else {
         s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
         s.client.stream.plain().close(ec);
       }
+std::cout << "done with shutdown, yay!\n";
     }
   }
 };
@@ -197,7 +203,7 @@ foxy::proxy::loop(boost::system::error_code ec) -> void
         continue;
       }
 
-      async_connect_op(std::move(stream_), client_opts_)({}, false);
+      boost::asio::post(async_connect_op(std::move(stream_), client_opts_));
     }
   }
 }

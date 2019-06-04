@@ -21,6 +21,7 @@
 #include <thread>
 #include <string>
 #include <atomic>
+#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -240,7 +241,10 @@ TEST_CASE("Our forward proxy (part 2)")
 
         if (was_valid_result) {
           auto const num_ops = ++num_valid_responses;
+          // std::cout << "got valid result with num_ops total: " << num_ops << "\n";
           if (num_ops == num_requests) { proxy->cancel(); }
+        } else {
+          // std::cout << "hit an invalid result\n";
         }
       }
     };
