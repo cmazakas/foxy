@@ -88,13 +88,10 @@ public:
     auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(*this)
     {
-//      std::cout << std::boolalpha << "running in this thread? " << strand.running_in_this_thread() << "\n";
-
       while (true) {
         BOOST_ASIO_CORO_YIELD
         ::foxy::detail::async_tunnel(s.session, s.client, std::move(*this));
-        if (ec) { std::cout << ec.message() << "\n"; break; }
-std::cout << "done tunnelling/one-time relay\n";
+        if (ec) { break; }
         if (close_tunnel) { break; }
 
         BOOST_ASIO_CORO_YIELD
@@ -103,7 +100,7 @@ std::cout << "done tunnelling/one-time relay\n";
 
         if (close_tunnel) { break; }
       }
-std::cout << "beginning shutdown\n";
+
       // http rfc 7230 section 6.6 Tear-down
       // -----------------------------------
       // To avoid the TCP reset problem, servers typically close a connection
@@ -128,8 +125,8 @@ std::cout << "beginning shutdown\n";
       s.session.stream.plain().close(ec);
 
       if (s.client.stream.is_ssl()) {
-        // BOOST_ASIO_CORO_YIELD
-        // s.client.stream.ssl().async_shutdown(std::bind(std::move(*this), _1, true));
+        BOOST_ASIO_CORO_YIELD
+        s.client.stream.ssl().async_shutdown(boost::beast::bind_handler(std::move(*this), _1, true));
 
         if (ec == boost::asio::error::eof) {
           // Rationale:
@@ -139,14 +136,10 @@ std::cout << "beginning shutdown\n";
 
         if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
 
-        s.client.stream.ssl().next_layer().shutdown(tcp::socket::shutdown_both, ec);
-        s.client.stream.ssl().next_layer().close(ec);
-
       } else {
         s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
         s.client.stream.plain().close(ec);
       }
-std::cout << "done with shutdown, yay!\n";
     }
   }
 };
@@ -190,6 +183,9 @@ foxy::proxy::loop(boost::system::error_code ec) -> void
 {
   BOOST_ASIO_CORO_REENTER(accept_coro_)
   {
+    BOOST_ASIO_CORO_YIELD
+    strand_.post([self = shared_from_this()] { self->loop({}); }, std::allocator<char>{});
+
     for (;;) {
       BOOST_ASIO_CORO_YIELD
       acceptor_.async_accept(
