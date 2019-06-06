@@ -46,7 +46,7 @@ struct client_session : public session
 {
 public:
   client_session()                      = delete;
-  client_session(client_session const&) = default;
+  client_session(client_session const&) = delete;
   client_session(client_session&&)      = default;
 
   explicit client_session(boost::asio::io_context& io, session_opts opts = {});
