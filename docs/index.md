@@ -1,5 +1,3 @@
-# Intro
-
 ## Table of Contents
 
 * [Reference](./reference.md#Reference)

@@ -2,15 +2,15 @@
 
 [![Build Status](https://travis-ci.org/LeonineKing1199/foxy.svg?branch=master)](https://travis-ci.org/LeonineKing1199/foxy)
 
-Session-based Beast/Asio wrapper
+Session-based Beast/Asio wrapper + URL parsing and pct-encoding
 
-Read the docs [here](./docs/intro.md).
+Read the docs [here](./docs/index.md).
 
 ## Requirements
 
 * C++14
-* CMake 3.13 and above
-* Latest Boost (currently 1.70)
+* CMake 3.10 and above
+* Latest Boost (currently 1.71)
 * OpenSSL
 * Catch2 (for testing)
 
