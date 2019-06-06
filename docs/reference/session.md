@@ -1,5 +1,9 @@
 ## `foxy::basic_session`
 
+```c++
+#include <foxy/session.hpp>
+```
+
 ## Synopsis
 
 The most fundamental class in Foxy, the `basic_session` encapsulates a minimal subset of the classes

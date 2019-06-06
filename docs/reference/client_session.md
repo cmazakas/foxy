@@ -1,5 +1,11 @@
 ## `foxy::client_session`
 
+## Include
+
+```c++
+#include <foxy/client_session.hpp>
+```
+
 ## Synopsis
 
 ## Declaration

@@ -1,5 +1,11 @@
 ## `foxy::session_opts`
 
+## Include
+
+```c++
+#include <foxy/session.hpp>
+```
+
 ## Synopsis
 
 A small class that Foxy uses for configuring its `basic_session` class.
