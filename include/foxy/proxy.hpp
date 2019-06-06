@@ -18,8 +18,9 @@
 #include <boost/beast/http/error.hpp>
 
 #include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/coroutine.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -38,11 +39,12 @@ public:
   using acceptor_type = boost::asio::ip::tcp::acceptor;
   using endpoint_type = boost::asio::ip::tcp::endpoint;
   using stream_type   = multi_stream;
-  using executor_type = stream_type::executor_type;
+  using executor_type = boost::asio::strand<typename stream_type::executor_type>;
 
 private:
   stream_type          stream_;
   acceptor_type        acceptor_;
+  executor_type        strand_;
   ::foxy::session_opts client_opts_;
 
   boost::asio::coroutine accept_coro_;
@@ -66,7 +68,7 @@ public:
   async_accept() -> void;
 
   auto
-  cancel(boost::system::error_code& ec) -> void;
+  cancel() -> void;
 };
 
 } // namespace foxy

@@ -68,7 +68,7 @@ TEST_CASE("Our forward proxy")
         "Malformed client request. Use either CONNECT <authority-uri> or <verb> <absolute-uri>";
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
       proxy.reset();
     });
 
@@ -112,7 +112,7 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_body   = response.body().size() > 0;
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
       proxy.reset();
     });
 
@@ -163,7 +163,7 @@ TEST_CASE("Our forward proxy")
       auto const was_valid_body   = response.body().size() > 0;
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
       proxy.reset();
     });
 
@@ -209,7 +209,7 @@ TEST_CASE("Our forward proxy")
         response.body() == "CONNECT semantics require a persistent connection\n\n";
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
       proxy.reset();
     });
 
@@ -266,7 +266,7 @@ TEST_CASE("Our forward proxy")
       client.stream.plain().close(ec);
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
     });
 
     io.run();
@@ -315,7 +315,7 @@ TEST_CASE("Our forward proxy")
       client.stream.plain().close(ec);
 
       was_valid_response = was_valid_result && was_valid_body;
-      proxy->cancel(ec);
+      proxy->cancel();
     });
 
     io.run();

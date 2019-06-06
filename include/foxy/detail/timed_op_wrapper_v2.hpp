@@ -31,9 +31,9 @@ template <class Stream, template <class...> class Op, class Handler, class Ret, 
 struct timed_op_wrapper_v2<Stream, Op, Handler, Ret(Args...)>
 {
 public:
-  using executor_type = boost::asio::associated_executor_t<
-    Handler,
-    decltype(std::declval<::foxy::basic_session<Stream>&>().get_executor())>;
+  using executor_type =
+    boost::asio::associated_executor_t<Handler,
+                                       typename ::foxy::basic_session<Stream>::executor_type>;
 
   using allocator_type = boost::asio::associated_allocator_t<Handler>;
 
@@ -47,7 +47,7 @@ private:
     bool                                            done;
     boost::asio::executor_work_guard<executor_type> work;
 
-    state(Handler const& handler, executor_type executor)
+    state(Handler const& handler, typename ::foxy::basic_session<Stream>::executor_type executor)
       : ops{0}
       , done{false}
       , work(boost::asio::get_associated_executor(handler, executor))
