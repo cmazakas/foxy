@@ -21,7 +21,6 @@
 #include <thread>
 #include <string>
 #include <atomic>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -206,15 +205,15 @@ TEST_CASE("Our forward proxy (part 2)")
 
     auto const reuse_addr = true;
 
+    auto const num_requests = urls.size() * num_threads;
+
+    std::atomic_int num_valid_responses{0};
+
     auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
     auto opts = foxy::session_opts{ctx, 30s};
 
     auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
     proxy->async_accept();
-
-    auto const num_requests = urls.size() * num_threads;
-
-    std::atomic_int num_valid_responses{0};
 
     auto const crawler = [&io, &urls, &num_valid_responses, proxy,
                           num_requests](asio::yield_context yield) -> void {
@@ -241,18 +240,15 @@ TEST_CASE("Our forward proxy (part 2)")
 
         if (was_valid_result) {
           auto const num_ops = ++num_valid_responses;
-          // std::cout << "got valid result with num_ops total: " << num_ops << "\n";
           if (num_ops == num_requests) { proxy->cancel(); }
-        } else {
-          // std::cout << "hit an invalid result\n";
         }
       }
     };
 
+    for (auto idx = 0; idx < num_threads; ++idx) { asio::spawn(crawler); }
+
     auto threads = std::vector<std::thread>();
     threads.reserve(num_threads);
-
-    for (auto idx = 0; idx < num_threads; ++idx) { asio::spawn(crawler); }
 
     for (auto idx = 0; idx < num_threads; ++idx) {
       threads.emplace_back([&io] { io.run(); });
