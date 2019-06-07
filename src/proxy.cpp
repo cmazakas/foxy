@@ -29,6 +29,8 @@
 #include <boost/asio/error.hpp>
 #include <boost/asio/bind_executor.hpp>
 
+#include <boost/assert.hpp>
+
 #include <memory>
 #include <iostream>
 
@@ -82,9 +84,10 @@ public:
     return strand;
   };
 
-  auto
-  operator()(boost::system::error_code ec = {}, bool close_tunnel = false) -> void
+  auto operator()(boost::system::error_code ec = {}, bool close_tunnel = false) -> void
   {
+    BOOST_ASSERT(strand.running_in_this_thread());
+
     auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(*this)
     {
@@ -126,7 +129,8 @@ public:
 
       if (s.client.stream.is_ssl()) {
         BOOST_ASIO_CORO_YIELD
-        s.client.stream.ssl().async_shutdown(boost::beast::bind_handler(std::move(*this), _1, true));
+        s.client.stream.ssl().async_shutdown(
+          boost::beast::bind_handler(std::move(*this), _1, true));
 
         if (ec == boost::asio::error::eof) {
           // Rationale:
