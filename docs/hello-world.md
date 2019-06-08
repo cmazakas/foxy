@@ -9,10 +9,10 @@ But before we just dive in and look at the end code, it's useful to review Foxy'
 
 ## Core Abstractions
 
-Foxy's core abstractions revolves around the idea of an HTTP session, where an HTTP "session"
-represents several messages passed back and forth between a server and a client over the same
-TCP connection. In the RFC nomenclature, this is referred to as a "persistent" connection and is the
-default for HTTP/1.1 and `connection: keep-alive` for HTTP/1.0.
+Foxy's core abstractions revolve around the notion of an HTTP session. A session represents a
+persistent connection between a client and server over which many messages are exchanged. For HTTP,
+connections are considered persistent by default under HTTP/1.1 and when the
+`connection: keep-alive` header field is used in HTTP/1.0.
 
 Foxy presents users with a `foxy::basic_session` which is a class templated on a `Stream` type.
 
@@ -184,4 +184,4 @@ main()
 }
 ```
 
-[To ToC](./index.md#Table-of-Contents)
+To [ToC](./index.md#Table-of-Contents)

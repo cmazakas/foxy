@@ -18,8 +18,7 @@ namespace detail
 {
 template <class Handler>
 struct connect_op
-  : boost::beast::stable_async_base<Handler,
-                                    decltype(std::declval<::foxy::session&>().get_executor())>,
+  : boost::beast::stable_async_base<Handler, typename ::foxy::session::executor_type>,
     boost::asio::coroutine
 {
   struct state
@@ -46,8 +45,7 @@ struct connect_op
   connect_op(connect_op&&)      = default;
 
   connect_op(::foxy::session& session_, Handler handler, std::string host, std::string service)
-    : boost::beast::stable_async_base<Handler,
-                                      decltype(std::declval<::foxy::session&>().get_executor())>(
+    : boost::beast::stable_async_base<Handler, typename ::foxy::session::executor_type>(
         std::move(handler),
         session_.get_executor())
     , session(session_)

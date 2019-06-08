@@ -41,9 +41,10 @@ public:
   static_assert(boost::beast::is_async_stream<Stream>::value,
                 "Requirements on the Stream type were not met. Stream must be a Beast.AsyncStream");
 
-  using stream_type = ::foxy::basic_multi_stream<Stream>;
-  using buffer_type = boost::beast::flat_buffer;
-  using timer_type  = boost::asio::steady_timer;
+  using stream_type   = ::foxy::basic_multi_stream<Stream>;
+  using buffer_type   = boost::beast::flat_buffer;
+  using timer_type    = boost::asio::steady_timer;
+  using executor_type = typename stream_type::executor_type;
 
   session_opts opts;
   stream_type  stream;
@@ -56,8 +57,6 @@ public:
 
   explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
   explicit basic_session(stream_type stream_, session_opts opts_ = {});
-
-  using executor_type = decltype(stream.get_executor());
 
   auto
   get_executor() -> executor_type;

@@ -1,7 +1,6 @@
-# Intro
-
 ## Table of Contents
 
+* [Reference](./reference.md#Reference)
 * [Hello World](./hello-world.md#Hello-World)
 * [URI Combinators](./uri-combinators.md#URI-Combinators)
 
@@ -20,6 +19,7 @@ Foxy features:
 [Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html))
 * support for Asio's universal async model of execution
 * simple and experimental TLS forward proxy
+* pct-encoding for Unicode URLs
 
 ## Motivation
 
@@ -27,7 +27,7 @@ Foxy aims to be competitive with the HTTP libraries offered by both Node.js and 
 
 While these languages are significantly higher-level than C++ is, their standard HTTP libraries are
 low-level from an abstract perspective. The success of these languages and their libraries has shown
-that the modern web  development is favoring an ever-lower set of HTTP APIs.
+that the modern web development is favoring an ever-lower set of HTTP APIs.
 
 Foxy offers a low-level set of session-based primitives that empower users to create their own
 abstractions while also offering much more familiar APIs.

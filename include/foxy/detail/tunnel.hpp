@@ -32,8 +32,7 @@ namespace detail
 {
 template <class TunnelHandler>
 struct tunnel_op
-  : boost::beast::stable_async_base<TunnelHandler,
-                                    decltype(std::declval<::foxy::session&>().get_executor())>,
+  : boost::beast::stable_async_base<TunnelHandler, typename ::foxy::session::executor_type>,
     boost::asio::coroutine
 {
   struct state
@@ -66,8 +65,7 @@ public:
   tunnel_op(tunnel_op&&)      = default;
 
   tunnel_op(foxy::server_session& server_, TunnelHandler handler, foxy::client_session& client_)
-    : boost::beast::stable_async_base<TunnelHandler,
-                                      decltype(std::declval<::foxy::session&>().get_executor())>(
+    : boost::beast::stable_async_base<TunnelHandler, typename ::foxy::session::executor_type>(
         std::move(handler),
         server_.get_executor())
     , server(server_)
