@@ -19,8 +19,7 @@ namespace detail
 {
 template <class Stream, class Parser, class Handler>
 struct read_op
-  : boost::beast::
-      async_base<Handler, decltype(std::declval<::foxy::basic_session<Stream>&>().get_executor())>,
+  : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>,
     boost::asio::coroutine
 {
   ::foxy::basic_session<Stream>& session;

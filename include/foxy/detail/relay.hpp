@@ -32,10 +32,10 @@ namespace foxy
 namespace detail
 {
 template <class Stream, class RelayHandler>
-struct relay_op : boost::beast::stable_async_base<
-                    RelayHandler,
-                    decltype(std::declval<::foxy::basic_session<Stream>&>().get_executor())>,
-                  boost::asio::coroutine
+struct relay_op
+  : boost::beast::stable_async_base<RelayHandler,
+                                    typename ::foxy::basic_session<Stream>::executor_type>,
+    boost::asio::coroutine
 {
   template <bool isRequest, class Body>
   using parser = boost::beast::http::parser<isRequest, Body>;
