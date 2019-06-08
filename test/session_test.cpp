@@ -37,40 +37,10 @@ static_assert(foxy::detail::is_closable_stream_nothrow<
                                                  boost::asio::io_context::executor_type>>::value,
               "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
-namespace
-{
-struct test_stream : public boost::beast::test::stream
-{
-  test_stream(boost::asio::io_context& io)
-    : boost::beast::test::stream(io)
-  {
-  }
-
-  test_stream(test_stream&&) = default;
-
-  // boost::asio::ssl::stream needs these
-  // DEPRECATED
-  template <class>
-  friend class boost::asio::ssl::stream;
-  // DEPRECATED
-  using lowest_layer_type = boost::beast::test::stream;
-  // DEPRECATED
-  lowest_layer_type&
-  lowest_layer() noexcept
-  {
-    return *this;
-  }
-  // DEPRECATED
-  lowest_layer_type const&
-  lowest_layer() const noexcept
-  {
-    return *this;
-  }
-};
-} // namespace
-
 TEST_CASE("Our basic_session class...")
 {
+  using test_stream = boost::beast::test::stream;
+
   SECTION("should be able to read a header")
   {
     asio::io_context io;
