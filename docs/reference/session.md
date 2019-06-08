@@ -18,13 +18,13 @@ serialization operations as well as a timer that it uses to determine when an op
 
 The `basic_session` is configurable via its `foxy::session_opts`. Currently, only adjusting the
 timeouts has any direct effect. Mutating the nested SSL context may result in an inconsistent state
-of the session.
+of the session and is undefined by the library.
 
 This class is used primarily for reading and writing HTTP messages.
 
 The class is coded such that no timeout operations run in user-land code. Foxy ensures that before
-each call to its async read and write member functions completes, the timer operation has been
-cancelled and that it has also been successfully run.
+each call to its async read and write member functions complete, the timer operations have been
+cancelled and any pending operations have also been successfully run.
 
 This guarantee enables the user to re-adjust the timeout between asynchronous operations without
 ever having to worry about the state of the timer or any of its pending operations.
@@ -79,7 +79,8 @@ explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
 
 The "default" constructor for most use-cases.
 
-If the session options contain an SSL context, the session will be constructed in SSL mode.
+If the session options contain an SSL context, the session will be constructed in SSL mode, i.e.
+`session.stream.is_ssl()` returns `true`.
 
 #### `stream_type`
 
@@ -119,6 +120,14 @@ Users can pass either a [`boost::beast::http::message`](https://www.boost.org/do
 or a [`boost::beast::http::parser`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__http__parser.html)
 as the `Parser` template parameter.
 
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code, std::size_t)
+```
+
+The `std::size_t` supplied to the handler is the total number of bytes read from the underlying
+stream.
+
 This function will timeout.
 
 #### async_read
@@ -137,6 +146,14 @@ that supports timeouts.
 Users can pass either a [`boost::beast::http::message`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__http__message.html)
 or a [`boost::beast::http::parser`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__http__parser.html)
 as the `Parser` template parameter.
+
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code, std::size_t)
+```
+
+The `std::size_t` supplied to the handler is the total number of bytes read from the underlying
+stream.
 
 This function will timeout.
 
@@ -157,6 +174,14 @@ Users can pass either a [`boost::beast::http::message`](https://www.boost.org/do
 or a [`boost::beast::http::serializer`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__http__serializer.html)
 as the `Serializer` template parameter.
 
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code, std::size_t)
+```
+
+The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
+stream.
+
 This function will timeout.
 
 #### async_write
@@ -175,6 +200,14 @@ that supports timeouts.
 Users can pass either a [`boost::beast::http::message`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__http__message.html)
 or a [`boost::beast::http::serializer`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__http__serializer.html)
 as the `Serializer` template parameter.
+
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code, std::size_t)
+```
+
+The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
+stream.
 
 This function will timeout.
 
