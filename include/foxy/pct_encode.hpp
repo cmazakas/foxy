@@ -29,8 +29,6 @@
 
 namespace foxy
 {
-namespace uri
-{
 template <class OutputIterator>
 auto
 utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink) -> OutputIterator
@@ -64,6 +62,8 @@ utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> Ou
   return sink;
 }
 
+namespace uri
+{
 template <class OutputIterator>
 auto
 encode_host(boost::u32string_view const host, OutputIterator out) -> OutputIterator
@@ -94,7 +94,7 @@ encode_host(boost::u32string_view const host, OutputIterator out) -> OutputItera
 
     auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
 
-    auto const end = ::foxy::uri::utf8_encode(code_point, buffer.begin());
+    auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 
     for (auto pos = buffer.begin(); pos < end; ++pos) {
       karma::generate(out, karma::lit("%") << karma::right_align(2, karma::lit("0"))[karma::hex],
@@ -128,7 +128,7 @@ encode_path(boost::u32string_view const host, OutputIterator out) -> OutputItera
 
     auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
 
-    auto const end = ::foxy::uri::utf8_encode(code_point, buffer.begin());
+    auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 
     for (auto pos = buffer.begin(); pos < end; ++pos) {
       karma::generate(out, karma::lit("%") << karma::right_align(2, karma::lit("0"))[karma::hex],
@@ -163,7 +163,7 @@ encode_query(boost::u32string_view const host, OutputIterator out) -> OutputIter
 
     auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
 
-    auto const end = ::foxy::uri::utf8_encode(code_point, buffer.begin());
+    auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 
     for (auto pos = buffer.begin(); pos < end; ++pos) {
       karma::generate(out, karma::lit("%") << karma::right_align(2, karma::lit("0"))[karma::hex],

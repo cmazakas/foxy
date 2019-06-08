@@ -18,13 +18,11 @@
 
 namespace foxy
 {
-namespace uri
-{
 template <class Iterator>
 struct code_point_iterator
 {
 public:
-  using value_type        = boost::locale::utf::code_point;
+  using value_type        = char32_t;
   using difference_type   = std::ptrdiff_t;
   using pointer           = void;
   using reference         = value_type;
@@ -160,7 +158,6 @@ public:
   }
 };
 
-} // namespace uri
 } // namespace foxy
 
 #endif // FOXY_ITERATOR_HPP_
