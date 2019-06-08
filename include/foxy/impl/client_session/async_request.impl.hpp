@@ -17,9 +17,8 @@ namespace foxy
 namespace detail
 {
 template <class Request, class ResponseParser, class Handler>
-struct request_op
-  : boost::beast::async_base<Handler, decltype(std::declval<::foxy::session&>().get_executor())>,
-    boost::asio::coroutine
+struct request_op : boost::beast::async_base<Handler, typename ::foxy::session::executor_type>,
+                    boost::asio::coroutine
 
 {
   ::foxy::session& session;
@@ -31,7 +30,7 @@ struct request_op
   request_op(request_op&&)      = default;
 
   request_op(::foxy::session& session_, Handler handler, Request& request_, ResponseParser& parser_)
-    : boost::beast::async_base<Handler, decltype(std::declval<::foxy::session&>().get_executor())>(
+    : boost::beast::async_base<Handler, typename ::foxy::session::executor_type>(
         std::move(handler),
         session_.get_executor())
     , session(session_)

@@ -30,9 +30,7 @@ struct write_op
   write_op(write_op&&)      = default;
 
   write_op(::foxy::basic_session<Stream>& session_, Handler handler, Serializer& serializer_)
-    : boost::beast::async_base<Handler,
-                               decltype(
-                                 std::declval<::foxy::basic_session<Stream>&>().get_executor())>(
+    : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>(
         std::move(handler),
         session_.get_executor())
     , session(session_)
