@@ -46,4 +46,3 @@ handling off of `char32_t`. An experimental TLS forward proxy is provided as wel
 Project is young but the `client_session` and `server_session` classes are usable.
 
 Initial minimum viable product is a proxy-aware HTTP client and a small proxy server implementation.
-
