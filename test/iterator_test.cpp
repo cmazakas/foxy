@@ -50,13 +50,10 @@ TEST_CASE("Our Unicode code point iterator...")
     auto const points_view = foxy::code_point_view<char>(view);
     auto const code_points = std::vector<char32_t>(points_view.begin(), points_view.end());
 
-    auto const* const unsigned_view =
-      reinterpret_cast<std::uint_least32_t const*>(code_points.data());
-
     REQUIRE(code_points.size() == 3);
-    CHECK(unsigned_view[0] == 0xFFFFFFFFu);
-    CHECK(unsigned_view[1] == 0xFFFFFFFFu);
-    CHECK(unsigned_view[2] == 0xFFFFFFFFu);
+    CHECK(code_points[0] == 0xFFFFFFFFu);
+    CHECK(code_points[1] == 0xFFFFFFFFu);
+    CHECK(code_points[2] == 0xFFFFFFFFu);
   }
 
   SECTION("should follow the proper Iterator requirements")
