@@ -147,6 +147,20 @@ swap(code_point_iterator<Iterator>& iter1, code_point_iterator<Iterator>& iter2)
 Invokes `iter1.swap(iter2)`. Intended to work as a swap-friendly customization hook for `std::swap`
 and the STL.
 
+#### make_code_point_iterator
+
+```c++
+template <class Iterator>
+auto
+make_code_point_iterator(Iterator const iterator, Iterator const end)
+  -> code_point_iterator<Iterator>;
+```
+
+Factory function used to more ergonomically create code point iterators due to function template
+deduction.
+
+Returns a code point iterator constructed as-if: `foxy::code_point_iterator{iterator, end}`.
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)
