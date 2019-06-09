@@ -40,7 +40,7 @@ TEST_CASE("Our Unicode code point iterator...")
     CHECK(ranges_match);
   }
 
-  SECTION("should handle ill-formed input somewhat gracefully")
+  SECTION("[utf-8] should handle ill-formed input somewhat gracefully")
   {
     auto input = std::array<char, 3>{0};
     std::memset(input.data(), 0xff, input.size());
@@ -54,6 +54,19 @@ TEST_CASE("Our Unicode code point iterator...")
     CHECK(code_points[0] == 0xFFFFFFFFu);
     CHECK(code_points[1] == 0xFFFFFFFFu);
     CHECK(code_points[2] == 0xFFFFFFFFu);
+  }
+
+  SECTION("[utf-16] should handle ill-formed input somewhat gracefully")
+  {
+    auto const buff = std::array<char16_t, 2>{0xd800, u'b'};
+
+    auto const view = boost::u16string_view(buff.data(), buff.size());
+
+    auto const points_view = foxy::code_point_view<char16_t>(view);
+    auto const code_points = std::vector<char32_t>(points_view.begin(), points_view.end());
+
+    REQUIRE(code_points.size() == 1);
+    CHECK(code_points[0] == 0xFFFFFFFFu);
   }
 
   SECTION("should follow the proper Iterator requirements")
