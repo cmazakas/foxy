@@ -56,6 +56,17 @@ TEST_CASE("Our Unicode code point iterator...")
     CHECK(code_points[2] == 0xFFFFFFFFu);
   }
 
+  SECTION("[utf-8] should handle incomplete input somewhat gracefully")
+  {
+    auto const view = boost::string_view("\xe2\x82");
+
+    auto const points_view = foxy::code_point_view<char>(view);
+    auto const code_points = std::vector<char32_t>(points_view.begin(), points_view.end());
+
+    REQUIRE(code_points.size() == 1);
+    CHECK(code_points[0] == 0xFFFFFFFEu);
+  }
+
   SECTION("[utf-16] should handle ill-formed input somewhat gracefully")
   {
     auto const buff = std::array<char16_t, 2>{0xd800, u'b'};
