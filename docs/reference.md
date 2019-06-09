@@ -15,5 +15,10 @@
 #### Classes
 
 * [code_point_iterator](./reference/code_point_iterator.md#foxy::code_point_iterator)
+* [code_point_view](./reference/code_point_view.md#foxy::code_point_view)
+
+#### Functions
+
+* [make_code_point_iterator](./reference/code_point_iterator.md#make_code_point_iterator)
 
 To [ToC](./index.md#Table-of-Contents)
