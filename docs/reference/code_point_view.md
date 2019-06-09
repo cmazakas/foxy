@@ -53,6 +53,8 @@ begin() const noexcept -> code_point_iterator<iterator_type>;
 
 Returns a code point iterator that starts at the beginning of the internal string view.
 
+#### end
+
 ```c++
 auto
 end() const noexcept -> code_point_iterator<iterator_type>
