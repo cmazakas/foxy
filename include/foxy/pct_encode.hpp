@@ -31,7 +31,7 @@ namespace foxy
 {
 template <class OutputIterator>
 auto
-utf8_encode(boost::locale::utf::code_point const code_point, OutputIterator sink) -> OutputIterator
+utf8_encode(char32_t const code_point, OutputIterator sink) -> OutputIterator
 {
   return boost::locale::utf::utf_traits<char>::encode(code_point, sink);
 }

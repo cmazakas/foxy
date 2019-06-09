@@ -9,6 +9,7 @@
 
 #include <foxy/iterator.hpp>
 #include <foxy/uri_parts.hpp>
+#include <foxy/pct_encode.hpp>
 
 #include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>
@@ -16,6 +17,7 @@
 #include <vector>
 #include <algorithm>
 #include <type_traits>
+#include <array>
 
 #include <catch2/catch.hpp>
 
@@ -183,5 +185,18 @@ TEST_CASE("Our code point view...")
     CHECK(uri_parts.query() ==
           U"q=\u0412\u0441\u0435\u043c+\u043f\u0440\u0438\u0432\u0435\u0442+c");
     CHECK(uri_parts.fragment() == U"");
+  }
+
+  SECTION("should interop with our utf-8 encoder")
+  {
+    auto input      = boost::u16string_view(u"\u20ac");
+    auto point_view = foxy::code_point_view<char16_t>(input);
+    auto buff       = std::array<unsigned char, 3>{0};
+
+    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+
+    CHECK(buff[0] == 0xe2);
+    CHECK(buff[1] == 0x82);
+    CHECK(buff[2] == 0xac);
   }
 }
