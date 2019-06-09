@@ -187,10 +187,23 @@ TEST_CASE("Our code point view...")
     CHECK(uri_parts.fragment() == U"");
   }
 
-  SECTION("should interop with our utf-8 encoder")
+  SECTION("[utf-16] should interop with our utf-8 encoder")
   {
     auto input      = boost::u16string_view(u"\u20ac");
     auto point_view = foxy::code_point_view<char16_t>(input);
+    auto buff       = std::array<unsigned char, 3>{0};
+
+    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+
+    CHECK(buff[0] == 0xe2);
+    CHECK(buff[1] == 0x82);
+    CHECK(buff[2] == 0xac);
+  }
+
+  SECTION("[wchar_t] should interop with our utf-8 encoder")
+  {
+    auto input      = boost::wstring_view(L"\u20ac");
+    auto point_view = foxy::code_point_view<wchar_t>(input);
     auto buff       = std::array<unsigned char, 3>{0};
 
     foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
