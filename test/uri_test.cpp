@@ -313,7 +313,7 @@ TEST_CASE("Our URI module...")
                                       "http://www.example.com/#%23asdf",
                                       "http:",
                                       "asdf:jkl;",
-                                      "foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof",
+                                      "foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:\?\?//:foof",
                                       "http://ay%40lmao:password@[fe80::]/p@th?q=@lol"};
 
     auto const all_match =
