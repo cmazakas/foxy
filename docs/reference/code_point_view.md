@@ -57,10 +57,13 @@ Returns a code point iterator that starts at the beginning of the internal strin
 
 ```c++
 auto
-end() const noexcept -> code_point_iterator<iterator_type>
+end() const noexcept -> code_point_iterator<iterator_type>;
 ```
 
 Returns a code point iterator that represents the end of the possible code point range.
+
+See also:
+ * [code_point_iterator](./code_point_iterator.md#foxy::code_point_iterator)
 
 To [Reference](../reference.md#Reference)
 

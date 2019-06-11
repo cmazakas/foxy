@@ -161,6 +161,9 @@ deduction.
 
 Returns a code point iterator constructed as-if: `foxy::code_point_iterator{iterator, end}`.
 
+See also:
+ * [code_point_view](./code_point_view.md#foxy::code_point_view)
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)
