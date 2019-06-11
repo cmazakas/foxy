@@ -18,13 +18,11 @@
 
 namespace foxy
 {
-namespace uri
-{
 template <class Iterator>
 struct code_point_iterator
 {
 public:
-  using value_type        = boost::locale::utf::code_point;
+  using value_type        = char32_t;
   using difference_type   = std::ptrdiff_t;
   using pointer           = void;
   using reference         = value_type;
@@ -132,7 +130,8 @@ template <class Char, class Traits = std::char_traits<Char>>
 struct code_point_view
 {
 public:
-  using iterator_type = typename boost::basic_string_view<Char, Traits>::iterator;
+  using iterator_type =
+    code_point_iterator<typename boost::basic_string_view<Char, Traits>::iterator>;
 
 private:
   boost::basic_string_view<Char, Traits> view_;
@@ -148,19 +147,18 @@ public:
   }
 
   auto
-  begin() const noexcept -> code_point_iterator<iterator_type>
+  begin() const noexcept -> iterator_type
   {
     return make_code_point_iterator(view_.begin(), view_.end());
   }
 
   auto
-  end() const noexcept -> code_point_iterator<iterator_type>
+  end() const noexcept -> iterator_type
   {
     return make_code_point_iterator(view_.end(), view_.end());
   }
 };
 
-} // namespace uri
 } // namespace foxy
 
 #endif // FOXY_ITERATOR_HPP_

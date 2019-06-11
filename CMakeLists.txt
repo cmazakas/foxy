@@ -26,7 +26,7 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/client_session.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/iterator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/code_point_iterator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/log.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/multi_stream.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/pct_encode.hpp

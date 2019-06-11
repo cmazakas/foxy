@@ -52,7 +52,7 @@ TEST_CASE("Our uri_parts function")
 
   SECTION("should handle wonky user-input")
   {
-    auto const view = boost::string_view("foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof");
+    auto const view = boost::string_view("foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:\?\?//:foof");
 
     auto const uri_parts = foxy::parse_uri(view);
 
@@ -61,7 +61,7 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.port() == "");
     CHECK(uri_parts.path() == "/@;:");
     CHECK(uri_parts.query() == "?:;@/~@;://");
-    CHECK(uri_parts.fragment() == "//:;@~/@;:??//:foof");
+    CHECK(uri_parts.fragment() == "//:;@~/@;:\?\?//:foof");
 
     CHECK(!uri_parts.is_http());
     CHECK(!uri_parts.is_authority());
@@ -248,7 +248,8 @@ TEST_CASE("Our uri_parts function")
 
   SECTION("[unicode] should handle wonky user-input")
   {
-    auto const view = boost::u32string_view(U"foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof");
+    auto const view =
+      boost::u32string_view(U"foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:\?\?//:foof");
 
     auto const uri_parts = foxy::parse_uri(view);
 
@@ -257,7 +258,7 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.port() == U"");
     CHECK(uri_parts.path() == U"/@;:");
     CHECK(uri_parts.query() == U"?:;@/~@;://");
-    CHECK(uri_parts.fragment() == U"//:;@~/@;:??//:foof");
+    CHECK(uri_parts.fragment() == U"//:;@~/@;:\?\?//:foof");
 
     CHECK(!uri_parts.is_http());
     CHECK(!uri_parts.is_authority());

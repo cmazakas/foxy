@@ -7,7 +7,9 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#include <foxy/iterator.hpp>
+#include <foxy/code_point_iterator.hpp>
+#include <foxy/uri_parts.hpp>
+#include <foxy/pct_encode.hpp>
 
 #include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>
@@ -15,6 +17,8 @@
 #include <vector>
 #include <algorithm>
 #include <type_traits>
+#include <array>
+#include <cstring>
 
 #include <catch2/catch.hpp>
 
@@ -26,45 +30,85 @@ TEST_CASE("Our Unicode code point iterator...")
   {
     auto const input = boost::wstring_view(L"hello, world!");
 
-    auto const expected = //       'h'  'e'  'l'  'l'  'o'  ',' ' ' 'w'  'o'  'r'  'l'  'd'  '!'
-      std::vector<utf::code_point>{104, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33};
+    auto const expected = // 'h'  'e'  'l'  'l'  'o'  ',' ' ' 'w'  'o'  'r'  'l'  'd'  '!'
+      std::vector<char32_t>{104, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33};
 
-    auto const points_view  = foxy::uri::code_point_view<wchar_t>(input);
-    auto const code_points  = std::vector<utf::code_point>(points_view.begin(), points_view.end());
+    auto const points_view  = foxy::code_point_view<wchar_t>(input);
+    auto const code_points  = std::vector<char32_t>(points_view.begin(), points_view.end());
     auto const ranges_match = std::equal(expected.begin(), expected.end(), code_points.begin());
 
     CHECK(ranges_match);
+  }
+
+  SECTION("[utf-8] should handle ill-formed input somewhat gracefully")
+  {
+    auto input = std::array<char, 3>{0};
+    std::memset(input.data(), 0xff, input.size());
+
+    auto const view = boost::string_view(input.data(), input.size());
+
+    auto const points_view = foxy::code_point_view<char>(view);
+    auto const code_points = std::vector<char32_t>(points_view.begin(), points_view.end());
+
+    REQUIRE(code_points.size() == 3);
+    CHECK(code_points[0] == 0xFFFFFFFFu);
+    CHECK(code_points[1] == 0xFFFFFFFFu);
+    CHECK(code_points[2] == 0xFFFFFFFFu);
+  }
+
+  SECTION("[utf-8] should handle incomplete input somewhat gracefully")
+  {
+    auto const view = boost::string_view("\xe2\x82");
+
+    auto const points_view = foxy::code_point_view<char>(view);
+    auto const code_points = std::vector<char32_t>(points_view.begin(), points_view.end());
+
+    REQUIRE(code_points.size() == 1);
+    CHECK(code_points[0] == 0xFFFFFFFEu);
+  }
+
+  SECTION("[utf-16] should handle ill-formed input somewhat gracefully")
+  {
+    auto const buff = std::array<char16_t, 2>{0xd800, u'b'};
+
+    auto const view = boost::u16string_view(buff.data(), buff.size());
+
+    auto const points_view = foxy::code_point_view<char16_t>(view);
+    auto const code_points = std::vector<char32_t>(points_view.begin(), points_view.end());
+
+    REQUIRE(code_points.size() == 1);
+    CHECK(code_points[0] == 0xFFFFFFFFu);
   }
 
   SECTION("should follow the proper Iterator requirements")
   {
     // CopyConstructible
     {
-      foxy::uri::code_point_iterator<char const*> const pos{nullptr, nullptr};
+      foxy::code_point_iterator<char const*> const pos{nullptr, nullptr};
 
       auto pos2(pos);
     }
 
     // MoveConstructible
     {
-      foxy::uri::code_point_iterator<char const*> pos{nullptr, nullptr};
+      foxy::code_point_iterator<char const*> pos{nullptr, nullptr};
 
       auto pos2(std::move(pos));
-      auto pos3(foxy::uri::code_point_iterator<char const*>{nullptr, nullptr});
+      auto pos3(foxy::code_point_iterator<char const*>{nullptr, nullptr});
     }
 
     // CopyAssignable
     {
-      foxy::uri::code_point_iterator<char const*> pos{nullptr, nullptr};
-      foxy::uri::code_point_iterator<char const*> pos2{nullptr, nullptr};
+      foxy::code_point_iterator<char const*> pos{nullptr, nullptr};
+      foxy::code_point_iterator<char const*> pos2{nullptr, nullptr};
 
       pos2 = pos;
     }
 
     // MoveAssignable
     {
-      foxy::uri::code_point_iterator<char const*> pos{nullptr, nullptr};
-      foxy::uri::code_point_iterator<char const*> pos2{nullptr, nullptr};
+      foxy::code_point_iterator<char const*> pos{nullptr, nullptr};
+      foxy::code_point_iterator<char const*> pos2{nullptr, nullptr};
 
       pos2 = std::move(pos);
     }
@@ -79,16 +123,16 @@ TEST_CASE("Our Unicode code point iterator...")
     //
     {
       using std::swap;
-      using foxy::uri::code_point::swap;
+      using foxy::code_point::swap;
 
       auto input1 = boost::u16string_view(u"hello, world!");
       auto input2 = boost::u16string_view(u"hello, world!");
 
-      auto const code_points = //       'h'  'e'  'l'  'l'  'o'  ',' ' ' 'w'  'o'  'r'  'l'  'd' '!'
-        std::vector<utf::code_point>{104, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33};
+      auto const code_points = // 'h'  'e'  'l'  'l'  'o'  ',' ' ' 'w'  'o'  'r'  'l'  'd' '!'
+        std::vector<char32_t>{104, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33};
 
-      auto const pts_view1 = foxy::uri::code_point_view<char16_t>(input1);
-      auto const pts_view2 = foxy::uri::code_point_view<char16_t>(input2);
+      auto const pts_view1 = foxy::code_point_view<char16_t>(input1);
+      auto const pts_view2 = foxy::code_point_view<char16_t>(input2);
 
       auto begin1 = pts_view1.begin();
       auto begin2 = pts_view2.begin();
@@ -115,7 +159,7 @@ TEST_CASE("Our Unicode code point iterator...")
     {
       auto input = boost::u16string_view(u"hello, world!");
 
-      auto points_view = foxy::uri::code_point_view<char16_t>(input);
+      auto points_view = foxy::code_point_view<char16_t>(input);
 
       auto iter1 = points_view.begin();
       auto iter2 = points_view.begin();
@@ -132,31 +176,107 @@ TEST_CASE("Our Unicode code point iterator...")
     {
       static_assert(
         std::is_same<
-          typename std::iterator_traits<foxy::uri::code_point_iterator<char const*>>::value_type,
-          utf::code_point>::value,
+          typename std::iterator_traits<foxy::code_point_iterator<char const*>>::value_type,
+          char32_t>::value,
         "Invalid value_type");
-
-      static_assert(std::is_same<typename std::iterator_traits<
-                                   foxy::uri::code_point_iterator<char const*>>::difference_type,
-                                 std::ptrdiff_t>::value,
-                    "Invalid difference_type");
 
       static_assert(
         std::is_same<
-          typename std::iterator_traits<foxy::uri::code_point_iterator<char const*>>::reference,
-          utf::code_point>::value,
+          typename std::iterator_traits<foxy::code_point_iterator<char const*>>::difference_type,
+          std::ptrdiff_t>::value,
+        "Invalid difference_type");
+
+      static_assert(
+        std::is_same<
+          typename std::iterator_traits<foxy::code_point_iterator<char const*>>::reference,
+          char32_t>::value,
         "Invalid reference type");
 
       static_assert(
-        std::is_same<
-          typename std::iterator_traits<foxy::uri::code_point_iterator<char const*>>::pointer,
-          void>::value,
+        std::is_same<typename std::iterator_traits<foxy::code_point_iterator<char const*>>::pointer,
+                     void>::value,
         "Invalid pointer type");
 
-      static_assert(std::is_same<typename std::iterator_traits<
-                                   foxy::uri::code_point_iterator<char const*>>::iterator_category,
-                                 std::input_iterator_tag>::value,
-                    "Invalid pointer type");
+      static_assert(
+        std::is_same<
+          typename std::iterator_traits<foxy::code_point_iterator<char const*>>::iterator_category,
+          std::input_iterator_tag>::value,
+        "Invalid pointer type");
     }
+  }
+}
+
+TEST_CASE("Our code point view...")
+{
+  SECTION("should interop with our Unicode URI parsers")
+  {
+    auto url = boost::u16string_view(
+      u"http://www.google.com/?q=\u0412\u0441\u0435\u043c+\u043f\u0440\u0438\u0432\u0435\u0442+c");
+
+    auto point_view = foxy::code_point_view<char16_t>(url);
+
+    auto const code_points = std::vector<char32_t>(point_view.begin(), point_view.end());
+    auto const unicode_url = boost::u32string_view(code_points.data(), code_points.size());
+
+    auto const uri_parts = foxy::parse_uri(unicode_url);
+
+    CHECK(uri_parts.scheme() == U"http");
+    CHECK(uri_parts.host() == U"www.google.com");
+    CHECK(uri_parts.path() == U"/");
+    CHECK(uri_parts.query() ==
+          U"q=\u0412\u0441\u0435\u043c+\u043f\u0440\u0438\u0432\u0435\u0442+c");
+    CHECK(uri_parts.fragment() == U"");
+  }
+
+  SECTION("[wide] should interop with our utf-8 encoder")
+  {
+    auto input      = boost::wstring_view(L"\u20ac");
+    auto point_view = foxy::code_point_view<wchar_t>(input);
+    auto buff       = std::array<unsigned char, 3>{0};
+
+    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+
+    CHECK(buff[0] == 0xe2);
+    CHECK(buff[1] == 0x82);
+    CHECK(buff[2] == 0xac);
+  }
+
+  SECTION("[utf-32] should interop with our utf-8 encoder")
+  {
+    auto input      = boost::u32string_view(U"\u20ac");
+    auto point_view = foxy::code_point_view<char32_t>(input);
+    auto buff       = std::array<unsigned char, 3>{0};
+
+    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+
+    CHECK(buff[0] == 0xe2);
+    CHECK(buff[1] == 0x82);
+    CHECK(buff[2] == 0xac);
+  }
+
+  SECTION("[utf-16] should interop with our utf-8 encoder")
+  {
+    auto input      = boost::u16string_view(u"\u20ac");
+    auto point_view = foxy::code_point_view<char16_t>(input);
+    auto buff       = std::array<unsigned char, 3>{0};
+
+    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+
+    CHECK(buff[0] == 0xe2);
+    CHECK(buff[1] == 0x82);
+    CHECK(buff[2] == 0xac);
+  }
+
+  SECTION("[utf-8] should interop with our utf-8 encoder")
+  {
+    auto input      = boost::string_view(u8"\u20ac");
+    auto point_view = foxy::code_point_view<char>(input);
+    auto buff       = std::array<unsigned char, 3>{0};
+
+    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+
+    CHECK(buff[0] == 0xe2);
+    CHECK(buff[1] == 0x82);
+    CHECK(buff[2] == 0xac);
   }
 }

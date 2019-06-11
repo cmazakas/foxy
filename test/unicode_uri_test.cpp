@@ -315,7 +315,7 @@ TEST_CASE("Our Unicode URI module...")
                                          U"http://www.example.com/#%23asdf",
                                          U"http:",
                                          U"asdf:jkl;",
-                                         U"foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:??//:foof",
+                                         U"foof://:;@[::]/@;:??:;@/~@;://#//:;@~/@;:\?\?//:foof",
                                          U"http://ay%40lmao:password@[fe80::]/p@th?q=@lol",
                                          U"http://\u017C\u00F3\u0142\u0107.pl/"};
 

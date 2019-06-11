@@ -9,7 +9,6 @@
 
 #include <foxy/pct_encode.hpp>
 #include <boost/spirit/home/x3.hpp>
-#include <boost/locale/utf.hpp>
 
 #include <string>
 #include <cstdint>
@@ -17,12 +16,10 @@
 #include <vector>
 #include <bitset>
 #include <array>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
-namespace utf = boost::locale::utf;
-namespace x3  = boost::spirit::x3;
+namespace x3 = boost::spirit::x3;
 
 TEST_CASE("Our percent encoding function/namespace...")
 {
@@ -34,20 +31,19 @@ TEST_CASE("Our percent encoding function/namespace...")
     //
     {
       auto const bytes_per_code_point = 1;
-      auto const code_point_begin     = utf::code_point{0x0000};
-      auto const code_point_end       = utf::code_point{0x0080};
+      auto const code_point_begin     = char32_t{0x0000};
+      auto const code_point_end       = char32_t{0x0080};
 
-      auto code_points = std::vector<utf::code_point>();
+      auto code_points = std::vector<char32_t>();
       code_points.reserve(code_point_end - code_point_begin);
-      for (utf::code_point code_point = code_point_begin; code_point < code_point_end;
-           ++code_point) {
+      for (char32_t code_point = code_point_begin; code_point < code_point_end; ++code_point) {
         code_points.push_back(code_point);
       }
 
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::uri::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
@@ -73,20 +69,19 @@ TEST_CASE("Our percent encoding function/namespace...")
     //
     {
       auto const bytes_per_code_point = 2;
-      auto const code_point_begin     = utf::code_point{0x0080};
-      auto const code_point_end       = utf::code_point{0x0800};
+      auto const code_point_begin     = char32_t{0x0080};
+      auto const code_point_end       = char32_t{0x0800};
 
-      auto code_points = std::vector<utf::code_point>();
+      auto code_points = std::vector<char32_t>();
       code_points.reserve(code_point_end - code_point_begin);
-      for (utf::code_point code_point = code_point_begin; code_point < code_point_end;
-           ++code_point) {
+      for (char32_t code_point = code_point_begin; code_point < code_point_end; ++code_point) {
         code_points.push_back(code_point);
       }
 
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::uri::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
@@ -122,20 +117,19 @@ TEST_CASE("Our percent encoding function/namespace...")
     //
     {
       auto const bytes_per_code_point = 3;
-      auto const code_point_begin     = utf::code_point{0x0800};
-      auto const code_point_end       = utf::code_point{0x10000};
+      auto const code_point_begin     = char32_t{0x0800};
+      auto const code_point_end       = char32_t{0x10000};
 
-      auto code_points = std::vector<utf::code_point>();
+      auto code_points = std::vector<char32_t>();
       code_points.reserve(code_point_end - code_point_begin);
-      for (utf::code_point code_point = code_point_begin; code_point < code_point_end;
-           ++code_point) {
+      for (char32_t code_point = code_point_begin; code_point < code_point_end; ++code_point) {
         code_points.push_back(code_point);
       }
 
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::uri::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
@@ -181,20 +175,19 @@ TEST_CASE("Our percent encoding function/namespace...")
     //
     {
       auto const bytes_per_code_point = 4;
-      auto const code_point_begin     = utf::code_point{0x10000};
-      auto const code_point_end       = utf::code_point{0x110000};
+      auto const code_point_begin     = char32_t{0x10000};
+      auto const code_point_end       = char32_t{0x110000};
 
-      auto code_points = std::vector<utf::code_point>();
+      auto code_points = std::vector<char32_t>();
       code_points.reserve(code_point_end - code_point_begin);
-      for (utf::code_point code_point = code_point_begin; code_point < code_point_end;
-           ++code_point) {
+      for (char32_t code_point = code_point_begin; code_point < code_point_end; ++code_point) {
         code_points.push_back(code_point);
       }
 
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::uri::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
