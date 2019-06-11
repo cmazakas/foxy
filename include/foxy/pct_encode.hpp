@@ -11,7 +11,7 @@
 #define FOXY_PCT_ENCODE_HPP_
 
 #include <foxy/uri.hpp>
-#include <foxy/iterator.hpp>
+#include <foxy/code_point_iterator.hpp>
 
 #include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>

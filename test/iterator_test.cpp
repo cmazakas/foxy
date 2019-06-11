@@ -7,7 +7,7 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#include <foxy/iterator.hpp>
+#include <foxy/code_point_iterator.hpp>
 #include <foxy/uri_parts.hpp>
 #include <foxy/pct_encode.hpp>
 

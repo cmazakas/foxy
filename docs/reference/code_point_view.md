@@ -3,7 +3,7 @@
 ## Include
 
 ```c++
-#include <foxy/iterator.hpp>
+#include <foxy/code_point_iterator.hpp>
 ```
 
 ## Synopsis
@@ -20,7 +20,8 @@ struct code_point_view;
 ## Member Typedefs
 
 ```c++
-using iterator_type = typename boost::basic_string_view<Char, Traits>::iterator;
+using iterator_type =
+  code_point_iterator<typename boost::basic_string_view<Char, Traits>::iterator>;
 ```
 
 ## Constructors
@@ -48,7 +49,7 @@ of Unicode code points (`char32_t`).
 
 ```c++
 auto
-begin() const noexcept -> code_point_iterator<iterator_type>;
+begin() const noexcept -> iterator_type;
 ```
 
 Returns a code point iterator that starts at the beginning of the internal string view.
@@ -57,7 +58,7 @@ Returns a code point iterator that starts at the beginning of the internal strin
 
 ```c++
 auto
-end() const noexcept -> code_point_iterator<iterator_type>;
+end() const noexcept -> iterator_type
 ```
 
 Returns a code point iterator that represents the end of the possible code point range.

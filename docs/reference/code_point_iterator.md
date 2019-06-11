@@ -3,7 +3,7 @@
 ## Include
 
 ```c++
-#include <foxy/iterator.hpp>
+#include <foxy/code_point_iterator.hpp>
 ```
 
 ## Synopsis
