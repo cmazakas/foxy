@@ -31,23 +31,24 @@ auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
 auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 ```
 
-## `foxy::utf_encoding`
-
-#### Include
-
-```c++
-#include <foxy/pct_encode.hpp>
-```
-
 #### Declaration
 
 ```c++
 template <class InputIterator, class OutputIterator>
 auto
-utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> OutputIterator;
+utf8_encode(InputIterator begin, InputIterator end, OutputIterator sink) -> OutputIterator;
 ```
 
 #### Synopsis
 
 Writes the utf-8 encoding from the InputIterator range denoted by `begin` and `end` to the provided
 `sink`. Returns an iterator to one-past-the-end of the last `char` written.
+
+#### Example
+
+```c++
+auto utf8_bytes = std::vector<std::uint8_t>();
+utf8_bytes.resize(bytes_per_code_point * code_points.size());
+
+foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
+```
