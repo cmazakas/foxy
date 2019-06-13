@@ -40,7 +40,7 @@ TEST_CASE("Our percent encoding function/namespace...")
         code_points.push_back(code_point);
       }
 
-      auto utf8_bytes = std::vector<std::uint8_t>();
+      auto utf8_bytes = std::vector<char>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
       foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
@@ -78,7 +78,7 @@ TEST_CASE("Our percent encoding function/namespace...")
         code_points.push_back(code_point);
       }
 
-      auto utf8_bytes = std::vector<std::uint8_t>();
+      auto utf8_bytes = std::vector<char>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
       foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
@@ -126,7 +126,7 @@ TEST_CASE("Our percent encoding function/namespace...")
         code_points.push_back(code_point);
       }
 
-      auto utf8_bytes = std::vector<std::uint8_t>();
+      auto utf8_bytes = std::vector<char>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
       foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
@@ -184,7 +184,7 @@ TEST_CASE("Our percent encoding function/namespace...")
         code_points.push_back(code_point);
       }
 
-      auto utf8_bytes = std::vector<std::uint8_t>();
+      auto utf8_bytes = std::vector<char>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
       foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
