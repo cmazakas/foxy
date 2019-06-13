@@ -234,7 +234,7 @@ TEST_CASE("Our code point view...")
     auto point_view = foxy::code_point_view<wchar_t>(input);
     auto buff       = std::array<unsigned char, 3>{0};
 
-    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+    foxy::utf8_encode(point_view.begin(), point_view.end(), buff.begin());
 
     CHECK(buff[0] == 0xe2);
     CHECK(buff[1] == 0x82);
@@ -247,7 +247,7 @@ TEST_CASE("Our code point view...")
     auto point_view = foxy::code_point_view<char32_t>(input);
     auto buff       = std::array<unsigned char, 3>{0};
 
-    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+    foxy::utf8_encode(point_view.begin(), point_view.end(), buff.begin());
 
     CHECK(buff[0] == 0xe2);
     CHECK(buff[1] == 0x82);
@@ -260,7 +260,7 @@ TEST_CASE("Our code point view...")
     auto point_view = foxy::code_point_view<char16_t>(input);
     auto buff       = std::array<unsigned char, 3>{0};
 
-    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+    foxy::utf8_encode(point_view.begin(), point_view.end(), buff.begin());
 
     CHECK(buff[0] == 0xe2);
     CHECK(buff[1] == 0x82);
@@ -273,7 +273,7 @@ TEST_CASE("Our code point view...")
     auto point_view = foxy::code_point_view<char>(input);
     auto buff       = std::array<unsigned char, 3>{0};
 
-    foxy::utf8_encoding(point_view.begin(), point_view.end(), buff.begin());
+    foxy::utf8_encode(point_view.begin(), point_view.end(), buff.begin());
 
     CHECK(buff[0] == 0xe2);
     CHECK(buff[1] == 0x82);

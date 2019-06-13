@@ -43,7 +43,7 @@ TEST_CASE("Our percent encoding function/namespace...")
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
@@ -81,7 +81,7 @@ TEST_CASE("Our percent encoding function/namespace...")
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
@@ -129,7 +129,7 @@ TEST_CASE("Our percent encoding function/namespace...")
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 
@@ -187,7 +187,7 @@ TEST_CASE("Our percent encoding function/namespace...")
       auto utf8_bytes = std::vector<std::uint8_t>();
       utf8_bytes.resize(bytes_per_code_point * code_points.size());
 
-      foxy::utf8_encoding(code_points.begin(), code_points.end(), utf8_bytes.begin());
+      foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
 
       auto is_valid_encoding = true;
 

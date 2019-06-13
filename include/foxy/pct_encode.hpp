@@ -36,7 +36,7 @@ utf8_encode(char32_t const code_point, OutputIterator sink) -> OutputIterator
   return boost::locale::utf::utf_traits<char>::encode(code_point, sink);
 }
 
-// to_utf8_encoding takes the Boost.Locale type `utf::code_point` which is capable of holding any
+// utf8_encode takes the Boost.Locale type `utf::code_point` which is capable of holding any
 // Unicode code point. We convert the number to an unsigned 32 bit integer which represents the 1-4
 // byte UTF-8 binary encoding scheme seen here:
 // https://en.wikipedia.org/wiki/UTF-8#Description
@@ -51,7 +51,7 @@ utf8_encode(char32_t const code_point, OutputIterator sink) -> OutputIterator
 //
 template <class InputIterator, class OutputIterator>
 auto
-utf8_encoding(InputIterator begin, InputIterator end, OutputIterator sink) -> OutputIterator
+utf8_encode(InputIterator begin, InputIterator end, OutputIterator sink) -> OutputIterator
 {
   for (auto curr = begin; curr != end; ++curr) {
     auto const code_point = *curr;
