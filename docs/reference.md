@@ -20,5 +20,10 @@
 #### Functions
 
 * [make_code_point_iterator](./reference/code_point_iterator.md#make_code_point_iterator)
+* [utf8_encode](./reference/pct_encoding.md#foxy::utf8_encode)
+* [uri::encode_host](./reference/pct_encoding.md#foxy::uri::encode_host)
+* [uri::encode_path](./reference/pct_encoding.md#foxy::uri::encode_path)
+* [uri::encode_query](./reference/pct_encoding.md#foxy::uri::encode_query)
+* [uri::encode_fragment](./reference/pct_encoding.md#foxy::uri::encode_fragment)
 
 To [ToC](./index.md#Table-of-Contents)
