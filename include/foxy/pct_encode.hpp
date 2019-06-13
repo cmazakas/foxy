@@ -92,7 +92,7 @@ encode_host(boost::u32string_view const host, OutputIterator out) -> OutputItera
       continue;
     }
 
-    auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
+    auto buffer = std::array<char, 4>{0x7f, 0x7f, 0x7f, 0x7f};
 
     auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 
@@ -126,7 +126,7 @@ encode_path(boost::u32string_view const host, OutputIterator out) -> OutputItera
       continue;
     }
 
-    auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
+    auto buffer = std::array<char, 4>{0x7f, 0x7f, 0x7f, 0x7f};
 
     auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 
@@ -161,7 +161,7 @@ encode_query(boost::u32string_view const host, OutputIterator out) -> OutputIter
       continue;
     }
 
-    auto buffer = std::array<std::uint8_t, 4>{0xff, 0xff, 0xff, 0xff};
+    auto buffer = std::array<char, 4>{0x7f, 0x7f, 0x7f, 0x7f};
 
     auto const end = ::foxy::utf8_encode(code_point, buffer.begin());
 
