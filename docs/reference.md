@@ -9,6 +9,7 @@
 * [basic_session](./reference/session.md#foxybasic_session)
 * [client_session](./reference/client_session.md#foxyclient_session)
 * [server_session](./reference/server_session.md#foxyserver_session)
+* [proxy](./reference/proxy.md#foxyproxy)
 
 ### URLs / Unicode Encoding
 
