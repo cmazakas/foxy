@@ -95,3 +95,69 @@ This function is intended to be called once and only after the user has invoked 
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)
+
+## Example
+
+This is one of Foxy's tests that demonstrates proper usage of the `foxy::proxy` to forward a client
+request over a persistent tunnel.
+
+```c++
+using boost::asio::ip::tcp;
+namespace ip   = boost::asio::ip;
+namespace asio = boost::asio;
+namespace http = boost::beast::http;
+namespace ssl  = boost::asio::ssl;
+
+using namespace std::chrono_literals;
+
+SECTION("should relay via CONNECT")
+{
+  asio::io_context io;
+
+  auto was_valid_response = false;
+
+  asio::spawn([&](asio::yield_context yield) {
+    auto const addr     = ip::make_address_v4("127.0.0.1");
+    auto const port     = static_cast<unsigned short>(1337);
+    auto const endpoint = tcp::endpoint(addr, port);
+
+    auto const reuse_addr = true;
+
+    auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
+    proxy->async_accept();
+
+    auto client         = foxy::client_session(io);
+    client.opts.timeout = 30s;
+    client.async_connect("127.0.0.1", "1337", yield);
+
+    auto const request =
+          http::request<http::empty_body>(http::verb::connect, "www.google.com:80", 11);
+
+    http::response_parser<http::empty_body> tunnel_parser;
+    tunnel_parser.skip(true);
+
+    auto const google_request = http::request<http::empty_body>(http::verb::get, "/", 11);
+
+    http::response_parser<http::string_body> google_parser;
+
+    client.async_request(request, tunnel_parser, yield);
+    client.async_request(google_request, google_parser, yield);
+
+    auto ec = boost::system::error_code();
+    client.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+    client.stream.plain().close(ec);
+
+    auto response = google_parser.release();
+
+    auto const was_valid_result = response.result() == http::status::ok;
+    auto const was_valid_body   = response.body().size() > 0;
+
+    was_valid_response = was_valid_result && was_valid_body;
+    proxy->cancel();
+    proxy.reset();
+  });
+
+io.run();
+REQUIRE(was_valid_response);
+}
+```
