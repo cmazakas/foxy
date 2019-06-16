@@ -17,6 +17,7 @@
 
 * [code_point_iterator](./reference/code_point_iterator.md#foxycode_point_iterator)
 * [code_point_view](./reference/code_point_view.md#foxycode_point_view)
+* [URI parsing combinators](./reference/uri.md#foxyuri)
 
 #### Functions
 
