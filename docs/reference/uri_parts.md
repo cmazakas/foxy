@@ -142,6 +142,63 @@ is_absolute() const noexcept -> bool;
 
 Returns whether or not the parsed URI is considered absolute by the RFC.
 
+## Non-Member Functions
+
+#### parse_uri
+
+```c++
+auto
+parse_uri(boost::basic_string_view<char, std::char_traits<char>> const uri)
+  -> basic_uri_parts<char>;
+
+auto
+parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri)
+  -> basic_uri_parts<char32_t>;
+```
+
+Parse the string denoted by `uri`. If a valid URI has been supplied, this function will return a
+non-empty `basic_uri_parts`. Otherwise, a default-constructed instance is returned.
+
+#### parse_complete
+
+```c++
+auto
+parse_complete(boost::basic_string_view<char, std::char_traits<char>> const uri,
+               basic_uri_parts<char>&                                       parts) -> bool;
+
+auto
+parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+               basic_uri_parts<char32_t>&                                           parts) -> bool;
+```
+
+Attempt to parse a complete URI into the out-param `parts`. If parsing fails, `parts` will be left
+in a potentially partially completed state so it is recommended to reset the state by re-assignging
+a default constructed `basic_uri_parts`.
+
+This function returns a boolean that indicates whether or not the parse was successful.
+
+`parse_uri` should be preferred over this function.
+
+#### parse_authority
+
+```c++
+auto
+parse_authority(boost::basic_string_view<char, std::char_traits<char>> const uri,
+                basic_uri_parts<char>&                                       parts) -> bool;
+
+auto
+parse_authority(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const uri,
+                basic_uri_parts<char32_t>&                                           parts) -> bool;
+```
+
+Attempt to parse the authority form of a URI into the out-param `parts`. If parsing fails, `parts`
+will be left in a potentially partially completed state so it is recommended to reset the state by
+re-assigning a default constructed `basic_uri_parts`.
+
+This function returns a boolean that indicates whether or not the parse was successful.
+
+`parse_uri` should be preferred over this function.
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)
