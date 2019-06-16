@@ -92,10 +92,6 @@ This function will throw if cancellation on the underlying socket throws.
 
 This function is intended to be called once and only after the user has invoked `async_accept`.
 
-To [Reference](../reference.md#Reference)
-
-To [ToC](../index.md#Table-of-Contents)
-
 ## Example
 
 This is one of Foxy's tests that demonstrates proper usage of the `foxy::proxy` to forward a client
@@ -161,3 +157,7 @@ io.run();
 REQUIRE(was_valid_response);
 }
 ```
+
+To [Reference](../reference.md#Reference)
+
+To [ToC](../index.md#Table-of-Contents)
