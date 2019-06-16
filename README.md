@@ -26,8 +26,8 @@ Foxy is built on top of [Beast](https://www.boost.org/doc/libs/release/libs/beas
 and [Asio](https://www.boost.org/doc/libs/release/doc/html/boost_asio.html)
 and requires some degree of familiarity with both of these libraries to be used successfully.
 
-One Foxy's core tenets is rewarding users for deepening their knowledge and understanding of Beast
-and Asio and this is reflected in the design.
+One of Foxy's core tenets is rewarding users for deepening their knowledge and understanding of
+Beast and Asio and this is reflected in the design.
 
 Foxy provides primitives for HTTP sessions as well as a rich set of URI parser combinators along
 with methods for parsing (and pct-encoding) URLs in both ASCII and Unicode. Foxy bases its Unicode
