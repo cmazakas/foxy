@@ -68,7 +68,7 @@ auto
 scheme() const noexcept -> string_view;
 ```
 
-Returns the `scheme` portion of the parsed URI.
+Returns the `scheme` portion of the parsed URI. Empty if does not exist.
 
 #### host
 
@@ -128,11 +128,7 @@ Returns whether or not the parsed `scheme` portion matches either `"http"` or `"
 
 ```c++
 auto
-is_authority() const noexcept -> bool
-{
-  return scheme().empty() && !host().empty() && path().empty() && query().empty() &&
-          fragment().empty();
-}
+is_authority() const noexcept -> bool;
 ```
 
 Returns whether or not the parsed URI is in its authority form.
