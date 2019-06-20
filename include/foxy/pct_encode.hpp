@@ -26,6 +26,8 @@
 #include <cstring>
 #include <string>
 #include <array>
+#include <iterator>
+#include <type_traits>
 
 namespace foxy
 {
@@ -36,9 +38,9 @@ utf8_encode(char32_t const code_point, OutputIterator sink) -> OutputIterator
   return boost::locale::utf::utf_traits<char>::encode(code_point, sink);
 }
 
-// utf8_encode takes the Boost.Locale type `utf::code_point` which is capable of holding any
-// Unicode code point. We convert the number to an unsigned 32 bit integer which represents the 1-4
-// byte UTF-8 binary encoding scheme seen here:
+// utf8_encode takes an interator pair to a range of char32_t's (or something convertible to a
+// char32_t) and writes the utf-8 encoding to the output iterator denoted as `sink`
+//
 // https://en.wikipedia.org/wiki/UTF-8#Description
 //
 // UTF-8 encoding writes the representation of the code point's value to the binary templates
@@ -53,6 +55,10 @@ template <class InputIterator, class OutputIterator>
 auto
 utf8_encode(InputIterator begin, InputIterator end, OutputIterator sink) -> OutputIterator
 {
+  static_assert(
+    std::is_convertible<std::iterator_traits<InputIterator>::value_type, char32_t>::value,
+    "The InputIterator's value_type must be convertible to char32_t");
+
   for (auto curr = begin; curr != end; ++curr) {
     auto const code_point = *curr;
 
