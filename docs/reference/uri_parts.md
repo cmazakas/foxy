@@ -11,10 +11,10 @@
 `basic_uri_parts` is a collection of string views that enable the user to have a discretized view
 over a URI.
 
-The URI parts can only represent eithe a valid URI or an empty set of views. For a URI to be
+The URI parts can only represent either a valid URI or an empty set of views. For a URI to be
 considered valid it must either be in its complete form or its authority form.
 
-This classed is not meant to be directly constructed by users but instead returned from a set of
+This class is not meant to be directly constructed by users but instead returned from a set of
 friend functions that will parse the URI string for the user.
 
 ## Declaration
