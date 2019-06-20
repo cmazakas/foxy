@@ -108,6 +108,11 @@ public:
   }
 };
 
+// we add this namespace here so users can do:
+// using namespace foxy::code_point;
+//
+// and have `swap` be found via ADL without implicitly pulling in all of Foxy into the scope
+//
 namespace code_point
 {
 template <class Iterator>

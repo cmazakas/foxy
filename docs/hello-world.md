@@ -63,10 +63,10 @@ respects its universal asynchronous model.
 
 ## Client Session
 
-Client functionality is not nearly as generic as simple parsing/serailizing functions. Foxy offers a
-`foxy::client_session` which is an HTTP client-oriented class. It offers two additional functions
-over the `foxy::basic_session`: `async_connect` and `async_request`. The `client_session` is _not_
-templated on its underlying stream type and instead is hard-coded to use the
+Client functionality is not nearly as generic or as simple parsing/serailizing functions. Foxy
+offers a `foxy::client_session` which is an HTTP client-oriented class. It offers two additional
+functions over the `foxy::basic_session`: `async_connect` and `async_request`. The `client_session`
+is _not_ templated on its underlying stream type and instead is hard-coded to use the
 `boost::asio::ip::tcp::socket`.
 
 `foxy::client_session::async_connect` is used to connect with a remote and will first perform DNS
@@ -94,12 +94,7 @@ working Foxy "Hello, World!" client.
 
 #include <iostream>
 
-// because Asio is largely a synonym with the Networking TS, we choose to follow a newer idiom of
-// re-aliasing `boost::asio` as `net` to help signify the intended change to eventually move off of
-// Boost and instead use the STL
-//
-namespace net = boost::asio;
-
+namespace asio = boost::asio;
 namespace http = boost::beast::http;
 
 int
@@ -108,7 +103,7 @@ main()
   // this is the main workhorse for Asio and effectively operates the same as the event loop in
   // Node.js
   //
-  net::io_context io;
+  asio::io_context io;
 
   // we now construct a `client_session` with the default parameters (no SSL, timeout of 1s on
   // read/write ops)
@@ -124,7 +119,7 @@ main()
   // this effectively enables the coroutine to be suspended from below us as the actual suspension
   // happens in our underlying function calls
   //
-  net::spawn([&](net::yield_context yield) {
+  asio::spawn([&](asio::yield_context yield) {
     // these arguments get forwarded directly to Asio via Foxy
     // `host` is somewhat self-explanatory but `service` can be either a port number directly or a
     // protocol as is demonstrated here
@@ -159,7 +154,7 @@ main()
     // closing
     //
     auto& socket = client.stream.plain();
-    socket.shutdown(net::ip::tcp::socket::shutdown_both);
+    socket.shutdown(asio::ip::tcp::socket::shutdown_both);
     socket.close();
 
     std::cout << "Got a response back from Google!\n";
