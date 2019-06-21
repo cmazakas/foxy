@@ -56,7 +56,7 @@ auto
 utf8_encode(InputIterator begin, InputIterator end, OutputIterator sink) -> OutputIterator
 {
   static_assert(
-    std::is_convertible<std::iterator_traits<InputIterator>::value_type, char32_t>::value,
+    std::is_convertible<typename std::iterator_traits<InputIterator>::value_type, char32_t>::value,
     "The InputIterator's value_type must be convertible to char32_t");
 
   for (auto curr = begin; curr != end; ++curr) {
