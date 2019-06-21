@@ -12,12 +12,44 @@
 
 #include <boost/utility/string_view.hpp>
 
+#include <boost/fusion/adapted/std_pair.hpp>
+#include <boost/fusion/include/std_pair.hpp>
+
+#include <boost/spirit/home/x3.hpp>
+
+#include <utility>
+
 namespace foxy
 {
+namespace x3 = boost::spirit::x3;
+
+x3::rule<struct xpair, std::pair<char, char>> const xpair     = "xpair";
+auto const                                          xpair_def = "%" >> x3::xdigit >> x3::xdigit;
+BOOST_SPIRIT_DEFINE(xpair);
+
 template <class OutputIterator>
 auto
 pct_decode(boost::string_view const str, OutputIterator sink) -> OutputIterator
 {
+  auto pos = str.begin();
+
+  auto const to_utf8_byte = [&sink](auto& ctx) mutable {
+    auto const xdigit_pair = _attr(ctx);
+
+    auto const first_xdigit  = std::get<0>(xdigit_pair);
+    auto const second_xdigit = std::get<1>(xdigit_pair);
+
+    auto const first_char = (first_xdigit <= '9' ? first_xdigit - '0' : first_xdigit - 'a' + 10);
+    auto const second_char =
+      (second_xdigit <= '9' ? second_xdigit - '0' : second_xdigit - 'a' + 10);
+
+    *sink++ = (first_char << 4) + second_char;
+  };
+
+  auto const append_byte = [&sink](auto& ctx) mutable { *sink++ = _attr(ctx); };
+
+  x3::parse(pos, str.end(), *(xpair[to_utf8_byte] | (x3::char_ - "%")[append_byte]));
+
   return sink;
 }
 } // namespace foxy
