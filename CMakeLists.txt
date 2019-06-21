@@ -29,6 +29,7 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/code_point_iterator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/log.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/multi_stream.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/pct_decode.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/pct_encode.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/proxy.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/server_session.hpp
@@ -138,6 +139,7 @@ if (BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/export_connect_fields_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/iterator_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/pct_decode_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/pct_encode_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test2.cpp
