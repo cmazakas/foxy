@@ -21,6 +21,8 @@
 
 namespace foxy
 {
+namespace uri
+{
 namespace x3 = boost::spirit::x3;
 
 x3::rule<struct xpair, std::pair<char, char>> const xpair     = "xpair";
@@ -52,6 +54,7 @@ pct_decode(boost::string_view const str, OutputIterator sink) -> OutputIterator
 
   return sink;
 }
+} // namespace uri
 } // namespace foxy
 
 #endif // FOXY_PCT_DECODE_HPP_
