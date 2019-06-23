@@ -1,5 +1,5 @@
 #include <foxy/pct_decode.hpp>
-#include <foxy/code_point_iterator.hpp>
+#include <foxy/uri.hpp>
 
 #include <boost/utility/string_view.hpp>
 
@@ -7,6 +7,8 @@
 #include <algorithm>
 
 #include <catch2/catch.hpp>
+
+namespace x3 = boost::spirit::x3;
 
 TEST_CASE("Our pct-decoding function...")
 {
@@ -82,5 +84,23 @@ TEST_CASE("Our pct-decoding function...")
       boost::string_view(bytes.data(), foxy::uri::pct_decode(input, bytes.begin()) - bytes.begin());
 
     CHECK(decoded_view == u8"/\"#<>?@[\\]^`{|}:::");
+  }
+
+  SECTION("should recognize malformed input and simply stop parsing")
+  {
+    auto const invalid_host = boost::string_view("www.goo%%%%gle.com");
+
+    auto pos = invalid_host.begin();
+    x3::parse(pos, invalid_host.end(), foxy::uri::host);
+
+    auto const was_full_match = (pos == invalid_host.end());
+    REQUIRE(!was_full_match);
+
+    auto bytes = std::array<char, 256>{0};
+
+    auto const decoded_view = boost::string_view(
+      bytes.data(), foxy::uri::pct_decode(invalid_host, bytes.begin()) - bytes.begin());
+
+    CHECK(decoded_view == "www.goo");
   }
 }
