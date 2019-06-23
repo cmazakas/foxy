@@ -88,6 +88,8 @@ TEST_CASE("Our pct-decoding function...")
 
   SECTION("should recognize malformed input and simply stop parsing")
   {
+    auto ec = boost::system::error_code{};
+
     auto const invalid_host = boost::string_view("www.goo%%%%gle.com");
 
     auto pos = invalid_host.begin();
@@ -99,8 +101,9 @@ TEST_CASE("Our pct-decoding function...")
     auto bytes = std::array<char, 256>{0};
 
     auto const decoded_view = boost::string_view(
-      bytes.data(), foxy::uri::pct_decode(invalid_host, bytes.begin()) - bytes.begin());
+      bytes.data(), foxy::uri::pct_decode(invalid_host, bytes.begin(), ec) - bytes.begin());
 
     CHECK(decoded_view == "www.goo");
+    CHECK(ec == foxy::error::unexpected_pct);
   }
 }
