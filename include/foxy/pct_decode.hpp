@@ -10,6 +10,8 @@
 #ifndef FOXY_PCT_DECODE_HPP_
 #define FOXY_PCT_DECODE_HPP_
 
+#define BOOST_SPIRIT_X3_UNICODE
+
 #include <boost/utility/string_view.hpp>
 
 #include <boost/fusion/adapted/std_pair.hpp>
