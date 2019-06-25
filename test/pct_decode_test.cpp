@@ -126,4 +126,56 @@ TEST_CASE("Our pct-decoding function...")
     decoded_view = boost::string_view(bytes.data(), out - bytes.begin());
     CHECK(decoded_view == "www.goo");
   }
+
+  SECTION("should handle an incomplete pct-encoded byte")
+  {
+    auto const input = boost::string_view("%2");
+
+    auto bytes = std::array<char, 256>{0};
+    auto ec    = boost::system::error_code();
+
+    auto const decoded_view = boost::string_view(
+      bytes.data(), foxy::uri::pct_decode(input, bytes.begin(), ec) - bytes.begin());
+
+    CHECK(decoded_view == u8"");
+    CHECK(ec == foxy::error::unexpected_pct);
+  }
+
+  SECTION("should handle an invalid pct-encoded byte")
+  {
+    auto input = boost::string_view("%zz");
+
+    auto bytes = std::array<char, 256>{0};
+    auto ec    = boost::system::error_code();
+
+    auto decoded_view = boost::string_view(
+      bytes.data(), foxy::uri::pct_decode(input, bytes.begin(), ec) - bytes.begin());
+
+    CHECK(decoded_view == u8"");
+    CHECK(ec == foxy::error::unexpected_pct);
+
+    bytes.fill('\0');
+
+    input = boost::string_view("%1g");
+
+    decoded_view = boost::string_view(
+      bytes.data(), foxy::uri::pct_decode(input, bytes.begin(), ec) - bytes.begin());
+
+    CHECK(decoded_view == u8"");
+    CHECK(ec == foxy::error::unexpected_pct);
+  }
+
+  SECTION("should ignore 8 bit ASCII and other non-printables [i.e. no URI validation here]")
+  {
+    auto const input = boost::string_view("\x00\xff\x8f\x01");
+
+    auto bytes = std::array<char, 256>{0};
+    auto ec    = boost::system::error_code();
+
+    auto const decoded_view = boost::string_view(
+      bytes.data(), foxy::uri::pct_decode(input, bytes.begin(), ec) - bytes.begin());
+
+    CHECK(decoded_view == u8"\x00\xff\x8f\x01");
+    CHECK_FALSE(ec);
+  }
 }
