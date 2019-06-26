@@ -31,5 +31,6 @@
 * [parse_uri](./reference/uri_parts.md#parse_uri)
 * [parse_complete](./reference/uri_parts.md#parse_complete)
 * [parse_authority](./reference/uri_parts.md#parse_authority)
+* [uri::pct_decode](./reference/pct_decode.md#pct_decode)
 
 To [ToC](./index.md#Table-of-Contents)
