@@ -15,6 +15,8 @@
 
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/asio/buffer.hpp>
+
 #include <boost/asio/ssl/context.hpp>
 
 #include <boost/mp11/bind.hpp>
@@ -34,15 +36,19 @@ struct session_opts
   duration_type                               timeout = std::chrono::seconds{1};
 };
 
-template <class Stream>
+template <class Stream, class DynamicBuffer = boost::beast::flat_buffer>
 struct basic_session
 {
 public:
   static_assert(boost::beast::is_async_stream<Stream>::value,
                 "Requirements on the Stream type were not met. Stream must be a Beast.AsyncStream");
 
+  static_assert(boost::asio::is_dynamic_buffer<DynamicBuffer>::value,
+                "Requirements on the DynamicBuffer type were not met. DynamicBuffer must be an "
+                "Asio.DynamicBuffer");
+
   using stream_type   = ::foxy::basic_multi_stream<Stream>;
-  using buffer_type   = boost::beast::flat_buffer;
+  using buffer_type   = DynamicBuffer;
   using timer_type    = boost::asio::steady_timer;
   using executor_type = typename stream_type::executor_type;
 
@@ -55,8 +61,11 @@ public:
   basic_session(basic_session const&) = delete;
   basic_session(basic_session&&)      = default;
 
-  explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
-  explicit basic_session(stream_type stream_, session_opts opts_ = {});
+  template <class... BufferArgs>
+  basic_session(boost::asio::io_context& io, session_opts opts_ = {}, BufferArgs&&... bargs);
+
+  template <class... BufferArgs>
+  basic_session(stream_type stream_, session_opts opts_ = {}, BufferArgs&&... bargs);
 
   auto
   get_executor() -> executor_type;

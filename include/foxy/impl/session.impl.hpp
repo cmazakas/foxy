@@ -14,25 +14,33 @@
 
 namespace foxy
 {
-template <class Stream>
-foxy::basic_session<Stream>::basic_session(boost::asio::io_context& io, session_opts opts_)
+template <class Stream, class DynamicBuffer>
+template <class... BufferArgs>
+foxy::basic_session<Stream, DynamicBuffer>::basic_session(boost::asio::io_context& io,
+                                                          session_opts             opts_,
+                                                          BufferArgs&&... bargs)
   : opts(std::move(opts_))
   , stream(opts.ssl_ctx ? stream_type(io, *opts.ssl_ctx) : stream_type(io))
+  , buffer(std::forward<BufferArgs>(bargs)...)
   , timer(io)
 {
 }
 
-template <class Stream>
-foxy::basic_session<Stream>::basic_session(stream_type stream_, session_opts opts_)
+template <class Stream, class DynamicBuffer>
+template <class... BufferArgs>
+foxy::basic_session<Stream, DynamicBuffer>::basic_session(stream_type  stream_,
+                                                          session_opts opts_,
+                                                          BufferArgs&&... bargs)
   : opts(std::move(opts_))
   , stream(std::move(stream_))
+  , buffer(std::forward<BufferArgs>(bargs)...)
   , timer(stream.get_executor().context())
 {
 }
 
-template <class Stream>
+template <class Stream, class DynamicBuffer>
 auto
-foxy::basic_session<Stream>::get_executor() -> executor_type
+foxy::basic_session<Stream, DynamicBuffer>::get_executor() -> executor_type
 {
   return stream.get_executor();
 }
