@@ -16,10 +16,14 @@ namespace foxy
 {
 namespace detail
 {
-template <class Handler>
-struct connect_op
-  : boost::beast::stable_async_base<Handler, typename ::foxy::session::executor_type>,
-    boost::asio::coroutine
+template <class DynamicBuffer, class Handler>
+struct connect_op : boost::beast::stable_async_base<
+                      Handler,
+                      typename ::foxy::basic_session<
+                        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                         boost::asio::io_context::executor_type>,
+                        DynamicBuffer>::executor_type>,
+                    boost::asio::coroutine
 {
   struct state
   {
@@ -37,14 +41,22 @@ struct connect_op
     }
   };
 
-  ::foxy::session& session;
-  state&           s;
+  ::foxy::basic_session<
+    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
+    DynamicBuffer>& session;
+  state&            s;
 
   connect_op()                  = default;
   connect_op(connect_op const&) = default;
   connect_op(connect_op&&)      = default;
 
-  connect_op(::foxy::session& session_, Handler handler, std::string host, std::string service)
+  connect_op(
+    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                           boost::asio::io_context::executor_type>,
+                          DynamicBuffer>& session_,
+    Handler                               handler,
+    std::string                           host,
+    std::string                           service)
     : boost::beast::stable_async_base<Handler, typename ::foxy::session::executor_type>(
         std::move(handler),
         session_.get_executor())
@@ -138,9 +150,12 @@ struct connect_op
 };
 } // namespace detail
 
+template <class DynamicBuffer>
 template <class ConnectHandler>
 auto
-client_session::async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
+client_session<DynamicBuffer>::async_connect(std::string      host,
+                                             std::string      service,
+                                             ConnectHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<ConnectHandler>,
                                      void(boost::system::error_code,
                                           boost::asio::ip::tcp::endpoint)>::return_type
@@ -149,8 +164,9 @@ client_session::async_connect(std::string host, std::string service, ConnectHand
                                 void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
     init(handler);
 
-  return ::foxy::detail::timer_wrap<::foxy::detail::connect_op>(*this, init, std::move(host),
-                                                                std::move(service));
+  return ::foxy::detail::timer_wrap<
+    boost::mp11::mp_bind_front<::foxy::detail::connect_op, DynamicBuffer>::template fn>(
+    *this, init, std::move(host), std::move(service));
 }
 
 } // namespace foxy

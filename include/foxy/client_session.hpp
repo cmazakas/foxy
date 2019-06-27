@@ -42,14 +42,22 @@
 
 namespace foxy
 {
-struct client_session : public session
+template <class DynamicBuffer = boost::beast::flat_buffer>
+struct client_session
+  : public basic_session<
+      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                       typename boost::asio::io_context::executor_type>,
+      DynamicBuffer>
 {
 public:
   client_session()                      = delete;
   client_session(client_session const&) = delete;
   client_session(client_session&&)      = default;
 
-  explicit client_session(boost::asio::io_context& io, session_opts opts = {});
+  explicit client_session(boost::asio::io_context& io, session_opts opts = {})
+    : session(io, std::move(opts))
+  {
+  }
 
   // async_connect wraps asio::async_connect method and will invoke asio::async_connect with the
   // specified host and service parameters async_connect is SSL-aware and will automatically perform

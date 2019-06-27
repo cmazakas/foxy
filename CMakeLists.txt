@@ -59,7 +59,6 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp

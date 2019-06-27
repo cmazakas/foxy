@@ -39,7 +39,7 @@ TEST_CASE("Our SSL client session class")
 
     auto opts = foxy::session_opts{ctx, 30s};
 
-    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto  session_handle = boost::make_unique<foxy::client_session<>>(io, opts);
     auto& session        = *session_handle;
 
     REQUIRE(session.stream.is_ssl());
@@ -71,7 +71,7 @@ TEST_CASE("Our SSL client session class")
 
             // do this to prove that the TLS session is stable after a move
             //
-            auto new_handler = boost::make_unique<foxy::client_session>(std::move(session));
+            auto new_handler = boost::make_unique<foxy::client_session<>>(std::move(session));
 
             auto& other_session = *new_handler;
 
@@ -99,7 +99,7 @@ TEST_CASE("Our SSL client session class")
     auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
     auto opts = foxy::session_opts{ctx, 250ms};
 
-    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto  session_handle = boost::make_unique<foxy::client_session<>>(io, opts);
     auto& session        = *session_handle;
 
     auto timed_out = false;

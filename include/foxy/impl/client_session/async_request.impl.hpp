@@ -16,23 +16,39 @@ namespace foxy
 {
 namespace detail
 {
-template <class Request, class ResponseParser, class Handler>
-struct request_op : boost::beast::async_base<Handler, typename ::foxy::session::executor_type>,
+template <class Request, class ResponseParser, class DynamicBuffer, class Handler>
+struct request_op : boost::beast::async_base<
+                      Handler,
+                      typename ::foxy::basic_session<
+                        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                         boost::asio::io_context::executor_type>,
+                        DynamicBuffer>::executor_type>,
                     boost::asio::coroutine
 
 {
-  ::foxy::session& session;
-  Request&         request;
-  ResponseParser&  parser;
+  ::foxy::basic_session<
+    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
+    DynamicBuffer>& session;
+  Request&          request;
+  ResponseParser&   parser;
 
   request_op()                  = delete;
   request_op(request_op const&) = default;
   request_op(request_op&&)      = default;
 
-  request_op(::foxy::session& session_, Handler handler, Request& request_, ResponseParser& parser_)
-    : boost::beast::async_base<Handler, typename ::foxy::session::executor_type>(
-        std::move(handler),
-        session_.get_executor())
+  request_op(
+    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                                           boost::asio::io_context::executor_type>,
+                          DynamicBuffer>& session_,
+    Handler                               handler,
+    Request&                              request_,
+    ResponseParser&                       parser_)
+    : boost::beast::async_base<
+        Handler,
+        typename ::foxy::basic_session<
+          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                           boost::asio::io_context::executor_type>,
+          DynamicBuffer>::executor_type>(std::move(handler), session_.get_executor())
     , session(session_)
     , request(request_)
     , parser(parser_)
@@ -65,18 +81,19 @@ struct request_op : boost::beast::async_base<Handler, typename ::foxy::session::
 
 } // namespace detail
 
+template <class DynamicBuffer>
 template <class Request, class ResponseParser, class RequestHandler>
 auto
-client_session::async_request(Request&         request,
-                              ResponseParser&  parser,
-                              RequestHandler&& handler) & ->
+client_session<DynamicBuffer>::async_request(Request&         request,
+                                             ResponseParser&  parser,
+                                             RequestHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                      void(boost::system::error_code)>::return_type
 {
   boost::asio::async_completion<RequestHandler, void(boost::system::error_code)> init(handler);
 
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::request_op, Request, ResponseParser>::template fn>(
+  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<
+    ::foxy::detail::request_op, Request, ResponseParser, DynamicBuffer>::template fn>(
     *this, init, request, parser);
 }
 
