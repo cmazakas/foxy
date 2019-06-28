@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -27,17 +27,19 @@ namespace asio = boost::asio;
 namespace http = boost::beast::http;
 namespace pmr  = boost::container::pmr;
 
-using allocator_type = pmr::polymorphic_allocator<char>;
-using client_type    = foxy::client_session<boost::beast::basic_multi_buffer<allocator_type>>;
-using body_type      = http::basic_string_body<char, std::char_traits<char>, allocator_type>;
-using parser_type    = http::response_parser<body_type, allocator_type>;
-using request_type   = http::request<http::empty_body>;
+using alloc_type   = pmr::polymorphic_allocator<char>;
+using client_type  = foxy::client_session<boost::beast::basic_multi_buffer<alloc_type>>;
+using body_type    = http::basic_string_body<char, std::char_traits<char>, alloc_type>;
+using parser_type  = http::response_parser<body_type, alloc_type>;
+using request_type = http::request<http::empty_body, http::basic_fields<alloc_type>>;
 
 namespace
 {
 #include <boost/asio/yield.hpp>
 struct client_op : asio::coroutine
 {
+  using allocator_type = pmr::polymorphic_allocator<char>;
+
   client_type&  client;
   request_type& request;
   parser_type&  parser;
@@ -62,8 +64,6 @@ struct client_op : asio::coroutine
   {
   }
 
-  using allocator_type = pmr::polymorphic_allocator<char>;
-
   auto
   get_allocator() const noexcept -> allocator_type
   {
@@ -81,8 +81,6 @@ struct client_op : asio::coroutine
     reenter(this)
     {
       yield client.async_connect("www.google.com", "80", *this);
-      std::cout << "connected to the client!!!\n";
-
       if (ec) {
         was_valid = false;
         yield break;
@@ -95,8 +93,8 @@ struct client_op : asio::coroutine
       }
 
       {
-        auto response = parser.release();
-        was_valid     = (response.result_int() == 200 && response.body().size() > 0 &&
+        auto& response = parser.get();
+        was_valid      = (response.result_int() == 200 && response.body().size() > 0 &&
                      boost::string_view(response.body()).ends_with("</html>"));
       }
     }
@@ -105,24 +103,28 @@ struct client_op : asio::coroutine
 #include <boost/asio/unyield.hpp>
 } // namespace
 
-TEST_CASE("Our allocator-aware client session class")
+TEST_CASE("allocator_client_test")
 {
-  SECTION("... should be able to do a GET with 1 system allocation")
+  SECTION("Allocator-aware client GET")
   {
     bool was_valid = false;
 
     asio::io_context io(1);
 
-    auto const page_size = std::size_t{10 * 1024 * 1024};
+    auto const page_size = std::size_t{1024 * 512};
 
     pmr::monotonic_buffer_resource resource{page_size};
 
     auto alloc_handle = pmr::polymorphic_allocator<char>(std::addressof(resource));
 
     auto client  = client_type(io, {}, alloc_handle);
-    auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
+    auto request = request_type(http::request_header<http::basic_fields<alloc_type>>(alloc_handle));
+    request.method(http::verb::get);
+    request.target("/");
+    request.version(11);
+    request.set(http::field::host, "www.google.com");
 
-    parser_type parser{http::response_header<http::basic_fields<allocator_type>>(alloc_handle),
+    parser_type parser{http::response_header<http::basic_fields<alloc_type>>(alloc_handle),
                        alloc_handle};
 
     asio::post(io, client_op{client, request, parser, was_valid, alloc_handle});
@@ -130,6 +132,5 @@ TEST_CASE("Our allocator-aware client session class")
     io.run();
 
     REQUIRE(was_valid);
-    REQUIRE(page_size > resource.remaining_storage());
   }
 }
