@@ -24,16 +24,27 @@ namespace foxy
 {
 namespace detail
 {
-template <class Stream, template <class...> class Op, class Handler, class Signature>
+template <class Stream,
+          class DynamicBuffer,
+          template <class...>
+          class Op,
+          class Handler,
+          class Signature>
 struct timed_op_wrapper_v2;
 
-template <class Stream, template <class...> class Op, class Handler, class Ret, class... Args>
-struct timed_op_wrapper_v2<Stream, Op, Handler, Ret(Args...)>
+template <class Stream,
+          class DynamicBuffer,
+          template <class...>
+          class Op,
+          class Handler,
+          class Ret,
+          class... Args>
+struct timed_op_wrapper_v2<Stream, DynamicBuffer, Op, Handler, Ret(Args...)>
 {
 public:
-  using executor_type =
-    boost::asio::associated_executor_t<Handler,
-                                       typename ::foxy::basic_session<Stream>::executor_type>;
+  using executor_type = boost::asio::associated_executor_t<
+    Handler,
+    typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>;
 
   using allocator_type = boost::asio::associated_allocator_t<Handler>;
 
@@ -47,7 +58,8 @@ private:
     bool                                            done;
     boost::asio::executor_work_guard<executor_type> work;
 
-    state(Handler const& handler, typename ::foxy::basic_session<Stream>::executor_type executor)
+    state(Handler const&                                                       handler,
+          typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type executor)
       : ops{0}
       , done{false}
       , work(boost::asio::get_associated_executor(handler, executor))
@@ -55,8 +67,8 @@ private:
     }
   };
 
-  ::foxy::basic_session<Stream>&             session_;
-  ::foxy::shared_handler_ptr<state, Handler> p_;
+  ::foxy::basic_session<Stream, DynamicBuffer>& session_;
+  ::foxy::shared_handler_ptr<state, Handler>    p_;
 
 public:
   struct on_timer_t
@@ -71,8 +83,8 @@ public:
   timed_op_wrapper_v2(timed_op_wrapper_v2&&)      = default;
 
   template <class DeducedHandler, class... ConstructorArgs>
-  timed_op_wrapper_v2(::foxy::basic_session<Stream>& session,
-                      DeducedHandler&&               handler,
+  timed_op_wrapper_v2(::foxy::basic_session<Stream, DynamicBuffer>& session,
+                      DeducedHandler&&                              handler,
                       ConstructorArgs&&... args)
     : session_(session)
     , p_(std::forward<DeducedHandler>(handler), session_.get_executor())
@@ -172,18 +184,19 @@ public:
 
 template <template <class...> class Op,
           class Stream,
+          class DynamicBuffer,
           class CompletionToken,
           class Signature,
           class... Args>
 auto
-timer_wrap(::foxy::basic_session<Stream>&                             session,
+timer_wrap(::foxy::basic_session<Stream, DynamicBuffer>&              session,
            boost::asio::async_completion<CompletionToken, Signature>& init,
            Args&&... args)
 {
   using handler_type =
     typename boost::asio::async_completion<CompletionToken, Signature>::completion_handler_type;
 
-  timed_op_wrapper_v2<Stream, Op, handler_type, Signature>(
+  timed_op_wrapper_v2<Stream, DynamicBuffer, Op, handler_type, Signature>(
     session, std::move(init.completion_handler), args...);
 
   return init.result.get();

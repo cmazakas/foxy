@@ -54,8 +54,12 @@ public:
   client_session(client_session const&) = delete;
   client_session(client_session&&)      = default;
 
-  explicit client_session(boost::asio::io_context& io, session_opts opts = {})
-    : session(io, std::move(opts))
+  template <class... BufferArgs>
+  client_session(boost::asio::io_context& io, session_opts opts = {}, BufferArgs&&... bargs)
+    : basic_session<
+        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                         typename boost::asio::io_context::executor_type>,
+        DynamicBuffer>(io, std::move(opts), std::forward<BufferArgs>(bargs)...)
   {
   }
 
