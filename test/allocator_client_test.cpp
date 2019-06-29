@@ -120,16 +120,18 @@ TEST_CASE("allocator_client_test")
 
     auto client = client_type(io, {}, alloc_handle);
 
-    auto request = request_type(http::request_header<http::basic_fields<alloc_type>>(alloc_handle));
+    auto request = request_type(http::request_header<fields_type>(alloc_handle));
     request.method(http::verb::get);
     request.target("/");
     request.version(11);
     request.set(http::field::host, "www.google.com");
 
-    parser_type parser{http::response_header<http::basic_fields<alloc_type>>(alloc_handle),
-                       alloc_handle};
+    parser_type parser{http::response_header<fields_type>(alloc_handle), alloc_handle};
 
-    asio::post(io, client_op{client, request, parser, was_valid, alloc_handle});
+    auto async_op = client_op(client, request, parser, was_valid, alloc_handle);
+    CHECK(async_op.get_allocator() == alloc_handle);
+
+    asio::post(io, std::move(async_op));
 
     io.run();
 
