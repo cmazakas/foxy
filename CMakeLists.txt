@@ -175,6 +175,7 @@ if (FOXY_BUILD_EXAMPLES)
     CONFIG REQUIRED
       coroutine
       thread
+      container
   )
 
   add_executable(
@@ -202,6 +203,20 @@ if (FOXY_BUILD_EXAMPLES)
     PRIVATE
       foxy
       Boost::coroutine
+      Boost::thread
+  )
+
+  add_executable(
+    client
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/allocators/client.cpp
+  )
+
+  target_link_libraries(
+    client
+    PRIVATE
+      foxy
+      Boost::container
       Boost::thread
   )
 endif()
