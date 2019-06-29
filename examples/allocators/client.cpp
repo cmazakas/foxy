@@ -16,24 +16,57 @@ namespace asio = boost::asio;
 namespace http = boost::beast::http;
 namespace pmr  = boost::container::pmr;
 
-using alloc_type   = pmr::polymorphic_allocator<char>;
-using client_type  = foxy::basic_client_session<boost::beast::basic_multi_buffer<alloc_type>>;
-using body_type    = http::basic_string_body<char, std::char_traits<char>, alloc_type>;
-using parser_type  = http::response_parser<body_type, alloc_type>;
-using request_type = http::request<http::empty_body, http::basic_fields<alloc_type>>;
+// Boost.Container ships with an implementation of the polymorphic allocators added to C++17
+// https://www.boost.org/doc/libs/1_70_0/doc/html/container/cpp_conformance.html#container.cpp_conformance.polymorphic_memory_resources
+//
+// we will be using these polymorphic allocators to share the same resource among all of our async
+// operations
+//
+using alloc_type = pmr::polymorphic_allocator<char>;
+
+// our headers, body and response parser all need to share the same memory resource so they
+// must all use the same allocator
+//
+using fields_type = http::basic_fields<alloc_type>;
+using body_type   = http::basic_string_body<char, std::char_traits<char>, alloc_type>;
+using parser_type = http::response_parser<body_type, alloc_type>;
+
+// even though our request type has an empty body, we still need to make sure the allocator is
+// propagated
+//
+// this is because internally Beast uses the allocator to create the header fields and we will need
+// header fields to send a request
+//
+using request_type = http::request<http::empty_body, fields_type>;
+
+// we use the basic_client_session over Beast's multi buffer type
+// the multi_buffer is a Beast Body type that internally uses a sequence of small buffers when
+// we read in the response
+//
+using client_type = foxy::basic_client_session<boost::beast::basic_multi_buffer<alloc_type>>;
 
 namespace
 {
+// to write an allocator-aware operation in Asio, we need a callable object that has a get_executor
+// member function and a nested executor_type typedef
+//
+// to this end, an Asio stackless coroutine will suffice
+//
 #include <boost/asio/yield.hpp>
 struct client_op : asio::coroutine
 {
   using allocator_type = pmr::polymorphic_allocator<char>;
 
+  // our async operation will own known of its required data
+  //
   client_type&  client;
   request_type& request;
   parser_type&  parser;
   bool&         was_valid;
 
+  // because our allocator is essentially just a pointer to a resouce, it's cheap to copy and to
+  // also pass by value
+  //
   allocator_type alloc;
 
   client_op()                     = delete;
@@ -59,12 +92,16 @@ struct client_op : asio::coroutine
     return alloc;
   }
 
+  // this overload of operator() is to enable reentry from our async_connect function
+  //
   auto
   operator()(error_code ec, tcp::endpoint) -> void
   {
     (*this)(ec);
   }
 
+  // the entrypoint into our coroutine
+  //
   auto operator()(error_code ec = {}) -> void
   {
     reenter(this)
@@ -72,6 +109,8 @@ struct client_op : asio::coroutine
       yield client.async_connect("www.google.com", "80", *this);
       if (ec) {
         was_valid = false;
+
+        // yield break; is how one terminates an Asio stackless coroutine early
         yield break;
       }
 
@@ -99,32 +138,47 @@ main()
 
   asio::io_context io(1);
 
+  // we wanna give our async op around half a MB up front
+  //
   auto const page_size = std::size_t{1024 * 512};
 
+  // we use the monotonic buffer resource which is a "dumb" allocator type that simply only
+  // increments an offset from the start of a buffer for its allocations
+  //
+  // because allocation is just incrementing a buffer offsets, allocations are cheap
+  //
   pmr::monotonic_buffer_resource resource{page_size};
 
   auto alloc_handle = pmr::polymorphic_allocator<char>(std::addressof(resource));
 
-  auto client  = client_type(io, {}, alloc_handle);
-  auto request = request_type(http::request_header<http::basic_fields<alloc_type>>(alloc_handle));
+  // we construct our client with a handle to the memory resource
+  //
+  auto client = client_type(io, {}, alloc_handle);
+
+  // we create our request, making sure that our headers are constructed with a handle to the
+  // resource as well
+  //
+  auto request = request_type(http::request_header<fields_type>(alloc_handle));
   request.method(http::verb::get);
   request.target("/");
   request.version(11);
   request.set(http::field::host, "www.google.com");
 
-  parser_type parser{http::response_header<http::basic_fields<alloc_type>>(alloc_handle),
-                     alloc_handle};
+  // our parser is comprised of 2 types, its headers and body
+  // this means we need to forward our allocation to both the headers and the body separately
+  //
+  parser_type parser{http::response_header<fields_type>(alloc_handle), alloc_handle};
 
-  asio::post(io, client_op{client, request, parser, was_valid, alloc_handle});
+  // our client, request and response parser all now share the same memory resource
+  // this means all intermediate allocations will be done using a simple pointer incremenet
+  //
+
+  // we create an instance of our coroutine and then post it the io_context for execution
+  //
+  auto async_op = client_op(client, request, parser, was_valid, alloc_handle);
+  asio::post(io, std::move(async_op));
 
   io.run();
-
-  auto res = parser.release();
-  std::cout << "Response received from google:\n";
-  std::cout << res.body() << "\n";
-
-  std::cout << "We used this many bytes to read in this message: "
-            << page_size - resource.remaining_storage() << "\n";
 
   return 0;
 }
