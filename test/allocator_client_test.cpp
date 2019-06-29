@@ -27,10 +27,12 @@ namespace http = boost::beast::http;
 namespace pmr  = boost::container::pmr;
 
 using alloc_type   = pmr::polymorphic_allocator<char>;
-using client_type  = foxy::basic_client_session<boost::beast::basic_multi_buffer<alloc_type>>;
+using fields_type  = http::basic_fields<alloc_type>;
 using body_type    = http::basic_string_body<char, std::char_traits<char>, alloc_type>;
 using parser_type  = http::response_parser<body_type, alloc_type>;
-using request_type = http::request<http::empty_body, http::basic_fields<alloc_type>>;
+using request_type = http::request<http::empty_body, fields_type>;
+
+using client_type = foxy::basic_client_session<boost::beast::basic_multi_buffer<alloc_type>>;
 
 namespace
 {
@@ -70,12 +72,12 @@ struct client_op : asio::coroutine
   }
 
   auto
-  operator()(boost::system::error_code ec, boost::asio::ip::tcp::endpoint) -> void
+  operator()(error_code ec, tcp::endpoint) -> void
   {
     (*this)(ec);
   }
 
-  auto operator()(boost::system::error_code ec = {}) -> void
+  auto operator()(error_code ec = {}) -> void
   {
     reenter(this)
     {
@@ -116,7 +118,8 @@ TEST_CASE("allocator_client_test")
 
     auto alloc_handle = pmr::polymorphic_allocator<char>(std::addressof(resource));
 
-    auto client  = client_type(io, {}, alloc_handle);
+    auto client = client_type(io, {}, alloc_handle);
+
     auto request = request_type(http::request_header<http::basic_fields<alloc_type>>(alloc_handle));
     request.method(http::verb::get);
     request.target("/");
@@ -132,5 +135,6 @@ TEST_CASE("allocator_client_test")
 
     CHECK(was_valid);
     CHECK(resource.remaining_storage() < page_size);
+    CHECK(client.buffer.get_allocator() == alloc_handle);
   }
 }
