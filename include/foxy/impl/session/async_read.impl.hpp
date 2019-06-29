@@ -17,22 +17,24 @@ namespace foxy
 {
 namespace detail
 {
-template <class Stream, class Parser, class Handler>
+template <class Stream, class DynamicBuffer, class Parser, class Handler>
 struct read_op
-  : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>,
+  : boost::beast::async_base<Handler,
+                             typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>,
     boost::asio::coroutine
 {
-  ::foxy::basic_session<Stream>& session;
-  Parser&                        parser;
+  ::foxy::basic_session<Stream, DynamicBuffer>& session;
+  Parser&                                       parser;
 
   read_op()               = default;
   read_op(read_op const&) = default;
   read_op(read_op&&)      = default;
 
-  read_op(::foxy::basic_session<Stream>& session_, Handler handler, Parser& parser_)
-    : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
+  read_op(::foxy::basic_session<Stream, DynamicBuffer>& session_, Handler handler, Parser& parser_)
+    : boost::beast::
+        async_base<Handler, typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>(
+          std::move(handler),
+          session_.get_executor())
     , session(session_)
     , parser(parser_)
   {
@@ -66,9 +68,9 @@ basic_session<Stream, DynamicBuffer>::async_read(Parser& parser, ReadHandler&& h
   boost::asio::async_completion<ReadHandler, void(boost::system::error_code, std::size_t)> init(
     handler);
 
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::read_op, Stream, Parser>::template fn>(*this, init,
-                                                                                      parser);
+  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<::foxy::detail::read_op, Stream,
+                                                               DynamicBuffer, Parser>::template fn>(
+    *this, init, parser);
 }
 
 } // namespace foxy

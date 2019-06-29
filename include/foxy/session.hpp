@@ -36,7 +36,7 @@ struct session_opts
   duration_type                               timeout = std::chrono::seconds{1};
 };
 
-template <class Stream, class DynamicBuffer = boost::beast::flat_buffer>
+template <class Stream, class DynamicBuffer>
 struct basic_session
 {
 public:
@@ -96,7 +96,8 @@ public:
 };
 
 using session = basic_session<
-  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>>;
+  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
+  boost::beast::flat_buffer>;
 
 } // namespace foxy
 

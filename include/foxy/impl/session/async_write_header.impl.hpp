@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -17,22 +17,26 @@ namespace foxy
 {
 namespace detail
 {
-template <class Stream, class Serializer, class Handler>
+template <class Stream, class DynamicBuffer, class Serializer, class Handler>
 struct write_header_op
-  : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>,
+  : boost::beast::async_base<Handler,
+                             typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>,
     boost::asio::coroutine
 {
-  ::foxy::basic_session<Stream>& session;
-  Serializer&                    serializer;
+  ::foxy::basic_session<Stream, DynamicBuffer>& session;
+  Serializer&                                   serializer;
 
   write_header_op()                       = default;
   write_header_op(write_header_op const&) = default;
   write_header_op(write_header_op&&)      = default;
 
-  write_header_op(::foxy::basic_session<Stream>& session_, Handler handler, Serializer& serializer_)
-    : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
+  write_header_op(::foxy::basic_session<Stream, DynamicBuffer>& session_,
+                  Handler                                       handler,
+                  Serializer&                                   serializer_)
+    : boost::beast::
+        async_base<Handler, typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>(
+          std::move(handler),
+          session_.get_executor())
     , session(session_)
     , serializer(serializer_)
   {
@@ -67,9 +71,9 @@ basic_session<Stream, DynamicBuffer>::async_write_header(Serializer&    serializ
   boost::asio::async_completion<WriteHandler, void(boost::system::error_code, std::size_t)> init(
     handler);
 
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::write_header_op, Stream, Serializer>::template fn>(
-    *this, init, serializer);
+  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<
+    ::foxy::detail::write_header_op, Stream, DynamicBuffer, Serializer>::template fn>(*this, init,
+                                                                                      serializer);
 }
 
 } // namespace foxy
