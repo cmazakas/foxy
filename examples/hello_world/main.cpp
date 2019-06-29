@@ -33,7 +33,7 @@ main()
   // we now construct a `client_session` with the default parameters (no SSL, timeout of 1s on
   // read/write ops)
   //
-  auto client = foxy::client_session<>(io);
+  auto client = foxy::client_session(io);
 
   // we now choose to spin up a "stackful" coroutine
   // this essentially means that this coroutine suspends by taking a snapshot of the current call

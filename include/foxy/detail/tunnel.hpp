@@ -55,16 +55,16 @@ struct tunnel_op
     bool close_tunnel = false;
   };
 
-  ::foxy::server_session&   server;
-  ::foxy::client_session<>& client;
-  state&                    s;
+  ::foxy::server_session& server;
+  ::foxy::client_session& client;
+  state&                  s;
 
 public:
   tunnel_op()                 = delete;
   tunnel_op(tunnel_op const&) = default;
   tunnel_op(tunnel_op&&)      = default;
 
-  tunnel_op(foxy::server_session& server_, TunnelHandler handler, foxy::client_session<>& client_)
+  tunnel_op(foxy::server_session& server_, TunnelHandler handler, foxy::client_session& client_)
     : boost::beast::stable_async_base<TunnelHandler, typename ::foxy::session::executor_type>(
         std::move(handler),
         server_.get_executor())
@@ -283,9 +283,9 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
 
 template <class TunnelHandler>
 auto
-async_tunnel(foxy::server_session& server, foxy::client_session<>& client, TunnelHandler&& handler)
-  -> typename boost::asio::async_result<std::decay_t<TunnelHandler>,
-                                        void(boost::system::error_code, bool)>::return_type
+async_tunnel(foxy::server_session& server, foxy::client_session& client, TunnelHandler&& handler) ->
+  typename boost::asio::async_result<std::decay_t<TunnelHandler>,
+                                     void(boost::system::error_code, bool)>::return_type
 {
   boost::asio::async_completion<TunnelHandler, void(boost::system::error_code, bool)> init(handler);
 

@@ -56,7 +56,7 @@ public:
 
     // our session with the client's intended remote
     //
-    foxy::client_session<> client;
+    foxy::client_session client;
 
     http::response_parser<http::empty_body> shutdown_parser;
 

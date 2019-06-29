@@ -84,9 +84,9 @@ struct request_op : boost::beast::async_base<
 template <class DynamicBuffer>
 template <class Request, class ResponseParser, class RequestHandler>
 auto
-client_session<DynamicBuffer>::async_request(Request&         request,
-                                             ResponseParser&  parser,
-                                             RequestHandler&& handler) & ->
+basic_client_session<DynamicBuffer>::async_request(Request&         request,
+                                                   ResponseParser&  parser,
+                                                   RequestHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                      void(boost::system::error_code)>::return_type
 {

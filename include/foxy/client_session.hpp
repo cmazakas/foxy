@@ -42,20 +42,20 @@
 
 namespace foxy
 {
-template <class DynamicBuffer = boost::beast::flat_buffer>
-struct client_session
+template <class DynamicBuffer>
+struct basic_client_session
   : public basic_session<
       boost::asio::basic_stream_socket<boost::asio::ip::tcp,
                                        typename boost::asio::io_context::executor_type>,
       DynamicBuffer>
 {
 public:
-  client_session()                      = delete;
-  client_session(client_session const&) = delete;
-  client_session(client_session&&)      = default;
+  basic_client_session()                            = delete;
+  basic_client_session(basic_client_session const&) = delete;
+  basic_client_session(basic_client_session&&)      = default;
 
   template <class... BufferArgs>
-  client_session(boost::asio::io_context& io, session_opts opts = {}, BufferArgs&&... bargs)
+  basic_client_session(boost::asio::io_context& io, session_opts opts = {}, BufferArgs&&... bargs)
     : basic_session<
         boost::asio::basic_stream_socket<boost::asio::ip::tcp,
                                          typename boost::asio::io_context::executor_type>,
@@ -84,6 +84,8 @@ public:
     typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                        void(boost::system::error_code)>::return_type;
 };
+
+using client_session = basic_client_session<boost::beast::flat_buffer>;
 
 } // namespace foxy
 

@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -153,9 +153,9 @@ struct connect_op : boost::beast::stable_async_base<
 template <class DynamicBuffer>
 template <class ConnectHandler>
 auto
-client_session<DynamicBuffer>::async_connect(std::string      host,
-                                             std::string      service,
-                                             ConnectHandler&& handler) & ->
+basic_client_session<DynamicBuffer>::async_connect(std::string      host,
+                                                   std::string      service,
+                                                   ConnectHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<ConnectHandler>,
                                      void(boost::system::error_code,
                                           boost::asio::ip::tcp::endpoint)>::return_type

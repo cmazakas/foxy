@@ -29,7 +29,7 @@ TEST_CASE("Our client session class")
   {
     asio::io_context io;
 
-    auto session_handle = boost::make_unique<foxy::client_session<>>(io);
+    auto session_handle = boost::make_unique<foxy::client_session>(io);
 
     auto& session = *session_handle;
 
@@ -79,7 +79,7 @@ TEST_CASE("Our client session class")
     auto opts    = foxy::session_opts();
     opts.timeout = std::chrono::milliseconds{250};
 
-    auto session_handle = boost::make_unique<foxy::client_session<>>(io, std::move(opts));
+    auto session_handle = boost::make_unique<foxy::client_session>(io, std::move(opts));
 
     auto& session = *session_handle;
 

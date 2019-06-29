@@ -27,7 +27,7 @@ namespace http = boost::beast::http;
 namespace pmr  = boost::container::pmr;
 
 using alloc_type   = pmr::polymorphic_allocator<char>;
-using client_type  = foxy::client_session<boost::beast::basic_multi_buffer<alloc_type>>;
+using client_type  = foxy::basic_client_session<boost::beast::basic_multi_buffer<alloc_type>>;
 using body_type    = http::basic_string_body<char, std::char_traits<char>, alloc_type>;
 using parser_type  = http::response_parser<body_type, alloc_type>;
 using request_type = http::request<http::empty_body, http::basic_fields<alloc_type>>;
