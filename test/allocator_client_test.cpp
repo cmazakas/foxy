@@ -16,7 +16,6 @@
 #include <boost/container/pmr/monotonic_buffer_resource.hpp>
 
 #include <memory>
-#include <iostream>
 
 #include <catch2/catch.hpp>
 
