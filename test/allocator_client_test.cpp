@@ -131,6 +131,7 @@ TEST_CASE("allocator_client_test")
 
     io.run();
 
-    REQUIRE(was_valid);
+    CHECK(was_valid);
+    CHECK(resource.remaining_storage() < page_size);
   }
 }
