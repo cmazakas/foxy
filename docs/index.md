@@ -1,9 +1,9 @@
 ## Table of Contents
 
-* [Reference](./reference.md#Reference)
-* [Hello World](./hello-world.md#HelloWorld)
-* [URI Combinators](./uri-combinators.md#URICombinators)
-* [Allocator-Aware GET Request](./allocator-client.md#AllocatorAwareClient)
+* [Reference](./reference.md#reference)
+* [Hello World](./hello-world.md#hello-world)
+* [URI Combinators](./uri-combinators.md#uri-combinators)
+* [Allocator-Aware GET Request](./allocator-client.md#allocator-aware-client)
 
 ## About
 
