@@ -2,8 +2,8 @@
 
 One of the biggest draws of Asio is its support for Allocators.
 
-Foxy tries to play up to this by allowing users to customize the allocator type used by the session
-object's buffers.
+Much like Beast, Foxy embraces this and ensures that if a user's completion handler has an
+associated allocator that it is used for intermediate allocations by the initiating functions.
 
 In this example, we will focus on writing an allocator-aware client request to a well-known URL.
 
@@ -132,6 +132,8 @@ struct client_op : asio::coroutine
         yield break;
       }
 
+      // our example is simple, we simply want to validate that we got a successful response
+      //
       {
         auto& response = parser.get();
         was_valid      = (response.result_int() == 200 && response.body().size() > 0 &&
@@ -177,7 +179,7 @@ main()
   request.set(http::field::host, "www.google.com");
 
   // our parser's underlying message is comprised of 2 parts, its headers and body
-  // this means we need to forward our allocation to both the headers and the body separately
+  // this means we need to forward our allocator to both the headers and the body separately
   // Beast's parser forwards arguments to the wrapped message and messages are directly
   // constructible with a header instance and any arguments we want to construct the body with
   //
@@ -187,7 +189,7 @@ main()
   // this means all intermediate allocations will be done using a simple pointer incremenet
   //
 
-  // we create an instance of our coroutine and then post it the io_context for execution
+  // we create an instance of our coroutine and then post it to the io_context for execution
   //
   auto async_op = client_op(client, request, parser, was_valid, alloc_handle);
   asio::post(io, std::move(async_op));
