@@ -40,7 +40,8 @@ struct basic_session;
 
 ```c++
 using session = basic_session<
-  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>>;
+  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
+  boost::beast::flat_buffer>;
 ```
 
 ## Member Typedefs
