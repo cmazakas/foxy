@@ -17,15 +17,15 @@ namespace http = boost::beast::http;
 namespace pmr  = boost::container::pmr;
 
 // Boost.Container ships with an implementation of the polymorphic allocators added to C++17
-// https://www.boost.org/doc/libs/1_70_0/doc/html/container/cpp_conformance.html#container.cpp_conformance.polymorphic_memory_resources
+// https://www.boost.org/doc/libs/release/doc/html/container/cpp_conformance.html#container.cpp_conformance.polymorphic_memory_resources
 //
-// we will be using these polymorphic allocators to share the same resource among all of our async
-// operations
+// we will be using these polymorphic allocators to share the same memory resource among all of our
+// async operations
 //
 using alloc_type = pmr::polymorphic_allocator<char>;
 
-// our headers, body and response parser all need to share the same memory resource so they
-// must all use the same allocator
+// our headers, body and response parser all need to share the same memory resource so they must all
+// use the same allocator
 //
 using fields_type = http::basic_fields<alloc_type>;
 using body_type   = http::basic_string_body<char, std::char_traits<char>, alloc_type>;
@@ -40,8 +40,7 @@ using parser_type = http::response_parser<body_type, alloc_type>;
 using request_type = http::request<http::empty_body, fields_type>;
 
 // we use the basic_client_session over Beast's multi buffer type
-// the multi_buffer is a Beast Body type that internally uses a sequence of small buffers when
-// we read in the response
+// the multi_buffer is a Beast Body type that internally uses a sequence of buffers
 //
 using client_type = foxy::basic_client_session<boost::beast::basic_multi_buffer<alloc_type>>;
 
@@ -52,12 +51,15 @@ namespace
 //
 // to this end, an Asio stackless coroutine will suffice
 //
+// we bring in the yield/unyield headers to import the faux-keywords Asio adds
+// these give us: yield, reenter
+//
 #include <boost/asio/yield.hpp>
 struct client_op : asio::coroutine
 {
   using allocator_type = pmr::polymorphic_allocator<char>;
 
-  // our async operation will own known of its required data
+  // our async operation will own none of its required data
   //
   client_type&  client;
   request_type& request;
@@ -82,7 +84,7 @@ struct client_op : asio::coroutine
     , request(request_)
     , parser(parser_)
     , was_valid(was_valid_)
-    , alloc(std::move(alloc_))
+    , alloc(alloc_)
   {
   }
 
@@ -110,7 +112,7 @@ struct client_op : asio::coroutine
       if (ec) {
         was_valid = false;
 
-        // yield break; is how one terminates an Asio stackless coroutine early
+        // "yield break;" is how one terminates an Asio stackless coroutine early
         yield break;
       }
 
@@ -136,16 +138,16 @@ main()
 {
   bool was_valid = false;
 
-  asio::io_context io(1);
+  asio::io_context io{1};
 
-  // we wanna give our async op around half a MB up front
+  // we give our async op around half a MB up front
   //
   auto const page_size = std::size_t{1024 * 512};
 
   // we use the monotonic buffer resource which is a "dumb" allocator type that simply only
   // increments an offset from the start of a buffer for its allocations
   //
-  // because allocation is just incrementing a buffer offsets, allocations are cheap
+  // because allocation is just incrementing a buffer offset, allocations are cheap
   //
   pmr::monotonic_buffer_resource resource{page_size};
 
@@ -164,8 +166,10 @@ main()
   request.version(11);
   request.set(http::field::host, "www.google.com");
 
-  // our parser is comprised of 2 types, its headers and body
+  // our parser's underlying message is comprised of 2 parts, its headers and body
   // this means we need to forward our allocation to both the headers and the body separately
+  // Beast's parser forwards arguments to the wrapped message and messages are directly
+  // constructible with a header instance and any arguments we want to construct the body with
   //
   parser_type parser{http::response_header<fields_type>(alloc_handle), alloc_handle};
 
@@ -179,6 +183,19 @@ main()
   asio::post(io, std::move(async_op));
 
   io.run();
+
+  auto res = parser.release();
+
+  if (!was_valid) {
+    std::cout << "error could not complete request successfully\n" << res << "\n";
+    return 1;
+  }
+
+  std::cout << "Completed request!\n";
+  std::cout << "-----------------------------------------------------------------\n";
+  std::cout << res.base() << "\n";
+  std::cout << "-----------------------------------------------------------------\n";
+  std::cout << "remaining storage in buffer: " << resource.remaining_storage() << "\n\n";
 
   return 0;
 }
