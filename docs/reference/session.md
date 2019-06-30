@@ -7,20 +7,20 @@
 ## Synopsis
 
 The most fundamental class in Foxy, the `basic_session` encapsulates a minimal subset of the classes
-needed for using Beast and Asio.
+needed for using Beast.
 
 All members are public so that users can make powerful and flexible abstractions without the library
 becoming a hindrance.
 
 The `basic_session` contains the `foxy::basic_multi_stream` so that it can act as a dual-stream type
-supporting both plain and encrypted data. It also contains a buffer for use during parsing and
-serialization operations as well as a timer that it uses to determine when an operation should end.
+supporting both plain and encrypted data. It also contains a user-specified buffer for use during
+parsing operations as well as a timer that it uses to determine when an operation should end.
 
 The `basic_session` is configurable via its `foxy::session_opts`. Currently, only adjusting the
 timeouts has any direct effect. Mutating the nested SSL context may result in an inconsistent state
 of the session and is undefined by the library.
 
-This class is used primarily for reading and writing HTTP messages.
+This class is used primarily for reading and writing HTTP/1.x messages.
 
 The class is coded such that no timeout operations run in user-land code. Foxy ensures that before
 each call to its async read and write member functions complete, the timer operations have been
@@ -84,7 +84,7 @@ The "default" constructor for most use-cases.
 If the session options contain an SSL context, the session will be constructed in SSL mode, i.e.
 `session.stream.is_ssl()` returns `true`.
 
-The construtor will instantiate the `DynamicBuffer` type with `bargs`.
+The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
 
 #### `stream_type`
 
@@ -97,7 +97,7 @@ Construct a session by moving the supplied `stream_` to the underlying session's
 
 The SSL mode of the session matches the SSL mode of the passed-in `stream_`.
 
-The construtor will instantiate the `DynamicBuffer` type with `bargs`.
+The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
 
 ## Member Functions
 
