@@ -32,7 +32,7 @@ ever having to worry about the state of the timer or any of its pending operatio
 ## Declaration
 
 ```c++
-template <class Stream>
+template <class Stream, class DynamicBuffer>
 struct basic_session;
 ```
 
@@ -47,7 +47,7 @@ using session = basic_session<
 
 ```c++
 using stream_type   = ::foxy::basic_multi_stream<Stream>;
-using buffer_type   = boost::beast::flat_buffer;
+using buffer_type   = DynamicBuffer;
 using timer_type    = boost::asio::steady_timer;
 using executor_type = typename stream_type::executor_type;
 ```
@@ -74,7 +74,8 @@ basic_session(basic_session&&)      = default;
 #### `io_context`
 
 ```c++
-explicit basic_session(boost::asio::io_context& io, session_opts opts_ = {});
+template <class... BufferArgs>
+basic_session(boost::asio::io_context& io, session_opts opts_ = {}, BufferArgs&&... bargs);
 ```
 
 The "default" constructor for most use-cases.
@@ -82,15 +83,20 @@ The "default" constructor for most use-cases.
 If the session options contain an SSL context, the session will be constructed in SSL mode, i.e.
 `session.stream.is_ssl()` returns `true`.
 
+The construtor will instantiate the `DynamicBuffer` type with `bargs`.
+
 #### `stream_type`
 
 ```c++
-explicit basic_session(stream_type stream_, session_opts opts_ = {});
+template <class... BufferArgs>
+basic_session(stream_type stream_, session_opts opts_ = {}, BufferArgs&&... bargs);
 ```
 
 Construct a session by moving the supplied `stream_` to the underlying session's `stream_type`.
 
 The SSL mode of the session matches the SSL mode of the passed-in `stream_`.
+
+The construtor will instantiate the `DynamicBuffer` type with `bargs`.
 
 ## Member Functions
 
