@@ -57,7 +57,8 @@ TEST_CASE("Our basic_session class...")
     auto valid_target = false;
 
     asio::spawn([&](asio::yield_context yield) mutable {
-      auto session = foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream));
+      auto session =
+        foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
       http::request_parser<http::empty_body> parser;
 
@@ -97,7 +98,8 @@ TEST_CASE("Our basic_session class...")
     auto valid_body  = false;
 
     asio::spawn([&](asio::yield_context yield) mutable {
-      auto session = foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream));
+      auto session =
+        foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
       http::request_parser<http::string_body> parser;
 
@@ -130,7 +132,8 @@ TEST_CASE("Our basic_session class...")
     asio::spawn([&](asio::yield_context yield) mutable {
       auto ec = boost::system::error_code();
 
-      auto session = foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream));
+      auto session =
+        foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
       auto res = http::response<http::empty_body>(http::status::ok, 11);
       http::response_serializer<http::empty_body> serializer(res);

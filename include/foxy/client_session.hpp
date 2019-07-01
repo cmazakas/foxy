@@ -57,7 +57,7 @@ public:
   basic_client_session(basic_client_session&&)      = default;
 
   template <class... BufferArgs>
-  basic_client_session(boost::asio::io_context& io, session_opts opts = {}, BufferArgs&&... bargs)
+  basic_client_session(boost::asio::io_context& io, session_opts opts, BufferArgs&&... bargs)
     : basic_session<
         boost::asio::basic_stream_socket<boost::asio::ip::tcp,
                                          typename boost::asio::io_context::executor_type>,

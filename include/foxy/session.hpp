@@ -62,10 +62,10 @@ public:
   basic_session(basic_session&&)      = default;
 
   template <class... BufferArgs>
-  basic_session(boost::asio::io_context& io, session_opts opts_ = {}, BufferArgs&&... bargs);
+  basic_session(boost::asio::io_context& io, session_opts opts_, BufferArgs&&... bargs);
 
   template <class... BufferArgs>
-  basic_session(stream_type stream_, session_opts opts_ = {}, BufferArgs&&... bargs);
+  basic_session(stream_type stream_, session_opts opts_, BufferArgs&&... bargs);
 
   auto
   get_executor() -> executor_type;

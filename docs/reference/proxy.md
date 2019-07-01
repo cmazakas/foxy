@@ -122,7 +122,7 @@ SECTION("should relay via CONNECT")
     auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
     proxy->async_accept();
 
-    auto client         = foxy::client_session(io);
+    auto client         = foxy::client_session(io, {});
     client.opts.timeout = 30s;
     client.async_connect("127.0.0.1", "1337", yield);
 

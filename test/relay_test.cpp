@@ -39,9 +39,9 @@ TEST_CASE("Our async HTTP relay")
     auto client_stream = test_stream(io);
 
     auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
     auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
 
@@ -103,9 +103,9 @@ TEST_CASE("Our async HTTP relay")
     auto client_stream = test_stream(io);
 
     auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
     auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
     // in this test, it's our proxy client that initiates the teardown of the
     // Connection
@@ -155,9 +155,9 @@ TEST_CASE("Our async HTTP relay")
     auto client_stream = test_stream(io);
 
     auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
     auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
 
@@ -203,9 +203,9 @@ TEST_CASE("Our async HTTP relay")
     auto client_stream = test_stream(io);
 
     auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
     auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
     auto request = http::request<http::string_body>(
       http::verb::post, "/", 11,
@@ -275,8 +275,8 @@ TEST_CASE("Our async HTTP relay")
     auto request_stream  = test_stream(io);
     auto response_stream = test_stream(io);
 
-    auto client = foxy::basic_session<test_stream, boost::beast::flat_buffer>(io);
-    auto server = foxy::basic_session<test_stream, boost::beast::flat_buffer>(io);
+    auto client = foxy::basic_session<test_stream, boost::beast::flat_buffer>(io, {});
+    auto server = foxy::basic_session<test_stream, boost::beast::flat_buffer>(io, {});
 
     beast::ostream(server.stream.plain().buffer()) << request;
     beast::ostream(client.stream.plain().buffer()) << response;
@@ -318,9 +318,9 @@ TEST_CASE("Our async HTTP relay")
     auto client_stream = test_stream(io);
 
     auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
     auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
     auto fields = http::fields();
     fields.insert(http::field::via, "1.1 foxy");
@@ -372,9 +372,9 @@ TEST_CASE("Our async HTTP relay")
     auto client_stream = test_stream(io);
 
     auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
     auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream));
+      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
     auto req_fields = http::fields();
     req_fields.insert(http::field::via, "1.1 otherserver");
