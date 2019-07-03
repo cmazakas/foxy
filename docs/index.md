@@ -1,8 +1,9 @@
 ## Table of Contents
 
-* [Reference](./reference.md#Reference)
-* [Hello World](./hello-world.md#Hello-World)
-* [URI Combinators](./uri-combinators.md#URI-Combinators)
+* [Reference](./reference.md#reference)
+* [Hello World](./hello-world.md#hello-world)
+* [URI Combinators](./uri-combinators.md#uri-combinators)
+* [Allocator-Aware GET Request](./allocator-client.md#allocator-aware-client)
 
 ## About
 
@@ -15,11 +16,10 @@ Foxy features:
 * session-based wrappers for Beast's `http::async_*` functions
 * automatic timeouts for stream operations
 * transparent support for SSL/TLS
-* URI parser combinators (writen in
-[Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html))
+* URI parser combinators (writen in [Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html))
 * support for Asio's universal async model of execution
 * simple and experimental TLS forward proxy
-* pct-encoding for Unicode URLs
+* pct-encoding/pct-decoding for Unicode URLs
 
 ## Motivation
 

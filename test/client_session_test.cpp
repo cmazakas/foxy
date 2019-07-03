@@ -29,7 +29,7 @@ TEST_CASE("Our client session class")
   {
     asio::io_context io;
 
-    auto session_handle = boost::make_unique<foxy::client_session>(io);
+    auto session_handle = boost::make_unique<foxy::client_session>(io, foxy::session_opts{});
 
     auto& session = *session_handle;
 

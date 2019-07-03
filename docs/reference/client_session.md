@@ -33,14 +33,32 @@ and the [`boost::asio::ssl::stream`](https://www.boost.org/doc/libs/release/doc/
 ## Declaration
 
 ```c++
-struct client_session : public session;
+template <class DynamicBuffer>
+struct basic_client_session
+  : public basic_session<
+      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                       typename boost::asio::io_context::executor_type>,
+      DynamicBuffer>;
+```
+
+## Exported Typedefs
+
+```c++
+using client_session = basic_client_session<boost::beast::flat_buffer>;
+
+namespace pmr
+{
+template <class T>
+using client_session = basic_client_session<
+  boost::beast::basic_flat_buffer<boost::container::pmr::polymorphic_allocator<T>>>;
+}
 ```
 
 ## Member Typedefs
 
 ```c++
 using stream_type   = ::foxy::multi_stream;
-using buffer_type   = boost::beast::flat_buffer;
+using buffer_type   = DynamicBuffer;
 using timer_type    = boost::asio::steady_timer;
 using executor_type = typename stream_type::executor_type;
 ```
@@ -67,8 +85,11 @@ client_session(client_session&&)      = default;
 #### `io_context`
 
 ```c++
-explicit client_session(boost::asio::io_context& io, session_opts opts = {});
+template <class... BufferArgs>
+basic_client_session(boost::asio::io_context& io, session_opts opts = {}, BufferArgs&&... bargs);
 ```
+
+Forwards to the same constructor found in `foxy::basic_session`.
 
 ## Member Functions
 

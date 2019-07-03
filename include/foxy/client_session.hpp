@@ -34,6 +34,8 @@
 #include <boost/optional/optional.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
 
+#include <boost/container/container_fwd.hpp>
+
 #include <chrono>
 #include <string>
 #include <utility>
@@ -42,19 +44,27 @@
 
 namespace foxy
 {
-struct client_session : public session
+template <class DynamicBuffer>
+struct basic_client_session
+  : public basic_session<
+      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                       typename boost::asio::io_context::executor_type>,
+      DynamicBuffer>
 {
 public:
-  client_session()                      = delete;
-  client_session(client_session const&) = delete;
-  client_session(client_session&&)      = default;
+  basic_client_session()                            = delete;
+  basic_client_session(basic_client_session const&) = delete;
+  basic_client_session(basic_client_session&&)      = default;
 
-  explicit client_session(boost::asio::io_context& io, session_opts opts = {});
+  template <class... BufferArgs>
+  basic_client_session(boost::asio::io_context& io, session_opts opts, BufferArgs&&... bargs)
+    : basic_session<
+        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                         typename boost::asio::io_context::executor_type>,
+        DynamicBuffer>(io, std::move(opts), std::forward<BufferArgs>(bargs)...)
+  {
+  }
 
-  // async_connect wraps asio::async_connect method and will invoke asio::async_connect with the
-  // specified host and service parameters async_connect is SSL-aware and will automatically perform
-  // the async handshake for the user, using the SSL context found in the session's opts
-  //
   template <class ConnectHandler>
   auto
   async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
@@ -62,16 +72,21 @@ public:
                                        void(boost::system::error_code,
                                             boost::asio::ip::tcp::endpoint)>::return_type;
 
-  // async_request will serialize the provided Request to the connected remote and then use the
-  // provided ResponseParser to parse the response The user is expected to retrieve the underlying
-  // message via the Beast http::parser interface
-  //
   template <class Request, class ResponseParser, class RequestHandler>
   auto
   async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
     typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                        void(boost::system::error_code)>::return_type;
 };
+
+using client_session = basic_client_session<boost::beast::flat_buffer>;
+
+namespace pmr
+{
+template <class T>
+using client_session = basic_client_session<
+  boost::beast::basic_flat_buffer<boost::container::pmr::polymorphic_allocator<T>>>;
+}
 
 } // namespace foxy
 

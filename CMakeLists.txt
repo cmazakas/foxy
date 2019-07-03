@@ -59,7 +59,6 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/client_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
@@ -124,6 +123,7 @@ if (BUILD_TESTING)
     CONFIG REQUIRED
       coroutine
       thread
+      container
   )
 
   add_library(test_utils INTERFACE)
@@ -136,6 +136,7 @@ if (BUILD_TESTING)
   add_executable(
     foxy_tests
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/allocator_client_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/export_connect_fields_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/iterator_test.cpp
@@ -161,6 +162,7 @@ if (BUILD_TESTING)
       Catch2::Catch2
       Boost::coroutine
       Boost::thread
+      Boost::container
   )
 
   include(Catch)
@@ -173,6 +175,7 @@ if (FOXY_BUILD_EXAMPLES)
     CONFIG REQUIRED
       coroutine
       thread
+      container
   )
 
   add_executable(
@@ -200,6 +203,20 @@ if (FOXY_BUILD_EXAMPLES)
     PRIVATE
       foxy
       Boost::coroutine
+      Boost::thread
+  )
+
+  add_executable(
+    client
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/allocators/client.cpp
+  )
+
+  target_link_libraries(
+    client
+    PRIVATE
+      foxy
+      Boost::container
       Boost::thread
   )
 endif()

@@ -31,11 +31,11 @@ namespace foxy
 {
 namespace detail
 {
-template <class Stream, class RelayHandler>
-struct relay_op
-  : boost::beast::stable_async_base<RelayHandler,
-                                    typename ::foxy::basic_session<Stream>::executor_type>,
-    boost::asio::coroutine
+template <class Stream, class DynamicBuffer, class RelayHandler>
+struct relay_op : boost::beast::stable_async_base<
+                    RelayHandler,
+                    typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>,
+                  boost::asio::coroutine
 {
   template <bool isRequest, class Body>
   using parser = boost::beast::http::parser<isRequest, Body>;
@@ -88,22 +88,23 @@ struct relay_op
     }
   };
 
-  ::foxy::basic_session<Stream>& server;
-  ::foxy::basic_session<Stream>& client;
-  state&                         s;
+  ::foxy::basic_session<Stream, DynamicBuffer>& server;
+  ::foxy::basic_session<Stream, DynamicBuffer>& client;
+  state&                                        s;
 
 public:
   relay_op()                = delete;
   relay_op(relay_op const&) = default;
   relay_op(relay_op&&)      = default;
 
-  relay_op(::foxy::basic_session<Stream>& server_,
-           RelayHandler                   handler,
-           ::foxy::basic_session<Stream>& client_)
-    : boost::beast::stable_async_base<RelayHandler,
-                                      decltype(std::declval<::foxy::basic_session<Stream>&>()
-                                                 .get_executor())>(std::move(handler),
-                                                                   server_.get_executor())
+  relay_op(::foxy::basic_session<Stream, DynamicBuffer>& server_,
+           RelayHandler                                  handler,
+           ::foxy::basic_session<Stream, DynamicBuffer>& client_)
+    : boost::beast::stable_async_base<
+        RelayHandler,
+        typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>(
+        std::move(handler),
+        server_.get_executor())
     , server(server_)
     , client(client_)
     , s(boost::beast::allocate_stable<state>(*this))
@@ -111,14 +112,15 @@ public:
     (*this)({}, 0, false);
   }
 
-  relay_op(::foxy::basic_session<Stream>& server_,
-           RelayHandler                   handler,
-           ::foxy::basic_session<Stream>& client_,
-           parser<true, empty_body>&&     req_parser)
-    : boost::beast::stable_async_base<RelayHandler,
-                                      decltype(std::declval<::foxy::basic_session<Stream>&>()
-                                                 .get_executor())>(std::move(handler),
-                                                                   server_.get_executor())
+  relay_op(::foxy::basic_session<Stream, DynamicBuffer>& server_,
+           RelayHandler                                  handler,
+           ::foxy::basic_session<Stream, DynamicBuffer>& client_,
+           parser<true, empty_body>&&                    req_parser)
+    : boost::beast::stable_async_base<
+        RelayHandler,
+        typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>(
+        std::move(handler),
+        server_.get_executor())
     , server(server_)
     , client(client_)
     , s(boost::beast::allocate_stable<state>(*this, std::move(req_parser)))
@@ -132,11 +134,11 @@ public:
              bool const                is_continuation = true) -> void;
 };
 
-template <class Stream, class RelayHandler>
+template <class Stream, class DynamicBuffer, class RelayHandler>
 auto
-relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
-                                           std::size_t const         bytes_transferred,
-                                           bool const                is_continuation) -> void
+relay_op<Stream, DynamicBuffer, RelayHandler>::operator()(boost::system::error_code ec,
+                                                          std::size_t const bytes_transferred,
+                                                          bool const        is_continuation) -> void
 {
   namespace http = boost::beast::http;
 
@@ -269,36 +271,38 @@ relay_op<Stream, RelayHandler>::operator()(boost::system::error_code ec,
   }
 }
 
-template <class Stream, class RelayHandler>
+template <class Stream, class DynamicBuffer, class RelayHandler>
 auto
-async_relay(::foxy::basic_session<Stream>& server,
-            ::foxy::basic_session<Stream>& client,
-            RelayHandler&&                 handler) ->
+async_relay(::foxy::basic_session<Stream, DynamicBuffer>& server,
+            ::foxy::basic_session<Stream, DynamicBuffer>& client,
+            RelayHandler&&                                handler) ->
   typename boost::asio::async_result<std::decay_t<RelayHandler>,
                                      void(boost::system::error_code, bool)>::return_type
 {
   boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
 
-  relay_op<Stream, typename boost::asio::async_completion<
-                     RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
+  relay_op<Stream, DynamicBuffer,
+           typename boost::asio::async_completion<
+             RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
     server, std::move(init.completion_handler), client);
 
   return init.result.get();
 }
 
-template <class Stream, class Parser, class RelayHandler>
+template <class Stream, class DynamicBuffer, class Parser, class RelayHandler>
 auto
-async_relay(::foxy::basic_session<Stream>& server,
-            ::foxy::basic_session<Stream>& client,
-            Parser&&                       parser,
-            RelayHandler&&                 handler) ->
+async_relay(::foxy::basic_session<Stream, DynamicBuffer>& server,
+            ::foxy::basic_session<Stream, DynamicBuffer>& client,
+            Parser&&                                      parser,
+            RelayHandler&&                                handler) ->
   typename boost::asio::async_result<std::decay_t<RelayHandler>,
                                      void(boost::system::error_code, bool)>::return_type
 {
   boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
 
-  relay_op<Stream, typename boost::asio::async_completion<
-                     RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
+  relay_op<Stream, DynamicBuffer,
+           typename boost::asio::async_completion<
+             RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
     server, std::move(init.completion_handler), client, std::move(parser));
 
   return init.result.get();

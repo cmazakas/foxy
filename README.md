@@ -4,7 +4,7 @@
 
 Session-based Beast/Asio wrapper + URL parsing and pct-encoding
 
-Read the docs [here](./docs/index.md).
+Read the docs [here](./docs/index.md#table-of-contents).
 
 ## Requirements
 

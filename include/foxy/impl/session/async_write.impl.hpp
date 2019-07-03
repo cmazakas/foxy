@@ -17,22 +17,26 @@ namespace foxy
 {
 namespace detail
 {
-template <class Stream, class Serializer, class Handler>
+template <class Stream, class DynamicBuffer, class Serializer, class Handler>
 struct write_op
-  : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>,
+  : boost::beast::async_base<Handler,
+                             typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>,
     boost::asio::coroutine
 {
-  ::foxy::basic_session<Stream>& session;
-  Serializer&                    serializer;
+  ::foxy::basic_session<Stream, DynamicBuffer>& session;
+  Serializer&                                   serializer;
 
   write_op()                = default;
   write_op(write_op const&) = default;
   write_op(write_op&&)      = default;
 
-  write_op(::foxy::basic_session<Stream>& session_, Handler handler, Serializer& serializer_)
-    : boost::beast::async_base<Handler, typename ::foxy::basic_session<Stream>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
+  write_op(::foxy::basic_session<Stream, DynamicBuffer>& session_,
+           Handler                                       handler,
+           Serializer&                                   serializer_)
+    : boost::beast::
+        async_base<Handler, typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>(
+          std::move(handler),
+          session_.get_executor())
     , session(session_)
     , serializer(serializer_)
   {
@@ -56,19 +60,20 @@ struct write_op
 
 } // namespace detail
 
-template <class Stream>
+template <class Stream, class DynamicBuffer>
 template <class Serializer, class WriteHandler>
 auto
-basic_session<Stream>::async_write(Serializer& serializer, WriteHandler&& handler) & ->
+basic_session<Stream, DynamicBuffer>::async_write(Serializer&    serializer,
+                                                  WriteHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<WriteHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
   boost::asio::async_completion<WriteHandler, void(boost::system::error_code, std::size_t)> init(
     handler);
 
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::write_op, Stream, Serializer>::template fn>(
-    *this, init, serializer);
+  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<
+    ::foxy::detail::write_op, Stream, DynamicBuffer, Serializer>::template fn>(*this, init,
+                                                                               serializer);
 }
 
 } // namespace foxy
