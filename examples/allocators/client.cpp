@@ -71,9 +71,9 @@ struct client_op : asio::coroutine
   //
   allocator_type alloc;
 
-  client_op()                     = delete;
-  client_op(client_op const&)     = default;
-  client_op(client_op&&) noexcept = default;
+  client_op()                 = delete;
+  client_op(client_op const&) = default;
+  client_op(client_op&&)      = default;
 
   client_op(client_type&   client_,
             request_type&  request_,
