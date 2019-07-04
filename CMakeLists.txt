@@ -114,9 +114,9 @@ if (MSVC)
   target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
 endif()
 
-include(CTest)
-
 if (BUILD_TESTING)
+  include(CTest)
+
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
     Boost 1.70
