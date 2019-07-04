@@ -14,16 +14,30 @@
 
 namespace foxy
 {
-struct server_session : public session
+template <class DynamicBuffer>
+struct basic_server_session
+  : public basic_session<
+      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                       typename boost::asio::io_context::executor_type>,
+      DynamicBuffer>
 {
 public:
-  server_session()                      = delete;
-  server_session(server_session const&) = delete;
-  server_session(server_session&&)      = default;
+  basic_server_session()                            = delete;
+  basic_server_session(basic_server_session const&) = delete;
+  basic_server_session(basic_server_session&&)      = default;
 
-  explicit server_session(multi_stream stream_);
+  template <class... BufferArgs>
+  basic_server_session(multi_stream stream_, session_opts opts, BufferArgs&&... bargs)
+    : basic_session<
+        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                         typename boost::asio::io_context::executor_type>,
+        DynamicBuffer>(std::move(stream_), opts, std::forward<BufferArgs>(bargs)...)
+  {
+  }
 };
 
-} // foxy
+using server_session = basic_server_session<boost::beast::flat_buffer>;
+
+} // namespace foxy
 
 #endif // FOXY_SERVER_SESSION_HPP_

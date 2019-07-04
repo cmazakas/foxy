@@ -61,7 +61,6 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/uri_parts.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 
