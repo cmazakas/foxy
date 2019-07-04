@@ -52,8 +52,12 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/server_session/async_detect_ssl.impl.hpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
@@ -145,6 +149,7 @@ if (BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/server_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/unicode_uri_test.cpp

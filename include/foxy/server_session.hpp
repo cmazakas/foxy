@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -11,6 +11,13 @@
 #define FOXY_SERVER_SESSION_HPP_
 
 #include <foxy/session.hpp>
+#include <foxy/detail/timed_op_wrapper_v2.hpp>
+
+#include <boost/beast/core/detect_ssl.hpp>
+
+#include <boost/asio/async_result.hpp>
+
+#include <type_traits>
 
 namespace foxy
 {
@@ -34,10 +41,18 @@ public:
         DynamicBuffer>(std::move(stream_), opts, std::forward<BufferArgs>(bargs)...)
   {
   }
+
+  template <class DetectHandler>
+  auto
+  async_detect_ssl(DetectHandler&& handler) ->
+    typename boost::asio::async_result<std::decay_t<DetectHandler>,
+                                       void(boost::system::error_code, bool)>::return_type;
 };
 
 using server_session = basic_server_session<boost::beast::flat_buffer>;
 
 } // namespace foxy
+
+#include <foxy/impl/server_session/async_detect_ssl.impl.hpp>
 
 #endif // FOXY_SERVER_SESSION_HPP_
