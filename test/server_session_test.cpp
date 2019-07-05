@@ -19,7 +19,6 @@
 
 #include <boost/beast/http.hpp>
 #include <boost/beast/core/ostream.hpp>
-#include <boost/beast/_experimental/test/stream.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -30,8 +29,6 @@ namespace ip    = boost::asio::ip;
 namespace ssl   = boost::asio::ssl;
 
 using boost::asio::ip::tcp;
-
-using test_stream = boost::beast::test::stream;
 
 TEST_CASE("server_session_test")
 {
