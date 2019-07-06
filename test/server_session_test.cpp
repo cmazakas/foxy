@@ -32,7 +32,7 @@ namespace ssl   = boost::asio::ssl;
 
 using boost::asio::ip::tcp;
 
-// We shamefully rip the load server context function from Beast's examples
+// We shamelessly rip the load server context function from Beast's examples
 //
 namespace
 {
