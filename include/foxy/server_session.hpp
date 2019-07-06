@@ -47,6 +47,12 @@ public:
   async_detect_ssl(DetectHandler&& handler) ->
     typename boost::asio::async_result<std::decay_t<DetectHandler>,
                                        void(boost::system::error_code, bool)>::return_type;
+
+  template <class HandshakeHandler>
+  auto
+  async_handshake(HandshakeHandler&& handler) ->
+    typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
+                                       void(boost::system::error_code, std::size_t)>::return_type;
 };
 
 using server_session = basic_server_session<boost::beast::flat_buffer>;
@@ -54,5 +60,6 @@ using server_session = basic_server_session<boost::beast::flat_buffer>;
 } // namespace foxy
 
 #include <foxy/impl/server_session/async_detect_ssl.impl.hpp>
+#include <foxy/impl/server_session/async_handshake.impl.hpp>
 
 #endif // FOXY_SERVER_SESSION_HPP_

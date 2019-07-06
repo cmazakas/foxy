@@ -232,11 +232,10 @@ TEST_CASE("server_session_test")
 
       server.stream.ssl().set_verify_mode(ssl::verify_none);
 
-      auto const bytes_used = server.stream.ssl().async_handshake(ssl::stream_base::server,
-                                                                  server.buffer.data(), yield[ec]);
+      auto const bytes_used = server.async_handshake(yield[ec]);
 
-      server.buffer.consume(bytes_used);
-
+      CHECK(server.buffer.size() == 0);
+      CHECK(bytes_used > 0);
       CHECK(ec.message() == "The operation completed successfully");
       REQUIRE_FALSE(ec);
 
