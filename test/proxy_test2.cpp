@@ -40,7 +40,7 @@ TEST_CASE("Our forward proxy (part 2)")
 
     auto was_valid_response = false;
 
-    asio::spawn([&](asio::yield_context yield) {
+    asio::spawn(io, [&](asio::yield_context yield) {
       auto const src_addr     = ip::make_address_v4("127.0.0.1");
       auto const src_port     = static_cast<unsigned short>(1337);
       auto const src_endpoint = tcp::endpoint(src_addr, src_port);
@@ -97,7 +97,7 @@ TEST_CASE("Our forward proxy (part 2)")
 
     auto was_valid_response = false;
 
-    asio::spawn([&](asio::yield_context yield) {
+    asio::spawn(io, [&](asio::yield_context yield) {
       auto const src_addr     = ip::make_address_v4("127.0.0.1");
       auto const src_port     = static_cast<unsigned short>(1337);
       auto const src_endpoint = tcp::endpoint(src_addr, src_port);
@@ -145,7 +145,7 @@ TEST_CASE("Our forward proxy (part 2)")
 
     auto was_valid_response = false;
 
-    asio::spawn([&](asio::yield_context yield) {
+    asio::spawn(io, [&](asio::yield_context yield) {
       auto const src_addr     = ip::make_address_v4("127.0.0.1");
       auto const src_port     = static_cast<unsigned short>(1337);
       auto const src_endpoint = tcp::endpoint(src_addr, src_port);
@@ -245,7 +245,7 @@ TEST_CASE("Our forward proxy (part 2)")
       }
     };
 
-    for (auto idx = 0; idx < num_threads; ++idx) { asio::spawn(crawler); }
+    for (auto idx = 0; idx < num_threads; ++idx) { asio::spawn(io, crawler); }
 
     auto threads = std::vector<std::thread>();
     threads.reserve(num_threads);
