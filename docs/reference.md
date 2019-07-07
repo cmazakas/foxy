@@ -28,9 +28,9 @@
 * [uri::encode_path](./reference/pct_encoding.md#foxyuriencode_path)
 * [uri::encode_query](./reference/pct_encoding.md#foxyuriencode_query)
 * [uri::encode_fragment](./reference/pct_encoding.md#foxyuriencode_fragment)
+* [uri::pct_decode](./reference/pct_decode.md#pct_decode)
 * [parse_uri](./reference/uri_parts.md#parse_uri)
 * [parse_complete](./reference/uri_parts.md#parse_complete)
 * [parse_authority](./reference/uri_parts.md#parse_authority)
-* [uri::pct_decode](./reference/pct_decode.md#pct_decode)
 
 To [ToC](./index.md#Table-of-Contents)
