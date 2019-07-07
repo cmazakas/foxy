@@ -57,6 +57,7 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/server_session/async_detect_ssl.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/server_session/async_handshake.impl.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
