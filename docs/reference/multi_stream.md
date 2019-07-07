@@ -104,6 +104,16 @@ get_executor() -> executor_type;
 
 Returns a copy of the underlying stream's `executor_type`.
 
+#### upgrade
+
+```c++
+auto
+upgrade(boost::asio::ssl::context& ctx) -> void;
+```
+
+Given a plain `multi_stream`, transform it to an `ssl_stream_type` using the supplied `ctx`.
+
+
 #### async_read_some
 
 ```c++
