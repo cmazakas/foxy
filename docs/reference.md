@@ -7,8 +7,8 @@
 * [basic_multi_stream](./reference/multi_stream.md#foxybasic_multi_stream)
 * [session_opts](./reference/session_opts.md#foxysession_opts)
 * [basic_session](./reference/session.md#foxybasic_session)
-* [client_session](./reference/client_session.md#foxyclient_session)
-* [server_session](./reference/server_session.md#foxyserver_session)
+* [basic_client_session](./reference/client_session.md#foxybasic_client_session)
+* [basic_server_session](./reference/server_session.md#foxybasic_server_session)
 * [proxy](./reference/proxy.md#foxyproxy)
 
 ### URLs / Unicode Encoding
