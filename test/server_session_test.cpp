@@ -211,6 +211,75 @@ TEST_CASE("server_session_test")
     opts.timeout = std::chrono::seconds{30};
     opts.ssl_ctx = client_ctx;
 
+    auto server_opts = foxy::session_opts{{}, std::chrono::seconds{30}};
+
+    auto client = foxy::client_session(io, opts);
+    client.stream.ssl().set_verify_mode(ssl::verify_none);
+
+    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+      auto ec = boost::system::error_code();
+
+      auto stream = foxy::multi_stream(io);
+      acceptor.async_accept(stream.plain(), yield);
+
+      auto server = foxy::server_session(std::move(stream), server_opts);
+      REQUIRE_FALSE(server.stream.is_ssl());
+
+      auto const detected_ssl = server.async_detect_ssl(yield);
+      REQUIRE(detected_ssl);
+
+      server.stream.upgrade(server_ctx);
+      REQUIRE(server.stream.is_ssl());
+
+      server.opts.ssl_ctx = server_ctx;
+      server.stream.ssl().set_verify_mode(ssl::verify_none);
+
+      auto const bytes_used = server.async_handshake(yield[ec]);
+
+      CHECK(server.buffer.size() == 0);
+      CHECK(bytes_used > 0);
+      CHECK(ec.message() == "The operation completed successfully");
+      REQUIRE_FALSE(ec);
+
+      server.stream.ssl().async_shutdown(yield);
+    });
+
+    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+      auto ec = boost::system::error_code();
+
+      client.async_connect("127.0.0.1", "1337", yield[ec]);
+
+      auto const handshake_failed = static_cast<bool>(ec);
+      CHECK_FALSE(handshake_failed);
+
+      client.stream.ssl().async_shutdown(yield);
+    });
+
+    io.run();
+  }
+
+  SECTION("Our server session should be upgrade-able to TLS (no detection)")
+  {
+    asio::io_context io{1};
+
+    auto const addr     = ip::make_address_v4("127.0.0.1");
+    auto const port     = static_cast<unsigned short>(1337);
+    auto const endpoint = tcp::endpoint(addr, port);
+
+    auto const reuse_addr = true;
+
+    auto acceptor = tcp::acceptor(io, endpoint, reuse_addr);
+    REQUIRE(acceptor.is_open());
+
+    auto client_ctx = ssl::context(ssl::context::tlsv12_client);
+    auto server_ctx = ssl::context(ssl::context::tlsv12_server);
+
+    load_server_certificate(server_ctx);
+
+    auto opts    = foxy::session_opts{};
+    opts.timeout = std::chrono::seconds{30};
+    opts.ssl_ctx = client_ctx;
+
     auto server_opts = foxy::session_opts{server_ctx, std::chrono::seconds{30}};
 
     auto client = foxy::client_session(io, opts);
@@ -223,10 +292,6 @@ TEST_CASE("server_session_test")
       acceptor.async_accept(stream.plain(), yield);
 
       auto server = foxy::server_session(std::move(stream), server_opts);
-
-      auto const detected_ssl = server.async_detect_ssl(yield);
-      REQUIRE(detected_ssl);
-
       server.stream.upgrade(server_ctx);
       REQUIRE(server.stream.is_ssl());
 
@@ -235,11 +300,11 @@ TEST_CASE("server_session_test")
       auto const bytes_used = server.async_handshake(yield[ec]);
 
       CHECK(server.buffer.size() == 0);
-      CHECK(bytes_used > 0);
+      CHECK(bytes_used == 0);
       CHECK(ec.message() == "The operation completed successfully");
       REQUIRE_FALSE(ec);
 
-      server.stream.ssl().async_shutdown(yield[ec]);
+      server.stream.ssl().async_shutdown(yield);
     });
 
     asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
@@ -250,7 +315,7 @@ TEST_CASE("server_session_test")
       auto const handshake_failed = static_cast<bool>(ec);
       CHECK_FALSE(handshake_failed);
 
-      client.stream.ssl().async_shutdown(yield[ec]);
+      client.stream.ssl().async_shutdown(yield);
     });
 
     io.run();
