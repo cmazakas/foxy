@@ -240,7 +240,7 @@ TEST_CASE("server_session_test")
 
       CHECK(server.buffer.size() == 0);
       CHECK(bytes_used > 0);
-      CHECK(ec.message() == "The operation completed successfully");
+
       REQUIRE_FALSE(ec);
 
       server.stream.ssl().async_shutdown(yield);
@@ -303,7 +303,7 @@ TEST_CASE("server_session_test")
 
       CHECK(server.buffer.size() == 0);
       CHECK(bytes_used == 0);
-      CHECK(ec.message() == "The operation completed successfully");
+
       REQUIRE_FALSE(ec);
 
       server.stream.ssl().async_shutdown(yield);
