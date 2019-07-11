@@ -1,4 +1,4 @@
-## `foxy::client_session`
+## `foxy::basic_client_session`
 
 ## Include
 
@@ -8,8 +8,8 @@
 
 ## Synopsis
 
-The `client_session` is one of Foxy's main workhorses. It gives users an easy way to connect to a
-remote server and then send and receive messages.
+The `basic_client_session` is one of Foxy's main workhorses. It gives users an easy way to connect
+to a remote server and then send and receive messages.
 
 Users will manually have to disconnect and close their connections.
 

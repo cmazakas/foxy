@@ -61,7 +61,7 @@ public:
     http::response_parser<http::empty_body> shutdown_parser;
 
     state(foxy::multi_stream stream, foxy::session_opts const& client_opts)
-      : session(std::move(stream))
+      : session(std::move(stream), {})
       , client(session.get_executor().context(), client_opts)
     {
     }

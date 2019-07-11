@@ -52,8 +52,13 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/shared_handler_ptr.impl.hpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_connect.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/client_session/async_request.impl.hpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/server_session/async_detect_ssl.impl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/server_session/async_handshake.impl.hpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_read_header.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
@@ -61,7 +66,6 @@ add_library(
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/server_session.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/uri_parts.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utility.cpp
 
@@ -114,9 +118,9 @@ if (MSVC)
   target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
 endif()
 
-include(CTest)
-
 if (BUILD_TESTING)
+  include(CTest)
+
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
     Boost 1.70
@@ -146,6 +150,7 @@ if (BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/proxy_test2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/relay_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/server_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/ssl_client_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/unicode_uri_test.cpp

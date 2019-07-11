@@ -56,7 +56,7 @@ TEST_CASE("Our basic_session class...")
     auto valid_verb   = false;
     auto valid_target = false;
 
-    asio::spawn([&](asio::yield_context yield) mutable {
+    asio::spawn(io, [&](asio::yield_context yield) mutable {
       auto session =
         foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
@@ -97,7 +97,7 @@ TEST_CASE("Our basic_session class...")
     auto valid_parse = false;
     auto valid_body  = false;
 
-    asio::spawn([&](asio::yield_context yield) mutable {
+    asio::spawn(io, [&](asio::yield_context yield) mutable {
       auto session =
         foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
@@ -129,7 +129,7 @@ TEST_CASE("Our basic_session class...")
 
     auto valid_serialization = false;
 
-    asio::spawn([&](asio::yield_context yield) mutable {
+    asio::spawn(io, [&](asio::yield_context yield) mutable {
       auto ec = boost::system::error_code();
 
       auto session =

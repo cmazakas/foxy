@@ -62,6 +62,9 @@ public:
   auto
   get_executor() -> executor_type;
 
+  auto
+  upgrade(boost::asio::ssl::context& ctx) -> void;
+
   // we inline these two method implementations so we don't have to declare
   // the return type
   //
@@ -133,6 +136,14 @@ auto
 basic_multi_stream<Stream>::get_executor() -> executor_type
 {
   return boost::variant2::visit([](auto& stream) { return stream.get_executor(); }, stream_);
+}
+
+template <class Stream>
+auto
+basic_multi_stream<Stream>::upgrade(boost::asio::ssl::context& ctx) -> void
+{
+  auto socket = std::move(plain());
+  stream_     = ssl_stream_type(std::move(socket), ctx);
 }
 
 using multi_stream = basic_multi_stream<

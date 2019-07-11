@@ -1,4 +1,4 @@
-## `foxy::server_session`
+## `foxy::basic_server_session`
 
 ## Include
 
@@ -8,10 +8,9 @@
 
 ## Synopsis
 
-The `server_session` functions more as a strong typedef of the `foxy::session` than it does an
-independent type. It is intended to represent the session a server has with a client.
-
-Currently not tested with TLS.
+The `basic_server_session` encapsulates a small subset of what a server may need to do to handle an
+HTTP transaction. It enables the user to detect an SSL handshake without upgrading and also allows
+the user to perform its half of the handshake.
 
 Users will have to manually disconnect and close their connections.
 
@@ -48,14 +47,19 @@ and the [`boost::asio::ssl::stream`](https://www.boost.org/doc/libs/release/doc/
 ## Declaration
 
 ```c++
-struct server_session : public session;
+template <class DynamicBuffer>
+struct basic_server_session
+  : public basic_session<
+      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
+                                       typename boost::asio::io_context::executor_type>,
+      DynamicBuffer>;
 ```
 
 ## Member Typedefs
 
 ```c++
-using stream_type   = ::foxy::multi_stream;
-using buffer_type   = boost::beast::flat_buffer;
+using stream_type   = ::foxy::basic_multi_stream<Stream>;
+using buffer_type   = DynamicBuffer;
 using timer_type    = boost::asio::steady_timer;
 using executor_type = typename stream_type::executor_type;
 ```
@@ -74,15 +78,16 @@ timer_type   timer;
 #### Defaults
 
 ```c++
-server_session()                      = delete;
-server_session(server_session const&) = delete;
-server_session(server_session&&)      = default;
+basic_server_session()                            = delete;
+basic_server_session(basic_server_session const&) = delete;
+basic_server_session(basic_server_session&&)      = default;
 ```
 
 #### `stream`
 
 ```c++
-explicit server_session(multi_stream stream_);
+template <class... BufferArgs>
+basic_server_session(multi_stream stream_, session_opts opts, BufferArgs&&... bargs);
 ```
 
 Construct the server session by moving the supplied `multi_stream`.
@@ -203,6 +208,52 @@ void(boost::system::error_code, std::size_t)
 
 The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
 stream.
+
+This function will timeout.
+
+#### async_detect_ssl
+
+```c++
+template <class DetectHandler>
+auto
+async_detect_ssl(DetectHandler&& handler) ->
+  typename boost::asio::async_result<std::decay_t<DetectHandler>,
+                                     void(boost::system::error_code, bool)>::return_type;
+```
+
+A version of [`boost::beast::async_detect_ssl`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__async_detect_ssl.html)
+that supports timeouts.
+
+This function will read from the socket until it either detects a client SSL handshake, reads in
+enough data to know it is not receiving a handshake or the connection is timed out or any other
+error occurs while reading from the socket.
+
+This function is intended to be used when the server session is in its plain mode.
+
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code, bool)
+```
+
+The supplied boolean indicates whether or not an SSL handshake was detected.
+
+This function will timeout.
+
+#### async_handshake
+
+```c++
+template <class HandshakeHandler>
+auto
+async_handshake(HandshakeHandler&& handler) ->
+  typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
+                                     void(boost::system::error_code, std::size_t)>::return_type;
+```
+
+Performs the server portion of an SSL handshake. Implicitly requires the session's stream to be in
+SSL mode, i.e. `session.stream.is_ssl()` returns `true`.
+
+Users are intended to call [`upgrade`](./multi_stream.md#upgrade) on the underlying stream object
+with an appropriate `asio::ssl::context` before calling this function.
 
 This function will timeout.
 
