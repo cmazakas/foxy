@@ -158,6 +158,8 @@ TEST_CASE("server_session_test")
     auto client = foxy::client_session(io, opts);
 
     asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+      auto ec = boost::system::error_code();
+
       auto stream = foxy::multi_stream(io);
       acceptor.async_accept(stream.plain(), yield);
 
@@ -168,8 +170,8 @@ TEST_CASE("server_session_test")
 
       auto& socket = server.stream.plain();
 
-      socket.shutdown(tcp::socket::shutdown_both);
-      socket.close();
+      socket.shutdown(tcp::socket::shutdown_both, ec);
+      socket.close(ec);
     });
 
     asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
@@ -182,8 +184,8 @@ TEST_CASE("server_session_test")
 
       auto& socket = client.stream.ssl().next_layer();
 
-      socket.shutdown(tcp::socket::shutdown_both);
-      socket.close();
+      socket.shutdown(tcp::socket::shutdown_both, ec);
+      socket.close(ec);
     });
 
     io.run();
