@@ -22,6 +22,13 @@ The session enables users to decouple detecting a client request for a TLS upgra
 the actual handshake. Using this, users can support both plain HTTP and HTTPS on the same port as
 is the case with the [example server in Beast](https://www.boost.org/doc/libs/release/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp).
 
+When constructing the `basic_server_session`, the supplied `session_opts` are stored but they are
+not used. The session's underlying stream will be that of the user-supplied one (this means the
+timeout value and SSL context in the session options are not used).
+
+The session's embedded options instead act as a cache that the user can interact with at their will.
+This is required for using the `async_handshake` method which accepts an `ssl::context&`.
+
 Users will have to manually disconnect and close their connections.
 
 For plain connections, users are advised to do something like:
