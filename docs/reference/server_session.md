@@ -257,6 +257,8 @@ with an appropriate `asio::ssl::context` before calling this function.
 
 This function will timeout.
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

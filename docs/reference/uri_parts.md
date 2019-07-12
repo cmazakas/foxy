@@ -217,6 +217,8 @@ This function returns a boolean that indicates whether or not the parse was succ
 
 `parse_uri` should be preferred over this function.
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

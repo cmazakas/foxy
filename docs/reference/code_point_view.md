@@ -66,6 +66,8 @@ Returns a code point iterator that represents the end of the possible code point
 See also:
  * [code_point_iterator](./code_point_iterator.md#foxy::code_point_iterator)
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

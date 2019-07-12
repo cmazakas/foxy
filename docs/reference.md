@@ -33,4 +33,6 @@
 * [parse_complete](./reference/uri_parts.md#parse_complete)
 * [parse_authority](./reference/uri_parts.md#parse_authority)
 
+---
+
 To [ToC](./index.md#Table-of-Contents)

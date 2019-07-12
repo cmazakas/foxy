@@ -318,6 +318,8 @@ x3::rule<class absolute_uri> const absolute_uri     = "absolute_uri";
 x3::rule<class uri_reference> const uri_reference     = "uri_reference";
 ```
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

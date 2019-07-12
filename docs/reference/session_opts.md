@@ -42,6 +42,8 @@ duration_type                               timeout = std::chrono::seconds{1};
 
 None provided.
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

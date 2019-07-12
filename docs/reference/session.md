@@ -218,6 +218,8 @@ stream.
 
 This function will timeout.
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

@@ -153,6 +153,8 @@ Writes the percent-encoded fragment component of a URI to the provided OutputIte
 
 This function is the same as `foxy::uri::encode_query`.
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)

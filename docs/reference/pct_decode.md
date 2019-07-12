@@ -89,6 +89,8 @@ decoded_view = boost::string_view(bytes.data(), out - bytes.begin());
 CHECK(decoded_view == "www.goo");
 ```
 
+---
+
 To [Reference](../reference.md#Reference)
 
 To [ToC](../index.md#Table-of-Contents)
