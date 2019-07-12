@@ -9,8 +9,18 @@
 ## Synopsis
 
 The `basic_server_session` encapsulates a small subset of what a server may need to do to handle an
-HTTP transaction. It enables the user to detect an SSL handshake without upgrading and also allows
-the user to perform its half of the handshake.
+HTTP transaction.
+
+The server session can only be constructed by a living socket which must be moved into the session's
+constructor.
+
+This is to have the design follow that of `accept` which returns a new file handle to a socket upon
+successfully accepting a connection. The server session is intended to be constructed by
+`asio::ip::tcp::acceptor`'s `accept` or `async_accept` methods.
+
+The session enables users to decouple detecting a client request for a TLS upgrade from performing
+the actual handshake. Using this, users can support both plain HTTP and HTTPS on the same port as
+is the case with the [example server in Beast](https://www.boost.org/doc/libs/release/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp).
 
 Users will have to manually disconnect and close their connections.
 
