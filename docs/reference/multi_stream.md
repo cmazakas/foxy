@@ -1,4 +1,4 @@
-## `foxy::basic_multi_stream`
+## foxy::basic_multi_stream
 
 ## Include
 

@@ -1,4 +1,4 @@
-## `foxy::code_point_iterator`
+## foxy::code_point_iterator
 
 ## Include
 

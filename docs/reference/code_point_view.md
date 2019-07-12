@@ -1,4 +1,4 @@
-## `foxy::code_point_view`
+## foxy::code_point_view
 
 ## Include
 

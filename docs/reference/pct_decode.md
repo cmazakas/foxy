@@ -4,7 +4,7 @@
 #include <foxy/pct_decode.hpp>
 ```
 
-## `foxy::uri::pct_decode`
+## foxy::uri::pct_decode
 
 #### Declaration
 

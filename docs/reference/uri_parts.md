@@ -1,4 +1,4 @@
-## `foxy::basic_uri_parts`
+## foxy::basic_uri_parts
 
 ## Include
 

@@ -1,4 +1,4 @@
-## `foxy::session_opts`
+## foxy::session_opts
 
 ## Include
 

@@ -1,4 +1,4 @@
-## `foxy::basic_client_session`
+## foxy::basic_client_session
 
 ## Include
 
@@ -82,7 +82,7 @@ client_session(client_session const&) = delete;
 client_session(client_session&&)      = default;
 ```
 
-#### `io_context`
+#### io_context
 
 ```c++
 template <class... BufferArgs>

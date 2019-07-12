@@ -1,4 +1,4 @@
-## `foxy::basic_server_session`
+## foxy::basic_server_session
 
 ## Include
 
@@ -100,7 +100,7 @@ basic_server_session(basic_server_session const&) = delete;
 basic_server_session(basic_server_session&&)      = default;
 ```
 
-#### `stream`
+#### stream
 
 ```c++
 template <class... BufferArgs>

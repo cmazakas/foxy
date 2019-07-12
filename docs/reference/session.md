@@ -1,4 +1,4 @@
-## `foxy::basic_session`
+## foxy::basic_session
 
 ```c++
 #include <foxy/session.hpp>
@@ -72,7 +72,7 @@ basic_session(basic_session const&) = delete;
 basic_session(basic_session&&)      = default;
 ```
 
-#### `io_context`
+#### io_context
 
 ```c++
 template <class... BufferArgs>
@@ -86,7 +86,7 @@ If the session options contain an SSL context, the session will be constructed i
 
 The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
 
-#### `stream_type`
+#### stream_type
 
 ```c++
 template <class... BufferArgs>

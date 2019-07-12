@@ -4,7 +4,7 @@
 #include <foxy/pct_encode.hpp>
 ```
 
-## `foxy::utf8_encode`
+## foxy::utf8_encode
 
 #### Declaration
 
@@ -53,7 +53,7 @@ utf8_bytes.resize(bytes_per_code_point * code_points.size());
 foxy::utf8_encode(code_points.begin(), code_points.end(), utf8_bytes.begin());
 ```
 
-## `foxy::uri::encode_host`
+## foxy::uri::encode_host
 
 #### Declaration
 
@@ -82,7 +82,7 @@ auto const encoded_host =
 CHECK(encoded_host == "hello%20world!%0a");
 ```
 
-## `foxy::uri::encode_path`
+## foxy::uri::encode_path
 
 #### Declaration
 
@@ -111,7 +111,7 @@ auto const encoded_path =
 CHECK(encoded_path == "/%22%23%3c%3e%3f@%5b%5c%5d%5e%60%7b%7c%7d:::");
 ```
 
-## `foxy::uri::encode_query`
+## foxy::uri::encode_query
 
 ##### Declaration
 
@@ -137,7 +137,7 @@ auto const encoded_query =
 CHECK(encoded_query == "?//%22%3a%23/%3c%3e?%40%5b%5c%5d%5e%60%7b%7c%7d");
 ```
 
-## `foxy::uri::encode_fragment`
+## foxy::uri::encode_fragment
 
 #### Declaration
 

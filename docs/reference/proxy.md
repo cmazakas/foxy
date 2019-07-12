@@ -1,4 +1,4 @@
-## `foxy::proxy`
+## foxy::proxy
 
 ## Include
 

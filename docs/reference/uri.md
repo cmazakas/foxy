@@ -1,4 +1,4 @@
-# `foxy::uri`
+# foxy::uri
 
 Foxy comes with a large set of URI combinators compatible with [Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html).
 
