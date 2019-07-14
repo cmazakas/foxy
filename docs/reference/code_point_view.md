@@ -8,7 +8,7 @@
 
 ## Synopsis
 
-A Range-like type that makes working with [code point iterators](./code_point_iterator#foxy::code_point_iterator)
+A Range-like type that makes working with [code point iterators](./code_point_iterator.md#foxycode_point_iterator)
 easier.
 
 ## Declaration
@@ -65,7 +65,7 @@ end() const noexcept -> iterator_type
 Returns a code point iterator that represents the end of the possible code point range.
 
 See also:
- * [code_point_iterator](./code_point_iterator.md#foxy::code_point_iterator)
+ * [code_point_iterator](./code_point_iterator.md#foxycode_point_iterator)
 
 ---
 
