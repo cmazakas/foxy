@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-#### Does Foxy throw an exception when an HTTP response is >= 400?
+### Does Foxy throw an exception when an HTTP response is >= 400?
 
 Nope! When a `foxy::basic_session` finishes reading a response from the underlying stream, it only
 assembles the message. This is the same that would happen if you called `boost::beast::async_read`
@@ -8,11 +8,11 @@ yourself.
 
 Validation of the response status code is left as an exercise for the user.
 
-Foxy will, however, invoke the `async_read` callback with a truth error code if there is an
+Foxy will, however, invoke the `async_read` callback with a truthy error code if there is an
 underlying error in reading from the stream or parsing the response itself (i.e. content-length
 headers don't match actual body length).
 
-#### How Do I Set Timeouts?
+### How Do I Set Timeouts?
 
 Given:
 
