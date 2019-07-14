@@ -22,16 +22,16 @@
 
 #### Functions
 
-* [parse_uri](./reference/uri_parts.md#parse_uri)
+* [parse_uri](./reference/parse_uri.md#foxyparse_uri)
 * [make_code_point_iterator](./reference/code_point_iterator.md#make_code_point_iterator)
-* [uri::encode_host](./reference/pct_encoding.md#foxyuriencode_host)
-* [uri::encode_path](./reference/pct_encoding.md#foxyuriencode_path)
-* [uri::encode_query](./reference/pct_encoding.md#foxyuriencode_query)
-* [uri::encode_fragment](./reference/pct_encoding.md#foxyuriencode_fragment)
+* [uri::encode_host](./reference/encode_host.md#foxyuriencode_host)
+* [uri::encode_path](./reference/encode_path.md#foxyuriencode_path)
+* [uri::encode_query](./reference/encode_query.md#foxyuriencode_query)
+* [uri::encode_fragment](./reference/encode_fragment.md#foxyuriencode_fragment)
 * [uri::pct_decode](./reference/pct_decode.md#pct_decode)
-* [utf8_encode](./reference/pct_encoding.md#foxyutf8_encode)
-* [parse_complete](./reference/uri_parts.md#parse_complete)
-* [parse_authority](./reference/uri_parts.md#parse_authority)
+* [utf8_encode](./reference/utf8.md#foxyutf8_encode)
+* [parse_complete](./reference/parse_complete.md#foxyparse_complete)
+* [parse_authority](./reference/parse_authority.md#parse_authority)
 
 ---
 

@@ -1,4 +1,4 @@
-## foxy::code_point_view
+# foxy::code_point_view
 
 ## Include
 
@@ -8,7 +8,8 @@
 
 ## Synopsis
 
-A range-like type that makes working with code point iterators easier.
+A Range-like type that makes working with [code point iterators](./code_point_iterator#foxy::code_point_iterator)
+easier.
 
 ## Declaration
 
@@ -26,7 +27,7 @@ using iterator_type =
 
 ## Constructors
 
-#### Defaults
+### Defaults
 
 ```c++
 code_point_view()                       = default;
@@ -34,7 +35,7 @@ code_point_view(code_point_view const&) = default;
 code_point_view(code_point_view&&)      = default;
 ```
 
-#### string_view
+### string_view
 
 ```c++
 code_point_view(boost::basic_string_view<Char, Traits> view)
@@ -45,7 +46,7 @@ of Unicode code points (`char32_t`).
 
 ## Member Functions
 
-#### begin
+### begin
 
 ```c++
 auto
@@ -54,7 +55,7 @@ begin() const noexcept -> iterator_type;
 
 Returns a code point iterator that starts at the beginning of the internal string view.
 
-#### end
+### end
 
 ```c++
 auto

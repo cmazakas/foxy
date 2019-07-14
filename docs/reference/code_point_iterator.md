@@ -1,4 +1,4 @@
-## foxy::code_point_iterator
+# foxy::code_point_iterator
 
 ## Include
 
@@ -8,7 +8,7 @@
 
 ## Synopsis
 
-The code point iterator is a simple InputIterator used to traverse a range of arbitrary character
+The `code_point_iterator` is a simple InputIterator used to traverse a range of arbitrary character
 type and output Unicode code points in the form of `char32_t`.
 
 The `code_point_iterator` is an "iterator adapter" and wraps an iterator pair as it must know when
@@ -33,7 +33,7 @@ using iterator_category = std::input_iterator_tag;
 
 ## Constructors
 
-#### Defaults
+### Defaults
 
 ```c++
 code_point_iterator(void)                           = default;
@@ -41,20 +41,20 @@ code_point_iterator(code_point_iterator const&)     = default;
 code_point_iterator(code_point_iterator&&) noexcept = default;
 ```
 
-#### Iterator Pair
+### Iterator Pair
 
 ```c++
-code_point_iterator(Iterator const iterator, Iterator const end)
+code_point_iterator(Iterator begin, Iterator end)
 ```
 
-The main constructor for the iterator type. The iterator begins wherever `iterator` is and uses the
+The main constructor for the iterator type. The iterator begins wherever `begin` is and uses the
 `end` iterator as a terminating condition.
 
-The behavior is undefined if `iterator` is advanced and never compares equal to `end`.
+The behavior is undefined if `begin` is advanced and never compares equal to `end`.
 
 ## Member Functions
 
-#### Copy Assignment
+### Copy Assignment
 
 ```c++
 auto
@@ -63,7 +63,7 @@ operator=(code_point_iterator const& rhs) & -> code_point_iterator&;
 
 Copy-assignment operator
 
-#### Move Assignment
+### Move Assignment
 
 ```c++
 auto
@@ -72,7 +72,7 @@ operator=(code_point_iterator&& rhs) & noexcept -> code_point_iterator&;
 
 Move-assignment operator
 
-#### Dereference
+### Dereference
 
 ```c++
 auto
@@ -86,7 +86,7 @@ Returns `0xFFFFFFFFu` when the character sequence contains an illegal code point
 `0xFFFFFFFEu` for an incomplete code point, i.e. 2 out of 3 valid utf-8 bytes were found but then
 the string abruptly ends.
 
-#### Pre-Increment
+### Pre-Increment
 
 ```c++
 auto
@@ -95,7 +95,7 @@ operator++() & -> code_point_iterator&;
 
 No-op as traversal is done via `operator*`.
 
-#### Post-Increment
+### Post-Increment
 
 ```c++
 auto
@@ -104,7 +104,7 @@ operator++(int const) & -> code_point_iterator&;
 
 No-op as traversal is done via `operator*`.
 
-#### Equality
+### Equality
 
 ```c++
 auto
@@ -113,7 +113,7 @@ operator==(code_point_iterator const& rhs) const noexcept -> bool;
 
 Returns whether the nested iterator is equal to the one in `rhs`.
 
-#### Inequality
+### Inequality
 
 ```c++
 auto
@@ -122,7 +122,7 @@ operator!=(code_point_iterator const& rhs) const noexcept -> bool
 
 Returns the negation of `operator==`.
 
-#### Swap
+### Swap
 
 ```c++
 auto
@@ -133,7 +133,7 @@ Swaps the internal iterator with the one in `rhs`.
 
 ## Non-Member Functions
 
-#### swap
+### swap
 
 ```c++
 namespace code_point
@@ -147,19 +147,19 @@ swap(code_point_iterator<Iterator>& iter1, code_point_iterator<Iterator>& iter2)
 Invokes `iter1.swap(iter2)`. Intended to work as a swap-friendly customization hook for `std::swap`
 and the STL.
 
-#### make_code_point_iterator
+### make_code_point_iterator
 
 ```c++
 template <class Iterator>
 auto
-make_code_point_iterator(Iterator const iterator, Iterator const end)
+make_code_point_iterator(Iterator const begin, Iterator const end)
   -> code_point_iterator<Iterator>;
 ```
 
 Factory function used to more ergonomically create code point iterators due to function template
 deduction.
 
-Returns a code point iterator constructed as-if: `foxy::code_point_iterator{iterator, end}`.
+Returns a code point iterator constructed as-if: `foxy::code_point_iterator(begin, end)`.
 
 See also:
  * [code_point_view](./code_point_view.md#foxy::code_point_view)

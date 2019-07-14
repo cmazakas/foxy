@@ -1,29 +1,31 @@
+# foxy::uri::pct_decode
+
 ## Include
 
 ```c++
 #include <foxy/pct_decode.hpp>
 ```
 
-## foxy::uri::pct_decode
-
-#### Declaration
+## Declaration
 
 ```c++
 namespace uri
 {
 template <class OutputIterator>
 auto
-pct_decode(boost::string_view const str, OutputIterator& sink) -> void;
-
-template <class OutputIterator>
-auto
 pct_decode(boost::string_view const   str,
            OutputIterator             sink,
            boost::system::error_code& ec) noexcept -> OutputIterator;
+
+// throwing version
+//
+template <class OutputIterator>
+auto
+pct_decode(boost::string_view const str, OutputIterator& sink) -> void;
 }
 ```
 
-#### Synopsis
+## Synopsis
 
 Writes the pct-dedoded string denoted by `str` to the supplied OutputIterator.
 
@@ -41,7 +43,7 @@ The noexcept version can take its `sink` by-value and will instead write the err
 This design decision was to accomodate both workflows while also giving users the ability to probe
 their buffers for partial decodings.
 
-#### Example
+### Example
 
 ```c++
 auto ec = boost::system::error_code{};

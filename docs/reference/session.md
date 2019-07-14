@@ -1,4 +1,4 @@
-## foxy::basic_session
+# foxy::basic_session
 
 ```c++
 #include <foxy/session.hpp>
