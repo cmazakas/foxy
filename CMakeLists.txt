@@ -37,8 +37,9 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utf8.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
