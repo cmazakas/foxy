@@ -31,7 +31,7 @@
 * [uri::pct_decode](./reference/pct_decode.md#pct_decode)
 * [utf8_encode](./reference/utf8.md#foxyutf8_encode)
 * [parse_complete](./reference/parse_complete.md#foxyparse_complete)
-* [parse_authority](./reference/parse_authority.md#parse_authority)
+* [parse_authority](./reference/parse_authority.md#foxyparse_authority)
 
 ---
 
