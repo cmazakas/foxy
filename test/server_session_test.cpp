@@ -213,7 +213,7 @@ TEST_CASE("server_session_test")
     opts.timeout = std::chrono::seconds{30};
     opts.ssl_ctx = client_ctx;
 
-    auto server_opts = foxy::session_opts{{}, std::chrono::seconds{30}};
+    auto server_opts = foxy::session_opts{server_ctx, std::chrono::seconds{30}};
 
     auto client = foxy::client_session(io, opts);
     client.stream.ssl().set_verify_mode(ssl::verify_none);
@@ -229,12 +229,6 @@ TEST_CASE("server_session_test")
 
       auto const detected_ssl = server.async_detect_ssl(yield);
       REQUIRE(detected_ssl);
-
-      server.stream.upgrade(server_ctx);
-      REQUIRE(server.stream.is_ssl());
-
-      server.opts.ssl_ctx = server_ctx;
-      server.stream.ssl().set_verify_mode(ssl::verify_none);
 
       auto const bytes_used = server.async_handshake(yield[ec]);
 

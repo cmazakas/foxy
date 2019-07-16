@@ -267,11 +267,14 @@ async_handshake(HandshakeHandler&& handler) ->
                                      void(boost::system::error_code, std::size_t)>::return_type;
 ```
 
-Performs the server portion of an SSL handshake. Implicitly requires the session's stream to be in
-SSL mode, i.e. `session.stream.is_ssl()` returns `true`.
+Performs the server portion of an SSL handshake.
 
-Users are intended to call [`upgrade`](./multi_stream.md#upgrade) on the underlying stream object
-with an appropriate `asio::ssl::context` before calling this function.
+This function will automatically [`upgrade`](./multi_stream.md#upgrade) the session's internal
+stream object to SSL mode if the stream is not already. This function will `upgrade` with SSL
+context found in the sessions `opts` member.
+
+For users wanting to use a different SSL context, a call to `upgrade` before invoking the handshake
+function will prevent the automatic upgrade.
 
 This function will timeout.
 

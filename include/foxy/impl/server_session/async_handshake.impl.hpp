@@ -56,6 +56,13 @@ struct handshake_op : boost::beast::async_base<
   {
     BOOST_ASIO_CORO_REENTER(*this)
     {
+      // forces all users to pay for a branch
+      // also saves new users from not updating their underlying stream type
+      //
+      if (!session.stream.is_ssl() && session.opts.ssl_ctx) {
+        session.stream.upgrade(*session.opts.ssl_ctx);
+      }
+
       if (session.buffer.size() > 0) {
         BOOST_ASIO_CORO_YIELD
         session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::server,
