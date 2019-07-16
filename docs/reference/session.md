@@ -12,13 +12,16 @@ needed for using Beast.
 All members are public so that users can make powerful and flexible abstractions without the library
 becoming a hindrance.
 
-The `basic_session` contains the `foxy::basic_multi_stream` so that it can act as a dual-stream type
-supporting both plain and encrypted data. It also contains a user-specified buffer for use during
-parsing operations as well as a timer that it uses to determine when an operation should end.
+The `basic_session` contains the [`foxy::basic_multi_stream`](./multi_stream.md#foxybasic_multi_stream)
+so that it can act as a dual-stream type supporting both plain and encrypted data. It also contains
+a user-specified buffer for use during parsing operations along with a timer that it uses to
+determine when an operation should end.
 
-The `basic_session` is configurable via its `opts` member. Currently, only adjusting the
-timeouts has any direct effect. Mutating the nested SSL context may result in an inconsistent state
-of the session and is undefined by the library.
+The `basic_session` is configurable via its [`opts`](./session_opts.md#foxysession_opts) member.
+Currently, only adjusting the timeouts has any direct effect. The client session, for example, will
+only use the nested SSL context during its constructor and nowhere else. The server session will
+only access the nested SSL context during its [`async_handshake`](./server_session.md#async_handshake)
+function.
 
 This class is used primarily for reading and writing HTTP/1.x messages.
 
