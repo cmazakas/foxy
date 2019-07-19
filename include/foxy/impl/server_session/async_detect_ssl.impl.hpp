@@ -17,13 +17,11 @@ namespace foxy
 namespace detail
 {
 template <class DynamicBuffer, class Handler>
-struct detect_op : boost::beast::async_base<
-                     Handler,
-                     typename ::foxy::basic_session<
-                       boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                        boost::asio::io_context::executor_type>,
-                       DynamicBuffer>::executor_type>,
-                   boost::asio::coroutine
+struct detect_op
+  : boost::beast::async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 {
   ::foxy::basic_session<
     boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
@@ -33,11 +31,8 @@ struct detect_op : boost::beast::async_base<
   detect_op(detect_op const&) = default;
   detect_op(detect_op&&)      = default;
 
-  detect_op(
-    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>& session_,
-    Handler                               handler)
+  detect_op(::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>& session_,
+            Handler                                                         handler)
     : boost::beast::async_base<
         Handler,
         typename ::foxy::basic_session<
@@ -77,8 +72,13 @@ basic_server_session<DynamicBuffer>::async_detect_ssl(DetectHandler&& handler) -
 {
   boost::asio::async_completion<DetectHandler, void(boost::system::error_code, bool)> init(handler);
 
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::detect_op, DynamicBuffer>::template fn>(*this, init);
+  ::foxy::detail::detect_op<
+    DynamicBuffer,
+    typename boost::asio::async_completion<
+      std::decay_t<DetectHandler>, void(boost::system::error_code, bool)>::completion_handler_type>(
+    *this, std::move(init.completion_handler));
+
+  return init.result.get();
 }
 
 } // namespace foxy

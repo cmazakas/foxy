@@ -30,6 +30,7 @@
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
 #include <boost/beast/core/bind_handler.hpp>
+#include <boost/beast/core/tcp_stream.hpp>
 
 #include <boost/optional/optional.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
@@ -45,11 +46,7 @@
 namespace foxy
 {
 template <class DynamicBuffer>
-struct basic_client_session
-  : public basic_session<
-      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                       typename boost::asio::io_context::executor_type>,
-      DynamicBuffer>
+struct basic_client_session : public basic_session<boost::beast::tcp_stream, DynamicBuffer>
 {
 public:
   basic_client_session()                            = delete;
@@ -58,10 +55,9 @@ public:
 
   template <class... BufferArgs>
   basic_client_session(boost::asio::io_context& io, session_opts opts, BufferArgs&&... bargs)
-    : basic_session<
-        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                         typename boost::asio::io_context::executor_type>,
-        DynamicBuffer>(io, std::move(opts), std::forward<BufferArgs>(bargs)...)
+    : basic_session<boost::beast::tcp_stream, DynamicBuffer>(io,
+                                                             std::move(opts),
+                                                             std::forward<BufferArgs>(bargs)...)
   {
   }
 

@@ -10,39 +10,30 @@
 #ifndef FOXY_IMPL_CLIENT_SESSION_ASYNC_REQUEST_IMPL_HPP_
 #define FOXY_IMPL_CLIENT_SESSION_ASYNC_REQUEST_IMPL_HPP_
 
-#include <foxy/client_session.hpp>
-
 namespace foxy
 {
 namespace detail
 {
 template <class Request, class ResponseParser, class DynamicBuffer, class Handler>
-struct request_op : boost::beast::async_base<
-                      Handler,
-                      typename ::foxy::basic_session<
-                        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                         boost::asio::io_context::executor_type>,
-                        DynamicBuffer>::executor_type>,
-                    boost::asio::coroutine
+struct request_op
+  : boost::beast::async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 
 {
-  ::foxy::basic_session<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    DynamicBuffer>& session;
-  Request&          request;
-  ResponseParser&   parser;
+  ::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>& session;
+  Request&                                                        request;
+  ResponseParser&                                                 parser;
 
   request_op()                  = delete;
   request_op(request_op const&) = default;
   request_op(request_op&&)      = default;
 
-  request_op(
-    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>& session_,
-    Handler                               handler,
-    Request&                              request_,
-    ResponseParser&                       parser_)
+  request_op(::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>& session_,
+             Handler                                                         handler,
+             Request&                                                        request_,
+             ResponseParser&                                                 parser_)
     : boost::beast::async_base<
         Handler,
         typename ::foxy::basic_session<
@@ -92,9 +83,13 @@ basic_client_session<DynamicBuffer>::async_request(Request&         request,
 {
   boost::asio::async_completion<RequestHandler, void(boost::system::error_code)> init(handler);
 
-  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<
-    ::foxy::detail::request_op, Request, ResponseParser, DynamicBuffer>::template fn>(
-    *this, init, request, parser);
+  ::foxy::detail::request_op<
+    Request, ResponseParser, DynamicBuffer,
+    typename boost::asio::async_completion<
+      std::decay_t<RequestHandler>, void(boost::system::error_code)>::completion_handler_type>(
+    *this, std::move(init.completion_handler), request, parser);
+
+  return init.result.get();
 }
 
 } // namespace foxy

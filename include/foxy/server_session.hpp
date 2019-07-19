@@ -13,6 +13,7 @@
 #include <foxy/session.hpp>
 #include <foxy/detail/timed_op_wrapper_v2.hpp>
 
+#include <boost/beast/core/tcp_stream.hpp>
 #include <boost/beast/core/detect_ssl.hpp>
 
 #include <boost/asio/async_result.hpp>
@@ -22,11 +23,7 @@
 namespace foxy
 {
 template <class DynamicBuffer>
-struct basic_server_session
-  : public basic_session<
-      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                       typename boost::asio::io_context::executor_type>,
-      DynamicBuffer>
+struct basic_server_session : public basic_session<boost::beast::tcp_stream, DynamicBuffer>
 {
 public:
   basic_server_session()                            = delete;
@@ -35,10 +32,9 @@ public:
 
   template <class... BufferArgs>
   basic_server_session(multi_stream stream_, session_opts opts, BufferArgs&&... bargs)
-    : basic_session<
-        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                         typename boost::asio::io_context::executor_type>,
-        DynamicBuffer>(std::move(stream_), opts, std::forward<BufferArgs>(bargs)...)
+    : basic_session<boost::beast::tcp_stream, DynamicBuffer>(std::move(stream_),
+                                                             opts,
+                                                             std::forward<BufferArgs>(bargs)...)
   {
   }
 

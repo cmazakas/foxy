@@ -115,7 +115,7 @@ public:
       // acknowledgement of the packet(s) containing the server's last
       // response.  Finally, the server fully closes the connection.
       //
-      s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
+      s.session.stream.plain().socket().shutdown(tcp::socket::shutdown_send, ec);
 
       BOOST_ASIO_CORO_YIELD
       s.session.async_read(s.shutdown_parser, std::move(*this));
@@ -124,8 +124,8 @@ public:
         foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
       }
 
-      s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
-      s.session.stream.plain().close(ec);
+      s.session.stream.plain().socket().shutdown(tcp::socket::shutdown_receive, ec);
+      s.session.stream.plain().socket().close(ec);
 
       if (s.client.stream.is_ssl()) {
         BOOST_ASIO_CORO_YIELD
@@ -141,8 +141,8 @@ public:
         if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
 
       } else {
-        s.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-        s.client.stream.plain().close(ec);
+        s.client.stream.plain().socket().shutdown(tcp::socket::shutdown_both, ec);
+        s.client.stream.plain().socket().close(ec);
       }
     }
   }

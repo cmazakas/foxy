@@ -10,24 +10,18 @@
 #ifndef FOXY_IMPL_SERVER_SESSION_ASYNC_HANDSHAKE_HPP_
 #define FOXY_IMPL_SERVER_SESSION_ASYNC_HANDSHAKE_HPP_
 
-#include <foxy/server_session.hpp>
-
 namespace foxy
 {
 namespace detail
 {
 template <class DynamicBuffer, class Handler>
-struct handshake_op : boost::beast::async_base<
-                        Handler,
-                        typename ::foxy::basic_session<
-                          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>::executor_type>,
-                      boost::asio::coroutine
+struct handshake_op
+  : boost::beast::async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 {
-  ::foxy::basic_session<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    DynamicBuffer>& session;
+  ::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>& session;
 
   handshake_op()                    = delete;
   handshake_op(handshake_op const&) = default;
@@ -40,10 +34,9 @@ struct handshake_op : boost::beast::async_base<
     Handler                               handler)
     : boost::beast::async_base<
         Handler,
-        typename ::foxy::basic_session<
-          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                           boost::asio::io_context::executor_type>,
-          DynamicBuffer>::executor_type>(std::move(handler), session_.get_executor())
+        typename ::foxy::basic_session<boost::beast::tcp_stream, DynamicBuffer>::executor_type>(
+        std::move(handler),
+        session_.get_executor())
     , session(session_)
   {
     (*this)({}, 0, false);
@@ -98,9 +91,13 @@ basic_server_session<DynamicBuffer>::async_handshake(HandshakeHandler&& handler)
   boost::asio::async_completion<HandshakeHandler, void(boost::system::error_code, std::size_t)>
     init(handler);
 
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::handshake_op, DynamicBuffer>::template fn>(*this,
-                                                                                          init);
+  ::foxy::detail::handshake_op<
+    DynamicBuffer, typename boost::asio::async_completion<
+                     std::decay_t<HandshakeHandler>,
+                     void(boost::system::error_code, std::size_t)>::completion_handler_type>(
+    *this, std::move(init.completion_handler));
+
+  return init.result.get();
 }
 
 } // namespace foxy
