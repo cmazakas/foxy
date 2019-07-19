@@ -1,4 +1,4 @@
-## `foxy::basic_server_session`
+# foxy::basic_server_session
 
 ## Include
 
@@ -9,8 +9,26 @@
 ## Synopsis
 
 The `basic_server_session` encapsulates a small subset of what a server may need to do to handle an
-HTTP transaction. It enables the user to detect an SSL handshake without upgrading and also allows
-the user to perform its half of the handshake.
+HTTP transaction.
+
+The server session can only be constructed by a living socket which must be moved into the session's
+constructor.
+
+This is to have the design follow that of [`accept`](http://man7.org/linux/man-pages/man2/accept.2.html)
+which returns a new file handle to a socket upon successfully accepting a connection. The server
+session is intended to be constructed by `asio::ip::tcp::acceptor`'s `accept` or `async_accept`
+methods.
+
+The session enables users to decouple detecting a client request for a TLS upgrade from performing
+the actual handshake. Using this, users can support both plain HTTP and HTTPS on the same port as
+is the case with the [example server in Beast](https://www.boost.org/doc/libs/release/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp).
+
+When constructing the `basic_server_session`, the supplied `session_opts` are stored but they are
+not used. The session's underlying stream will be that of the user-supplied one (this means the
+timeout value and SSL context in the session options are not used during construction).
+
+The session's embedded options instead act as a cache that the user can interact with at their will.
+This is required for using the `async_handshake` method which accepts an `ssl::context&`.
 
 Users will have to manually disconnect and close their connections.
 
@@ -75,7 +93,7 @@ timer_type   timer;
 
 ## Constructors
 
-#### Defaults
+### Defaults
 
 ```c++
 basic_server_session()                            = delete;
@@ -83,7 +101,7 @@ basic_server_session(basic_server_session const&) = delete;
 basic_server_session(basic_server_session&&)      = default;
 ```
 
-#### `stream`
+### stream
 
 ```c++
 template <class... BufferArgs>
@@ -94,7 +112,7 @@ Construct the server session by moving the supplied `multi_stream`.
 
 ## Member Functions
 
-#### get_executor
+### get_executor
 
 ```c++
 auto
@@ -103,7 +121,7 @@ get_executor() -> executor_type;
 
 Return a copy of the underlying executor. Serves as an executor hook.
 
-#### async_read_header
+### async_read_header
 
 ```c++
 template <class Parser, class ReadHandler>
@@ -130,7 +148,7 @@ stream.
 
 This function will timeout.
 
-#### async_read
+### async_read
 
 ```c++
 template <class Parser, class ReadHandler>
@@ -157,7 +175,7 @@ stream.
 
 This function will timeout.
 
-#### async_write_header
+### async_write_header
 
 ```c++
 template <class Serializer, class WriteHandler>
@@ -184,7 +202,7 @@ stream.
 
 This function will timeout.
 
-#### async_write
+### async_write
 
 ```c++
 template <class Serializer, class WriteHandler>
@@ -211,7 +229,7 @@ stream.
 
 This function will timeout.
 
-#### async_detect_ssl
+### async_detect_ssl
 
 ```c++
 template <class DetectHandler>
@@ -239,7 +257,7 @@ The supplied boolean indicates whether or not an SSL handshake was detected.
 
 This function will timeout.
 
-#### async_handshake
+### async_handshake
 
 ```c++
 template <class HandshakeHandler>
@@ -249,13 +267,18 @@ async_handshake(HandshakeHandler&& handler) ->
                                      void(boost::system::error_code, std::size_t)>::return_type;
 ```
 
-Performs the server portion of an SSL handshake. Implicitly requires the session's stream to be in
-SSL mode, i.e. `session.stream.is_ssl()` returns `true`.
+Performs the server portion of an SSL handshake.
 
-Users are intended to call [`upgrade`](./multi_stream.md#upgrade) on the underlying stream object
-with an appropriate `asio::ssl::context` before calling this function.
+This function will automatically [`upgrade`](./multi_stream.md#upgrade) the session's internal
+stream object to SSL mode if the stream is not already. This function will `upgrade` with SSL
+context found in the sessions `opts` member.
+
+For users wanting to use a different SSL context, a call to `upgrade` before invoking the handshake
+function will prevent the automatic upgrade.
 
 This function will timeout.
+
+---
 
 To [Reference](../reference.md#Reference)
 

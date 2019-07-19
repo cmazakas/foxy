@@ -1,4 +1,4 @@
-## `foxy::basic_session`
+# foxy::basic_session
 
 ```c++
 #include <foxy/session.hpp>
@@ -12,13 +12,16 @@ needed for using Beast.
 All members are public so that users can make powerful and flexible abstractions without the library
 becoming a hindrance.
 
-The `basic_session` contains the `foxy::basic_multi_stream` so that it can act as a dual-stream type
-supporting both plain and encrypted data. It also contains a user-specified buffer for use during
-parsing operations as well as a timer that it uses to determine when an operation should end.
+The `basic_session` contains the [`foxy::basic_multi_stream`](./multi_stream.md#foxybasic_multi_stream)
+so that it can act as a dual-stream type supporting both plain and encrypted data. It also contains
+a user-specified buffer for use during parsing operations along with a timer that it uses to
+determine when an operation should end.
 
-The `basic_session` is configurable via its `foxy::session_opts`. Currently, only adjusting the
-timeouts has any direct effect. Mutating the nested SSL context may result in an inconsistent state
-of the session and is undefined by the library.
+The `basic_session` is configurable via its [`opts`](./session_opts.md#foxysession_opts) member.
+Currently, only adjusting the timeouts has any direct effect. The client session, for example, will
+only use the nested SSL context during its constructor and nowhere else. The server session will
+only access the nested SSL context during its [`async_handshake`](./server_session.md#async_handshake)
+function.
 
 This class is used primarily for reading and writing HTTP/1.x messages.
 
@@ -64,7 +67,7 @@ timer_type   timer;
 
 ## Constructors
 
-#### Defaults
+### Defaults
 
 ```c++
 basic_session()                     = delete;
@@ -72,7 +75,7 @@ basic_session(basic_session const&) = delete;
 basic_session(basic_session&&)      = default;
 ```
 
-#### `io_context`
+### io_context
 
 ```c++
 template <class... BufferArgs>
@@ -86,7 +89,7 @@ If the session options contain an SSL context, the session will be constructed i
 
 The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
 
-#### `stream_type`
+### stream_type
 
 ```c++
 template <class... BufferArgs>
@@ -101,7 +104,7 @@ The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
 
 ## Member Functions
 
-#### get_executor
+### get_executor
 
 ```c++
 auto
@@ -110,7 +113,7 @@ get_executor() -> executor_type;
 
 Return a copy of the underlying executor. Serves as an executor hook.
 
-#### async_read_header
+### async_read_header
 
 ```c++
 template <class Parser, class ReadHandler>
@@ -137,7 +140,7 @@ stream.
 
 This function will timeout.
 
-#### async_read
+### async_read
 
 ```c++
 template <class Parser, class ReadHandler>
@@ -164,7 +167,7 @@ stream.
 
 This function will timeout.
 
-#### async_write_header
+### async_write_header
 
 ```c++
 template <class Serializer, class WriteHandler>
@@ -191,7 +194,7 @@ stream.
 
 This function will timeout.
 
-#### async_write
+### async_write
 
 ```c++
 template <class Serializer, class WriteHandler>
@@ -217,6 +220,8 @@ The `std::size_t` supplied to the handler is the total number of bytes written t
 stream.
 
 This function will timeout.
+
+---
 
 To [Reference](../reference.md#Reference)
 

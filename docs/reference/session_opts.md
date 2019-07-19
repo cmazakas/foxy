@@ -1,4 +1,4 @@
-## `foxy::session_opts`
+# foxy::session_opts
 
 ## Include
 
@@ -41,6 +41,8 @@ duration_type                               timeout = std::chrono::seconds{1};
 ## Constructors
 
 None provided.
+
+---
 
 To [Reference](../reference.md#Reference)
 

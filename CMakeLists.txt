@@ -37,8 +37,9 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/session.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/shared_handler_ptr.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/type_traits.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri_parts.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/uri.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utf8.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/utility.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/detail/close_stream.hpp
@@ -64,6 +65,8 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write.impl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/foxy/impl/session/async_write_header.impl.hpp
 
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/asio.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/beast.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/log.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/proxy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/uri_parts.cpp
@@ -92,6 +95,8 @@ target_compile_definitions(
     BOOST_COROUTINES_NO_DEPRECATION_WARNING=1
     BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1
     BOOST_BEAST_ALLOW_DEPRECATED=1
+    BOOST_ASIO_SEPARATE_COMPILATION=1
+    BOOST_BEAST_SEPARATE_COMPILATION=1
 )
 
 target_compile_features(foxy PUBLIC cxx_generic_lambdas)

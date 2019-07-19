@@ -4,6 +4,7 @@
 * [Hello World](./hello-world.md#hello-world)
 * [URI Combinators](./uri-combinators.md#uri-combinators)
 * [Allocator-Aware GET Request](./allocator-client.md#allocator-aware-client)
+* [FAQ](./faq.md#frequently-asked-questions)
 
 ## About
 

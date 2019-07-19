@@ -1,4 +1,4 @@
-## `foxy::basic_client_session`
+# foxy::basic_client_session
 
 ## Include
 
@@ -74,7 +74,7 @@ timer_type   timer;
 
 ## Constructors
 
-#### Defaults
+### Defaults
 
 ```c++
 client_session()                      = delete;
@@ -82,7 +82,7 @@ client_session(client_session const&) = delete;
 client_session(client_session&&)      = default;
 ```
 
-#### `io_context`
+### io_context
 
 ```c++
 template <class... BufferArgs>
@@ -93,7 +93,7 @@ Forwards to the same constructor found in `foxy::basic_session`.
 
 ## Member Functions
 
-#### async_connect
+### async_connect
 
 ```c++
 template <class ConnectHandler>
@@ -123,7 +123,7 @@ The `endpoint` supplied to the handler is the one that was used for the connecti
 
 This function will timeout.
 
-#### async_request
+### async_request
 
 ```c++
 template <class Request, class ResponseParser, class RequestHandler>
@@ -146,7 +146,7 @@ void(boost::system::error_code)
 
 This function will timeout.
 
-#### get_executor
+### get_executor
 
 ```c++
 auto
@@ -155,7 +155,7 @@ get_executor() -> executor_type;
 
 Return a copy of the underlying executor. Serves as an executor hook.
 
-#### async_read_header
+### async_read_header
 
 ```c++
 template <class Parser, class ReadHandler>
@@ -182,7 +182,7 @@ stream.
 
 This function will timeout.
 
-#### async_read
+### async_read
 
 ```c++
 template <class Parser, class ReadHandler>
@@ -209,7 +209,7 @@ stream.
 
 This function will timeout.
 
-#### async_write_header
+### async_write_header
 
 ```c++
 template <class Serializer, class WriteHandler>
@@ -236,7 +236,7 @@ stream.
 
 This function will timeout.
 
-#### async_write
+### async_write
 
 ```c++
 template <class Serializer, class WriteHandler>
@@ -262,6 +262,8 @@ The `std::size_t` supplied to the handler is the total number of bytes written t
 stream.
 
 This function will timeout.
+
+---
 
 To [Reference](../reference.md#Reference)
 

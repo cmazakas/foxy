@@ -1,4 +1,4 @@
-## `foxy::proxy`
+# foxy::proxy
 
 ## Include
 
@@ -13,7 +13,7 @@ The `foxy::proxy` is a simple TLS forward proxy, adhering to the standards set f
 
 It is intended to take unencrypted local network HTTP and then handle all encryption for the user.
 This is particularly useful in supporting legacy applications that will oftentimes have
-TLS-deficient HTTP clients.
+TLS-deficient client-capabilities.
 
 It also functions in a plain HTTP mode as well so TLS/SSL is not strictly required but it is
 recommended.
@@ -35,7 +35,7 @@ using executor_type = boost::asio::strand<typename stream_type::executor_type>;
 
 ## Constructors
 
-#### Defaults
+### Defaults
 
 ```c++
 proxy()             = delete;
@@ -43,7 +43,7 @@ proxy(proxy const&) = delete;
 proxy(proxy&&)      = default;
 ```
 
-#### Parameterized
+### Parameterized
 
 ```c++
 proxy(boost::asio::io_context& io,
@@ -61,12 +61,16 @@ session.
 
 ## Member Functions
 
+### get_executor
+
 ```c++
 auto
 get_executor() -> executor_type;
 ```
 
 Return a copy of the proxy's executor type.
+
+### async_accept
 
 ```c++
 auto
@@ -75,10 +79,9 @@ async_accept() -> void;
 
 Begins the acceptance loop without blocking the calling thread.
 
-While the acceptance loop will happen on the proxy's internal strand, this is not a thread-safe
-operation as it touches the internal `acceptor_type` to check if it's open.
-
 This function is intended to be called once.
+
+### cancel
 
 ```c++
 auto
@@ -157,6 +160,8 @@ io.run();
 REQUIRE(was_valid_response);
 }
 ```
+
+---
 
 To [Reference](../reference.md#Reference)
 

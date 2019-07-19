@@ -1,4 +1,4 @@
-# `foxy::uri`
+# foxy::uri
 
 Foxy comes with a large set of URI combinators compatible with [Boost.Spirit.X3](https://www.boost.org/doc/libs/release/libs/spirit/doc/x3/html/index.html).
 
@@ -317,6 +317,8 @@ x3::rule<class absolute_uri> const absolute_uri     = "absolute_uri";
 //
 x3::rule<class uri_reference> const uri_reference     = "uri_reference";
 ```
+
+---
 
 To [Reference](../reference.md#Reference)
 
