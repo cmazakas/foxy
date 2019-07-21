@@ -9,7 +9,15 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(foxy LANGUAGES CXX)
+project(
+  foxy
+
+  LANGUAGES
+    CXX
+
+  VERSION
+    1.0.0
+)
 
 find_package(
   Boost 1.70
@@ -105,7 +113,8 @@ target_include_directories(
   foxy
 
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 target_link_libraries(
@@ -230,3 +239,54 @@ if (FOXY_BUILD_EXAMPLES)
       Boost::thread
   )
 endif()
+
+# installation
+
+install(
+  TARGETS
+    foxy
+  EXPORT
+    foxy-targets
+  LIBRARY DESTINATION lib/
+  ARCHIVE DESTINATION lib/
+  RUNTIME DESTINATION bin/
+)
+
+set(INSTALL_CONFIGDIR lib/cmake/foxy)
+
+install(
+  EXPORT
+    foxy-targets
+  FILE foxy-targets.cmake
+  NAMESPACE Foxy::
+  DESTINATION ${INSTALL_CONFIGDIR}
+)
+
+install(
+  DIRECTORY
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/
+
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/foxy
+  FILES_MATCHING PATTERN "*.hpp"
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/foxy-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
+    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+)
+
+## Install all the helper files
+install(
+    FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
+    DESTINATION ${INSTALL_CONFIGDIR}
+)
