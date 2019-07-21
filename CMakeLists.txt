@@ -87,7 +87,9 @@ add_library(
 
 if (MSVC)
   # Win10
+  #
   target_compile_definitions(foxy PUBLIC _WIN32_WINNT=0x0A00)
+
   target_compile_options(foxy PUBLIC "/bigobj")
 endif()
 
@@ -114,7 +116,7 @@ target_include_directories(
 
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 
 target_link_libraries(
@@ -241,7 +243,7 @@ if (FOXY_BUILD_EXAMPLES)
 endif()
 
 # installation
-
+#
 install(
   TARGETS
     foxy
@@ -252,35 +254,33 @@ install(
   RUNTIME DESTINATION bin/
 )
 
-set(INSTALL_CONFIGDIR lib/cmake/foxy)
 
 install(
   EXPORT
     foxy-targets
-  FILE foxy-targets.cmake
   NAMESPACE Foxy::
-  DESTINATION ${INSTALL_CONFIGDIR}
+  DESTINATION lib/cmake/foxy/
 )
 
 install(
   DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/include/
 
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/foxy
+  DESTINATION include/
   FILES_MATCHING PATTERN "*.hpp"
 )
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
+    ${CMAKE_INSTALL_PREFIX}/lib/cmake/foxy/foxy-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_LIST_DIR}/cmake/foxy-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
-    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/foxy-config.cmake.in
+    foxy-config.cmake
+    INSTALL_DESTINATION lib/cmake/foxy
 )
 
 ## Install all the helper files
@@ -288,5 +288,5 @@ install(
     FILES
       ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
       ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
-    DESTINATION ${INSTALL_CONFIGDIR}
+    DESTINATION lib/cmake/foxy/
 )
