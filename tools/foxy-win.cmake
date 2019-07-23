@@ -9,4 +9,3 @@ add_compile_definitions("BOOST_ASIO_NO_DEPRECATED")
 include("/Users/cmaza/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 set(CMAKE_INSTALL_PREFIX "/Users/cmaza/cpp/f3/install")
-set(CMAKE_INSTALL_INCLUDEDIR "/Users/cmaza/cpp/f3/install/include")
