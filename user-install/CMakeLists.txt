@@ -12,15 +12,6 @@ find_package(
   CONFIG REQUIRED
 )
 
-find_package(
-  Boost 1.70
-  CONFIG REQUIRED
-    system
-    date_time
-)
-
-find_package(OpenSSL REQUIRED)
-
 add_executable(
   user-example
 

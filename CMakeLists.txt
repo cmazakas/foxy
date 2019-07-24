@@ -254,17 +254,16 @@ install(
   RUNTIME DESTINATION bin/
 )
 
-
 install(
   EXPORT
     foxy-targets
   NAMESPACE Foxy::
-  DESTINATION lib/cmake/foxy/
+  DESTINATION lib/cmake/foxy
 )
 
 install(
   DIRECTORY
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 
   DESTINATION include
   FILES_MATCHING PATTERN "*.hpp"
@@ -272,18 +271,17 @@ install(
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    ${CMAKE_INSTALL_PREFIX}/lib/cmake/foxy/foxy-config-version.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/foxy-config.cmake.in
-    foxy-config.cmake
-    INSTALL_DESTINATION lib/cmake/foxy
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/foxy-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
+    INSTALL_DESTINATION lib/cmake/foxy/
 )
 
-## Install all the helper files
 install(
     FILES
       ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
