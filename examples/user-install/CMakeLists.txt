@@ -23,8 +23,4 @@ target_link_libraries(
 
   PUBLIC
     Foxy::foxy
-    Boost::boost
-    Boost::system
-    Boost::date_time
-    OpenSSL::SSL
 )
