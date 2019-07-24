@@ -271,15 +271,15 @@ install(
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
+  ${CMAKE_CURRENT_BINARY_DIR}/foxy-config-version.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_LIST_DIR}/cmake/foxy-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
-    INSTALL_DESTINATION lib/cmake/foxy/
+  ${CMAKE_CURRENT_LIST_DIR}/cmake/foxy-config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/foxy-config.cmake
+  INSTALL_DESTINATION lib/cmake/foxy/
 )
 
 install(
