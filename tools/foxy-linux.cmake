@@ -19,5 +19,3 @@ add_link_options("-pthread" "-no-pie" "-flto")
 
 add_compile_definitions("BOOST_ASIO_NO_DEPRECATED")
 include("/home/chris/vcpkg/scripts/buildsystems/vcpkg.cmake")
-
-set(CMAKE_INSTALL_PREFIX "/home/chris/f3/install")
