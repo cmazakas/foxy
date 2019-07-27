@@ -102,6 +102,7 @@ struct request_op : asio::coroutine
     }
   }
 };
+#include <boost/asio/unyield.hpp>
 
 int
 main()
@@ -109,11 +110,8 @@ main()
   asio::io_context io{1};
 
   auto client = foxy::client_session(io, {});
-
   asio::post(io, request_op(client, io.get_executor()));
-
   io.run();
 
   return 0;
 }
-#include <boost/asio/unyield.hpp>
