@@ -65,12 +65,12 @@ struct request_op : asio::coroutine
 
   template <class... Args>
   auto
-  operator()(on_async_completion_t, boost::system::error_code ec, Args&&...)
+  operator()(on_async_completion_t, boost::system::error_code ec, Args&&...) -> void
   {
     (*this)(ec);
   }
 
-  auto operator()(boost::system::error_code ec = {})
+  auto operator()(boost::system::error_code ec = {}) -> void
   {
     auto& s = *p;
     reenter(*this)
