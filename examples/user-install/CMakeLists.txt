@@ -15,7 +15,7 @@ find_package(
 add_executable(
   user-example
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+  main.cpp
 )
 
 target_link_libraries(
