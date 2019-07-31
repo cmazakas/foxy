@@ -13,8 +13,8 @@ way of installing OpenSSL is via [Vcpkg](https://github.com/Microsoft/vcpkg).
 
 ## Threads
 
-On Linux and Unix systems, [FindThreads](https://cmake.org/cmake/help/latest/module/FindThreads.html)
-is also required to succeed.
+[FindThreads](https://cmake.org/cmake/help/latest/module/FindThreads.html) is also required to
+succeed.
 
 ## Boost
 

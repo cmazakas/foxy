@@ -31,6 +31,12 @@ find_package(
 
 find_package(OpenSSL REQUIRED)
 
+if (UNIX)
+  set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL "")
+endif()
+
+find_package(Threads REQUIRED)
+
 add_library(
   foxy
 
@@ -100,12 +106,6 @@ if (MSVC)
   target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
 endif()
 
-if (UNIX)
-  set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL)
-  find_package(Threads REQUIRED)
-  target_link_libraries(foxy PUBLIC Threads::Threads)
-endif()
-
 set(FOXY_QUIET ON CACHE BOOL "Suppresses messages internal to Beast/Asio about deprecated features")
 if(FOXY_QUIET)
   target_compile_definitions(
@@ -153,6 +153,7 @@ target_link_libraries(
     Boost::system
     Boost::date_time
     OpenSSL::SSL
+    Threads::Threads
 )
 
 if (BUILD_TESTING)
