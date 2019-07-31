@@ -101,6 +101,7 @@ if (MSVC)
 endif()
 
 if (UNIX)
+  set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL)
   find_package(Threads REQUIRED)
   target_link_libraries(foxy PUBLIC Threads::Threads)
 endif()
