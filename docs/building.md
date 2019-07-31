@@ -1,18 +1,32 @@
 # Building
 
 Foxy has only a few non-trivial dependencies. Namely, [Boost](https://github.com/boostorg/boost) and
-OpenSSL. The Threads package is required to build on Unix-flavored operating systems but this
-dependency is usually resolved automatically with no intervention required from users.
+OpenSSL.
+
+## OpenSSL
+
+OpenSSL is found via CMake's [FindOpenSSL](https://cmake.org/cmake/help/latest/module/FindOpenSSL.html)
+command.
+
+Most Linux and Unix-like systems will come with OpenSSL installed. For msvc users, the most simple
+way of installing OpenSSL is via [Vcpkg](https://github.com/Microsoft/vcpkg).
+
+## Threads
+
+On Linux and Unix systems, [FindThreads](https://cmake.org/cmake/help/latest/module/FindThreads.html)
+is also required to succeed.
 
 ## Boost
 
-The best way of installing Boost is via [Vcpkg](https://github.com/Microsoft/vcpkg). Because Foxy
-rolls with the latest versions of Boost, it's straight-forward to install with `vcpkg install boost`.
+`find_package(Boost <version> CONFIG REQUIRED system date_time)` is required to succeed for Foxy to
+build.
 
-However, source-based installation can be desirable. To do so, it's best to use the git
+Boost can be built directly by downloading the releases from [boost.org](https://www.boost.org/).
+
+However, a source-based installation can be desirable. To do so, it's best to use the git
 superproject.
 
-While these commands are Linux-focused, many can be almost ported directly to the Command Prompt in
+While these commands are Linux-focused, many can be ported directly to the Command Prompt in
 Windows. Users can perform easy CLI builds in Windows by using the Visual Studio Developer Command
 Prompt which will setup all paths to compilers and other tooling.
 
@@ -29,26 +43,16 @@ Prompt which will setup all paths to compilers and other tooling.
 
 # we use the "|| echo 0" to have our foreach loop keep going even in the case of failure
 # this can happen from time to time if the submodule list contains a submodule that doesn't have
-# the appropriate tag
+# the appropriate tag yet
 > git submodule foreach "git checkout boost-1.71.0 || echo 0"
 
 # this builds b2, the Boost build tool
 Linux:~/$ ./bootstrap.sh
 PS> bootstrap
 
-# we then use b2 to complete installation of Boost to the directly denoted by the --prefix option
+# we then use b2 to complete installation of Boost to the directory denoted by the --prefix option
 Linux:~/$ ./b2 install cxxstd=14 --prefix=.../install/directory
 PS> b2 install cxxstd=14 address-model=64 --prefix=...\install\directory
-```
-
-## OpenSSL
-
-For most installations, using vcpkg will be the path of least resistance (especially for MSVC
-users).
-
-```bash
-Linux:~/$ ./vcpkg install openssl
-PS> vcpkg install openssl
 ```
 
 ## Foxy
@@ -61,7 +65,7 @@ Building Foxy is a bit more straight-forward:
 > mkdir install
 > mkdir build
 > cd build
-> cmake -G"Ninja" -DCMAKE_INSTALL_PREFIX=.../install/directory -DCMAKE_TOOLCHAIN_FILE=.../user-toolchain.cmake ..
+> cmake -G"Ninja" -DCMAKE_INSTALL_PREFIX=../install/directory -DCMAKE_TOOLCHAIN_FILE=.../user-toolchain.cmake ..
 > cmake --build . --target install
 ```
 
