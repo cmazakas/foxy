@@ -17,6 +17,9 @@ project(
 
   VERSION
     1.0.0
+
+  DESCRIPTION
+    "Session-based abstractions for Beast + URL parsing and pct-coding"
 )
 
 find_package(
@@ -73,8 +76,6 @@ add_library(
   include/foxy/impl/session/async_write.impl.hpp
   include/foxy/impl/session/async_write_header.impl.hpp
 
-  src/asio.cpp
-  src/beast.cpp
   src/log.cpp
   src/proxy.cpp
   src/uri_parts.cpp
@@ -85,12 +86,18 @@ add_library(
   # src/uri.cpp
 )
 
+target_compile_features(foxy PUBLIC cxx_generic_lambdas)
+
 if (MSVC)
   # Win10
   #
-  target_compile_definitions(foxy PUBLIC _WIN32_WINNT=0x0A00)
+  set(FOXY_WIN_ARCH "0x0A00" CACHE STRING "Asio-specific Win architecture value (default: Win10)")
+  target_compile_definitions(foxy PUBLIC "_WIN32_WINNT=${FOXY_WIN_ARCH}")
 
   target_compile_options(foxy PUBLIC "/bigobj")
+
+  # keep this around, just in case
+  target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
 endif()
 
 if (UNIX)
@@ -98,18 +105,36 @@ if (UNIX)
   target_link_libraries(foxy PUBLIC Threads::Threads)
 endif()
 
-target_compile_definitions(
-  foxy
+set(FOXY_QUIET ON CACHE BOOL "Suppresses messages internal to Beast/Asio about deprecated features")
+if(FOXY_QUIET)
+  target_compile_definitions(
+    foxy
 
-  PUBLIC
-    BOOST_COROUTINES_NO_DEPRECATION_WARNING=1
-    BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1
-    BOOST_BEAST_ALLOW_DEPRECATED=1
-    BOOST_ASIO_SEPARATE_COMPILATION=1
-    BOOST_BEAST_SEPARATE_COMPILATION=1
-)
+    PUBLIC
+      BOOST_COROUTINES_NO_DEPRECATION_WARNING=1
+      BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1
+      BOOST_BEAST_ALLOW_DEPRECATED=1
+  )
+endif()
 
-target_compile_features(foxy PUBLIC cxx_generic_lambdas)
+set(FOXY_FAST_BUILD ON CACHE BOOL "Builds Foxy with separately compiled Beast and Asio")
+if(FOXY_FAST_BUILD)
+  target_compile_definitions(
+    foxy
+
+    PUBLIC
+      BOOST_ASIO_SEPARATE_COMPILATION=1
+      BOOST_BEAST_SEPARATE_COMPILATION=1
+  )
+
+  target_sources(
+    foxy
+
+    PRIVATE
+      src/asio.cpp
+      src/beast.cpp
+  )
+endif()
 
 target_include_directories(
   foxy
@@ -128,11 +153,6 @@ target_link_libraries(
     Boost::date_time
     OpenSSL::SSL
 )
-
-# keep this around, just in case
-if (MSVC)
-  target_link_libraries(foxy PUBLIC Boost::disable_autolinking)
-endif()
 
 if (BUILD_TESTING)
   include(CTest)
