@@ -1,0 +1,5 @@
+set(CMAKE_CXX_COMPILER "/Users/exbigboss/clang+llvm-6.0.0-x86_64-apple-darwin/bin/clang++")
+add_compile_options("-fsanitize=address,undefined")
+add_link_options("-fsanitize=address,undefined")
+include("/Users/exbigboss/vcpkg/scripts/buildsystems/vcpkg.cmake")
+set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};/Users/exbigboss/boosts/70-spirit-develop/lib/cmake/Boost-1.71.0;${CMAKE_CURRENT_SOURCE_DIR}/../../install/lib/cmake/foxy")

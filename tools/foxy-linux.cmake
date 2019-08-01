@@ -8,11 +8,11 @@ set(CMAKE_CXX_COMPILER "g++-7")
 set(CMAKE_BUILD_TYPE Debug)
 set(BUILD_SHARED_LIBS OFF)
 
-add_compile_options("-pthread" "-no-pie")
-add_link_options("-pthread" "-no-pie")
+add_compile_options("-pthread" "-no-pie" "-flto")
+add_link_options("-pthread" "-no-pie" "-flto")
 
-add_compile_options("-fsanitize=undefined,address")
-add_link_options("-fsanitize=undefined,address")
+# add_compile_options("-fsanitize=undefined,address")
+# add_link_options("-fsanitize=undefined,address")
 
 # add_compile_options("-fsanitize=thread")
 # add_link_options("-fsanitize=thread")
