@@ -81,7 +81,7 @@ struct client_op : asio::coroutine
   {
     reenter(this)
     {
-      yield client.async_connect("www.google.com", "80", *this);
+      yield client.async_connect("www.google.com", "80", std::move(*this));
       if (ec) {
         was_valid = false;
         yield break;

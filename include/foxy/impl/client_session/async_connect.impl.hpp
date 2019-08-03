@@ -160,13 +160,10 @@ basic_client_session<DynamicBuffer>::async_connect(std::string      host,
                                      void(boost::system::error_code,
                                           boost::asio::ip::tcp::endpoint)>::return_type
 {
-  boost::asio::async_completion<ConnectHandler,
-                                void(boost::system::error_code, boost::asio::ip::tcp::endpoint)>
-    init(handler);
-
-  return ::foxy::detail::timer_wrap<
+  return ::foxy::detail::timer_initiate<
+    void(boost::system::error_code, boost::asio::ip::tcp::endpoint),
     boost::mp11::mp_bind_front<::foxy::detail::connect_op, DynamicBuffer>::template fn>(
-    *this, init, std::move(host), std::move(service));
+    *this, std::forward<ConnectHandler>(handler), std::move(host), std::move(service));
 }
 
 } // namespace foxy
