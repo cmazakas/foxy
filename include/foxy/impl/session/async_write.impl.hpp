@@ -68,9 +68,6 @@ basic_session<Stream, DynamicBuffer>::async_write(Serializer&    serializer,
   typename boost::asio::async_result<std::decay_t<WriteHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
-  boost::asio::async_completion<WriteHandler, void(boost::system::error_code, std::size_t)> init(
-    handler);
-
   return ::foxy::detail::timer_initiate<
     void(boost::system::error_code, std::size_t),
     boost::mp11::mp_bind_front<::foxy::detail::write_op, Stream, DynamicBuffer,
