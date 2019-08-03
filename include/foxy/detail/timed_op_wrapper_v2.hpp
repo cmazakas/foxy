@@ -201,6 +201,37 @@ timer_wrap(::foxy::basic_session<Stream, DynamicBuffer>&              session,
 
   return init.result.get();
 }
+
+template <template <class...> class Op, class Signature>
+struct run_timed_op_wrapper
+{
+  template <class Handler, class Stream, class DynamicBuffer, class... Args>
+  auto
+  operator()(Handler&&                                     handler,
+             ::foxy::basic_session<Stream, DynamicBuffer>& session,
+             Args&&... args) -> void
+  {
+    timed_op_wrapper_v2<Stream, DynamicBuffer, Op, Handler, Signature>(
+      session, std::forward<Handler>(handler), std::forward<Args>(args)...);
+  }
+};
+
+template <class Signature,
+          template <class...>
+          class Op,
+          class Stream,
+          class DynamicBuffer,
+          class CompletionToken,
+          class... Args>
+auto
+timer_initiate(::foxy::basic_session<Stream, DynamicBuffer>& session,
+               CompletionToken&&                             token,
+               Args&&... args)
+{
+  return boost::asio::async_initiate<CompletionToken, Signature>(
+    run_timed_op_wrapper<Op, Signature>{}, token, session, std::forward<Args>(args)...);
+}
+
 } // namespace detail
 } // namespace foxy
 
