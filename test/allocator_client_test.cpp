@@ -87,7 +87,7 @@ struct client_op : asio::coroutine
         yield break;
       }
 
-      yield client.async_request(request, parser, *this);
+      yield client.async_request(request, parser, std::move(*this));
       if (ec) {
         was_valid = false;
         yield break;
