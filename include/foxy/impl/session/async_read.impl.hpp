@@ -65,12 +65,11 @@ basic_session<Stream, DynamicBuffer>::async_read(Parser& parser, ReadHandler&& h
   typename boost::asio::async_result<std::decay_t<ReadHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
-  boost::asio::async_completion<ReadHandler, void(boost::system::error_code, std::size_t)> init(
-    handler);
-
-  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<::foxy::detail::read_op, Stream,
-                                                               DynamicBuffer, Parser>::template fn>(
-    *this, init, parser);
+  return ::foxy::detail::timer_initiate<
+    void(boost::system::error_code, std::size_t),
+    boost::mp11::mp_bind_front<::foxy::detail::read_op, Stream, DynamicBuffer,
+                               Parser>::template fn>(*this, std::forward<ReadHandler>(handler),
+                                                     parser);
 }
 
 } // namespace foxy
