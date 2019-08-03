@@ -271,41 +271,52 @@ relay_op<Stream, DynamicBuffer, RelayHandler>::operator()(boost::system::error_c
   }
 }
 
-template <class Stream, class DynamicBuffer, class RelayHandler>
+struct run_async_relay_op
+{
+  template <class Handler, class Stream, class DynamicBuffer>
+  auto
+  operator()(Handler&&                                     handler,
+             ::foxy::basic_session<Stream, DynamicBuffer>& server,
+             ::foxy::basic_session<Stream, DynamicBuffer>& client) -> void
+  {
+    relay_op<Stream, DynamicBuffer, Handler>(server, std::forward<Handler>(handler), client);
+  }
+
+  template <class Handler, class Stream, class DynamicBuffer, class Parser>
+  auto
+  operator()(Handler&&                                     handler,
+             ::foxy::basic_session<Stream, DynamicBuffer>& server,
+             ::foxy::basic_session<Stream, DynamicBuffer>& client,
+             Parser&&                                      parser)
+  {
+    relay_op<Stream, DynamicBuffer, Handler>(server, std::forward<Handler>(handler), client,
+                                             std::move(parser));
+  }
+};
+
+template <class Stream, class DynamicBuffer, class CompletionToken>
 auto
 async_relay(::foxy::basic_session<Stream, DynamicBuffer>& server,
             ::foxy::basic_session<Stream, DynamicBuffer>& client,
-            RelayHandler&&                                handler) ->
-  typename boost::asio::async_result<std::decay_t<RelayHandler>,
+            CompletionToken&&                             token) ->
+  typename boost::asio::async_result<std::decay_t<CompletionToken>,
                                      void(boost::system::error_code, bool)>::return_type
 {
-  boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
-
-  relay_op<Stream, DynamicBuffer,
-           typename boost::asio::async_completion<
-             RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
-    server, std::move(init.completion_handler), client);
-
-  return init.result.get();
+  return boost::asio::async_initiate<CompletionToken, void(boost::system::error_code, bool)>(
+    run_async_relay_op{}, token, server, client);
 }
 
-template <class Stream, class DynamicBuffer, class Parser, class RelayHandler>
+template <class Stream, class DynamicBuffer, class Parser, class CompletionToken>
 auto
 async_relay(::foxy::basic_session<Stream, DynamicBuffer>& server,
             ::foxy::basic_session<Stream, DynamicBuffer>& client,
             Parser&&                                      parser,
-            RelayHandler&&                                handler) ->
-  typename boost::asio::async_result<std::decay_t<RelayHandler>,
+            CompletionToken&&                             token) ->
+  typename boost::asio::async_result<std::decay_t<CompletionToken>,
                                      void(boost::system::error_code, bool)>::return_type
 {
-  boost::asio::async_completion<RelayHandler, void(boost::system::error_code, bool)> init(handler);
-
-  relay_op<Stream, DynamicBuffer,
-           typename boost::asio::async_completion<
-             RelayHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
-    server, std::move(init.completion_handler), client, std::move(parser));
-
-  return init.result.get();
+  return boost::asio::async_initiate<CompletionToken, void(boost::system::error_code, bool)>(
+    run_async_relay_op{}, token, server, client, parser);
 }
 
 } // namespace detail
