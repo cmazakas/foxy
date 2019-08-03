@@ -182,26 +182,6 @@ public:
   }
 };
 
-template <template <class...> class Op,
-          class Stream,
-          class DynamicBuffer,
-          class CompletionToken,
-          class Signature,
-          class... Args>
-auto
-timer_wrap(::foxy::basic_session<Stream, DynamicBuffer>&              session,
-           boost::asio::async_completion<CompletionToken, Signature>& init,
-           Args&&... args)
-{
-  using handler_type =
-    typename boost::asio::async_completion<CompletionToken, Signature>::completion_handler_type;
-
-  timed_op_wrapper_v2<Stream, DynamicBuffer, Op, handler_type, Signature>(
-    session, std::move(init.completion_handler), args...);
-
-  return init.result.get();
-}
-
 template <template <class...> class Op, class Signature>
 struct run_timed_op_wrapper
 {
