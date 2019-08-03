@@ -32,7 +32,7 @@ namespace ssl  = boost::asio::ssl;
 
 using namespace std::chrono_literals;
 
-TEST_CASE("Our forward proxy (part 2)")
+TEST_CASE("proxy_test2")
 {
   SECTION("should forward a message over an encrypted connection")
   {
