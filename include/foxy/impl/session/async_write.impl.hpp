@@ -72,7 +72,7 @@ basic_session<Stream, DynamicBuffer>::async_write(Serializer&    serializer,
     void(boost::system::error_code, std::size_t),
     boost::mp11::mp_bind_front<::foxy::detail::write_op, Stream, DynamicBuffer,
                                Serializer>::template fn>(*this, std::forward<WriteHandler>(handler),
-                                                         std::ref(serializer));
+                                                         serializer);
 }
 
 } // namespace foxy

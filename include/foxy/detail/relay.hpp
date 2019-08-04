@@ -316,7 +316,7 @@ async_relay(::foxy::basic_session<Stream, DynamicBuffer>& server,
                                      void(boost::system::error_code, bool)>::return_type
 {
   return boost::asio::async_initiate<CompletionToken, void(boost::system::error_code, bool)>(
-    run_async_relay_op{}, token, server, client, parser);
+    run_async_relay_op{}, token, server, client, std::move(parser));
 }
 
 } // namespace detail
