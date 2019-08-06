@@ -37,7 +37,7 @@ static_assert(foxy::detail::is_closable_stream_nothrow<
                                                  boost::asio::io_context::executor_type>>::value,
               "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
-TEST_CASE("Our basic_session class...")
+TEST_CASE("session_test")
 {
   using test_stream = boost::beast::test::stream;
 
@@ -138,14 +138,12 @@ TEST_CASE("Our basic_session class...")
       auto res = http::response<http::empty_body>(http::status::ok, 11);
       http::response_serializer<http::empty_body> serializer(res);
 
-      session.async_write_header(serializer, yield[ec]);
-      if (ec) { return; }
+      session.async_write_header(serializer, yield);
 
       auto const is_serialization_done = peer_stream.buffer().size() > 0;
       auto const is_header_done        = serializer.is_header_done();
 
-      session.async_write(serializer, yield[ec]);
-      if (ec) { return; }
+      session.async_write(serializer, yield);
 
       auto const is_done      = serializer.is_done();
       auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");

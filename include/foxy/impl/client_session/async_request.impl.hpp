@@ -90,11 +90,11 @@ basic_client_session<DynamicBuffer>::async_request(Request&         request,
   typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                      void(boost::system::error_code)>::return_type
 {
-  boost::asio::async_completion<RequestHandler, void(boost::system::error_code)> init(handler);
-
-  return ::foxy::detail::timer_wrap<boost::mp11::mp_bind_front<
-    ::foxy::detail::request_op, Request, ResponseParser, DynamicBuffer>::template fn>(
-    *this, init, request, parser);
+  return ::foxy::detail::timer_initiate<
+    void(boost::system::error_code),
+    boost::mp11::mp_bind_front<::foxy::detail::request_op, Request, ResponseParser,
+                               DynamicBuffer>::template fn>(
+    *this, std::forward<RequestHandler>(handler), request, parser);
 }
 
 } // namespace foxy

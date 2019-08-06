@@ -95,12 +95,10 @@ basic_server_session<DynamicBuffer>::async_handshake(HandshakeHandler&& handler)
   typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
-  boost::asio::async_completion<HandshakeHandler, void(boost::system::error_code, std::size_t)>
-    init(handler);
-
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::handshake_op, DynamicBuffer>::template fn>(*this,
-                                                                                          init);
+  return ::foxy::detail::timer_initiate<
+    void(boost::system::error_code, std::size_t),
+    boost::mp11::mp_bind_front<::foxy::detail::handshake_op, DynamicBuffer>::template fn>(
+    *this, std::forward<HandshakeHandler>(handler));
 }
 
 } // namespace foxy

@@ -75,10 +75,10 @@ basic_server_session<DynamicBuffer>::async_detect_ssl(DetectHandler&& handler) -
   typename boost::asio::async_result<std::decay_t<DetectHandler>,
                                      void(boost::system::error_code, bool)>::return_type
 {
-  boost::asio::async_completion<DetectHandler, void(boost::system::error_code, bool)> init(handler);
-
-  return ::foxy::detail::timer_wrap<
-    boost::mp11::mp_bind_front<::foxy::detail::detect_op, DynamicBuffer>::template fn>(*this, init);
+  return ::foxy::detail::timer_initiate<
+    void(boost::system::error_code, bool),
+    boost::mp11::mp_bind_front<::foxy::detail::detect_op, DynamicBuffer>::template fn>(
+    *this, std::forward<DetectHandler>(handler));
 }
 
 } // namespace foxy

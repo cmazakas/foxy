@@ -281,19 +281,24 @@ tunnel_op<TunnelHandler>::operator()(boost::system::error_code ec,
   }
 }
 
-template <class TunnelHandler>
+struct run_async_tunnel_op
+{
+  template <class Handler>
+  auto
+  operator()(Handler&& handler, foxy::server_session& server, foxy::client_session& client) -> void
+  {
+    tunnel_op<Handler>(server, std::forward<Handler>(handler), client);
+  }
+};
+
+template <class CompletionToken>
 auto
-async_tunnel(foxy::server_session& server, foxy::client_session& client, TunnelHandler&& handler) ->
-  typename boost::asio::async_result<std::decay_t<TunnelHandler>,
+async_tunnel(foxy::server_session& server, foxy::client_session& client, CompletionToken&& token) ->
+  typename boost::asio::async_result<std::decay_t<CompletionToken>,
                                      void(boost::system::error_code, bool)>::return_type
 {
-  boost::asio::async_completion<TunnelHandler, void(boost::system::error_code, bool)> init(handler);
-
-  tunnel_op<typename boost::asio::async_completion<
-    TunnelHandler, void(boost::system::error_code, bool)>::completion_handler_type>(
-    server, std::move(init.completion_handler), client);
-
-  return init.result.get();
+  return boost::asio::async_initiate<CompletionToken, void(boost::system::error_code, bool)>(
+    run_async_tunnel_op{}, token, server, client);
 }
 
 } // namespace detail
