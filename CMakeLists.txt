@@ -7,7 +7,7 @@
 # Official repository: https://github.com/LeonineKing1199/foxy
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 project(
   foxy
@@ -261,6 +261,32 @@ if (FOXY_BUILD_EXAMPLES)
       foxy
       Boost::container
       Boost::thread
+  )
+endif()
+
+if (FOXY_FUZZ)
+  add_executable(
+    uri-parser
+
+    fuzz/parse_uri.cpp
+  )
+
+  target_link_libraries(
+    uri-parser
+    PRIVATE
+      foxy
+  )
+
+  target_compile_options(
+    uri-parser
+    PRIVATE
+      "-fsanitize=fuzzer"
+  )
+
+  target_link_options(
+    uri-parser
+    PRIVATE
+      "-fsanitize=fuzzer"
   )
 endif()
 
