@@ -12,7 +12,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("Our uri_parts function")
+TEST_CASE("uri_parts_test")
 {
   SECTION("should be able to decompose a well-formed URI")
   {
@@ -190,6 +190,62 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.is_http());
     CHECK(!uri_parts.is_authority());
     CHECK(uri_parts.is_absolute());
+  }
+
+  SECTION("should be able to handle what Go couldn't")
+  {
+    // https://github.com/golang/go/issues/29098
+    //
+    {
+      auto const view = boost::string_view("http://google.com]:80");
+
+      auto const uri_parts = foxy::parse_uri(view);
+
+      CHECK(uri_parts.scheme() == "");
+      CHECK(uri_parts.host() == "");
+      CHECK(uri_parts.port() == "");
+      CHECK(uri_parts.path() == "");
+      CHECK(uri_parts.query() == "");
+      CHECK(uri_parts.fragment() == "");
+
+      CHECK(!uri_parts.is_http());
+      CHECK(!uri_parts.is_authority());
+      CHECK(!uri_parts.is_absolute());
+    }
+
+    {
+      auto const view = boost::string_view("http://google.com]:80__Anything_you'd_like_sir");
+
+      auto const uri_parts = foxy::parse_uri(view);
+
+      CHECK(uri_parts.scheme() == "");
+      CHECK(uri_parts.host() == "");
+      CHECK(uri_parts.port() == "");
+      CHECK(uri_parts.path() == "");
+      CHECK(uri_parts.query() == "");
+      CHECK(uri_parts.fragment() == "");
+
+      CHECK(!uri_parts.is_http());
+      CHECK(!uri_parts.is_authority());
+      CHECK(!uri_parts.is_absolute());
+    }
+
+    {
+      auto const view = boost::string_view("http://[google.com]FreeTextZoneHere]:80");
+
+      auto const uri_parts = foxy::parse_uri(view);
+
+      CHECK(uri_parts.scheme() == "");
+      CHECK(uri_parts.host() == "");
+      CHECK(uri_parts.port() == "");
+      CHECK(uri_parts.path() == "");
+      CHECK(uri_parts.query() == "");
+      CHECK(uri_parts.fragment() == "");
+
+      CHECK(!uri_parts.is_http());
+      CHECK(!uri_parts.is_authority());
+      CHECK(!uri_parts.is_absolute());
+    }
   }
 
   SECTION("[unicode] should be able to decompose a well-formed URI")
@@ -389,5 +445,61 @@ TEST_CASE("Our uri_parts function")
     CHECK(uri_parts.is_http());
     CHECK(!uri_parts.is_authority());
     CHECK(uri_parts.is_absolute());
+  }
+
+  SECTION("[unicode] should be able to handle what Go couldn't")
+  {
+    // https://github.com/golang/go/issues/29098
+    //
+    {
+      auto const view = boost::u32string_view(U"http://google.com]:80");
+
+      auto const uri_parts = foxy::parse_uri(view);
+
+      CHECK(uri_parts.scheme() == U"");
+      CHECK(uri_parts.host() == U"");
+      CHECK(uri_parts.port() == U"");
+      CHECK(uri_parts.path() == U"");
+      CHECK(uri_parts.query() == U"");
+      CHECK(uri_parts.fragment() == U"");
+
+      CHECK(!uri_parts.is_http());
+      CHECK(!uri_parts.is_authority());
+      CHECK(!uri_parts.is_absolute());
+    }
+
+    {
+      auto const view = boost::u32string_view(U"http://google.com]:80__Anything_you'd_like_sir");
+
+      auto const uri_parts = foxy::parse_uri(view);
+
+      CHECK(uri_parts.scheme() == U"");
+      CHECK(uri_parts.host() == U"");
+      CHECK(uri_parts.port() == U"");
+      CHECK(uri_parts.path() == U"");
+      CHECK(uri_parts.query() == U"");
+      CHECK(uri_parts.fragment() == U"");
+
+      CHECK(!uri_parts.is_http());
+      CHECK(!uri_parts.is_authority());
+      CHECK(!uri_parts.is_absolute());
+    }
+
+    {
+      auto const view = boost::u32string_view(U"http://[google.com]FreeTextZoneHere]:80");
+
+      auto const uri_parts = foxy::parse_uri(view);
+
+      CHECK(uri_parts.scheme() == U"");
+      CHECK(uri_parts.host() == U"");
+      CHECK(uri_parts.port() == U"");
+      CHECK(uri_parts.path() == U"");
+      CHECK(uri_parts.query() == U"");
+      CHECK(uri_parts.fragment() == U"");
+
+      CHECK(!uri_parts.is_http());
+      CHECK(!uri_parts.is_authority());
+      CHECK(!uri_parts.is_absolute());
+    }
   }
 }
