@@ -2,7 +2,7 @@
 
 The `foxy::parse_uri` function has been fuzzed using [libFuzzer](http://llvm.org/docs/LibFuzzer.html)
 on both OS X and Linux using clang-6 on OS X and clang-8 on an Ubuntu VM. On both operating systems
-the fuzzer was let run for approximately 10 - 20 minutes with `ubsan` and `asan` enabled.
+the fuzzer was let run for approximately 20 minutes with `ubsan` and `asan` enabled.
 
 The corresponding toolchain files `tools/foxy-linux-clang.cmake` and `tools/foxy-osx.cmake` contain
 the compiler flags that show how the fuzzing binaries were built.
