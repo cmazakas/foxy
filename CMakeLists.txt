@@ -23,7 +23,7 @@ project(
 )
 
 find_package(
-  Boost 1.70
+  Boost 1.71
   CONFIG REQUIRED
     system
     date_time
@@ -65,8 +65,6 @@ add_library(
   include/foxy/detail/relay.hpp
   include/foxy/detail/timed_op_wrapper_v2.hpp
   include/foxy/detail/tunnel.hpp
-
-  include/foxy/detail/variant2/variant.hpp
 
   include/foxy/impl/session.impl.hpp
   include/foxy/impl/shared_handler_ptr.impl.hpp

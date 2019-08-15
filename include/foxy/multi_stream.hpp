@@ -10,7 +10,7 @@
 #ifndef FOXY_MULTI_STREAM_HPP_
 #define FOXY_MULTI_STREAM_HPP_
 
-#include <foxy/detail/variant2/variant.hpp>
+#include <boost/variant2/variant.hpp>
 
 #include <boost/asio/io_context.hpp>
 
