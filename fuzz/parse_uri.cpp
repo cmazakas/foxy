@@ -9,10 +9,10 @@ LLVMFuzzerTestOneInput(char const* data, size_t const size)
   auto const input = boost::string_view(data, size);
   foxy::parse_uri(input);
 
-  auto const num_code_points = input.size() / 4;
+  auto const num_code_points = input.size() / sizeof(char32_t);
   auto       code_points     = std::vector<char32_t>(num_code_points);
 
-  std::memcpy(code_points.data(), input.data(), num_code_points * 4);
+  std::memcpy(code_points.data(), input.data(), num_code_points * sizeof(char32_t));
 
   auto const unicode_input = boost::u32string_view(code_points.data(), code_points.size());
   foxy::parse_uri(unicode_input);
