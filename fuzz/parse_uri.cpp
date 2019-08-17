@@ -11,10 +11,9 @@ LLVMFuzzerTestOneInput(char const* data, size_t const size)
   foxy::parse_uri(input);
 
   auto const num_code_points = input.size() / sizeof(char32_t);
-  auto       code_points     = std::vector<char32_t>(num_code_points);
-
   if (num_code_points == 0) { return 0; }
 
+  auto code_points = std::vector<char32_t>(num_code_points);
   std::memcpy(code_points.data(), input.data(), num_code_points * sizeof(char32_t));
 
   auto const valid_size =
