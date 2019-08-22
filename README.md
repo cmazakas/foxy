@@ -9,8 +9,8 @@ Read the docs [here](./docs/index.md#table-of-contents).
 ## Requirements
 
 * C++14
-* CMake 3.10 and above
-* Latest Boost (currently 1.70 [currently requires `develop` version of Spirit])
+* CMake 3.13+ and above
+* Boost 1.71+
 * OpenSSL
 * Catch2 (for testing)
 
@@ -18,7 +18,7 @@ Read the docs [here](./docs/index.md#table-of-contents).
 
 ## Supported Compilers
 
-Latest `msvc`, `gcc-7`, `clang-6`, `clang-8`
+`gcc-7`, `clang-6`, `clang-8`, latest `msvc`
 
 ## High-Level Overview
 
