@@ -8,8 +8,8 @@ Read the docs [here](./docs/index.md#table-of-contents).
 
 ## Requirements
 
-* C++14
-* CMake 3.13+ and above
+* C++14 and above
+* CMake 3.13+
 * Boost 1.71+
 * OpenSSL
 * Catch2 (for testing)
