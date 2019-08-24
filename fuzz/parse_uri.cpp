@@ -18,7 +18,7 @@ LLVMFuzzerTestOneInput(char const* data, size_t const size)
 
   auto const valid_size =
     std::remove_if(code_points.begin(), code_points.end(),
-                   [](auto const code_point) -> bool { return code_point >= 0x10ffff; }) -
+                   [](auto const code_point) -> bool { return code_point > 0x10ffff; }) -
     code_points.begin();
 
   auto const unicode_input = boost::u32string_view(code_points.data(), valid_size);
