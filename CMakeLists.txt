@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018-2018 Christian Mazakas (christian dot mazakas at gmail dot com)
+# Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 #
 # Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
 # or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 # Official repository: https://github.com/LeonineKing1199/foxy
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 project(
   foxy
@@ -23,7 +23,7 @@ project(
 )
 
 find_package(
-  Boost 1.70
+  Boost 1.71
   CONFIG REQUIRED
     system
     date_time
@@ -65,8 +65,6 @@ add_library(
   include/foxy/detail/relay.hpp
   include/foxy/detail/timed_op_wrapper_v2.hpp
   include/foxy/detail/tunnel.hpp
-
-  include/foxy/detail/variant2/variant.hpp
 
   include/foxy/impl/session.impl.hpp
   include/foxy/impl/shared_handler_ptr.impl.hpp
@@ -261,6 +259,32 @@ if (FOXY_BUILD_EXAMPLES)
       foxy
       Boost::container
       Boost::thread
+  )
+endif()
+
+if (FOXY_FUZZ)
+  add_executable(
+    uri-parser
+
+    fuzz/parse_uri.cpp
+  )
+
+  target_link_libraries(
+    uri-parser
+    PRIVATE
+      foxy
+  )
+
+  target_compile_options(
+    uri-parser
+    PRIVATE
+      "-fsanitize=fuzzer"
+  )
+
+  target_link_options(
+    uri-parser
+    PRIVATE
+      "-fsanitize=fuzzer"
   )
 endif()
 

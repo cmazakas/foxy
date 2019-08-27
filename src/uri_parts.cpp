@@ -36,7 +36,7 @@ foxy::parse_complete(boost::basic_string_view<char, std::char_traits<char>> cons
   auto match = false;
 
   match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::scheme] >> ":", parts.scheme_);
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   old = iter;
 
@@ -49,10 +49,10 @@ foxy::parse_complete(boost::basic_string_view<char, std::char_traits<char>> cons
   //
   if (match) {
     match = x3::parse(iter, end, -(":" >> foxy::uri::raw[foxy::uri::port]), parts.port_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
 
     match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_abempty], parts.path_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
   }
 
   // TODO: find out if we can ever introduce these two path parsing portions without breaking the
@@ -73,19 +73,15 @@ foxy::parse_complete(boost::basic_string_view<char, std::char_traits<char>> cons
     match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_empty], parts.path_);
   }
 
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match = x3::parse(iter, end, -("?" >> foxy::uri::raw[foxy::uri::query]), parts.query_);
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match = x3::parse(iter, end, -("#" >> foxy::uri::raw[foxy::uri::fragment]), parts.fragment_);
-
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   return iter == end;
-
-upcall:
-  return false;
 }
 
 auto
@@ -106,25 +102,21 @@ foxy::parse_authority(boost::basic_string_view<char, std::char_traits<char>> con
   //
   if (match) {
     match = x3::parse(iter, end, -(":" >> foxy::uri::raw[foxy::uri::port]), parts.port_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
 
     match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::path_abempty], parts.path_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
   }
 
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match = x3::parse(iter, end, -("?" >> foxy::uri::raw[foxy::uri::query]), parts.query_);
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match = x3::parse(iter, end, -("#" >> foxy::uri::raw[foxy::uri::fragment]), parts.fragment_);
-
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   return iter == end;
-
-upcall:
-  return false;
 }
 
 auto
@@ -152,7 +144,7 @@ foxy::parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_
 
   match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::unicode::scheme] >> x3::unicode::lit(U":"),
                     parts.scheme_);
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   old = iter;
 
@@ -169,10 +161,10 @@ foxy::parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_
     match =
       x3::parse(iter, end, -(x3::unicode::lit(U":") >> foxy::uri::raw[foxy::uri::unicode::port]),
                 parts.port_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
 
     match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::unicode::path_abempty], parts.path_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
   }
 
   // TODO: find out if we can ever introduce these two path parsing portions without breaking the
@@ -193,23 +185,20 @@ foxy::parse_complete(boost::basic_string_view<char32_t, std::char_traits<char32_
     match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::unicode::path_empty], parts.path_);
   }
 
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match =
     x3::parse(iter, end, -(x3::unicode::lit(U"?") >> foxy::uri::raw[foxy::uri::unicode::query]),
               parts.query_);
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match =
     x3::parse(iter, end, -(x3::unicode::lit(U"#") >> foxy::uri::raw[foxy::uri::unicode::fragment]),
               parts.fragment_);
 
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   return iter == end;
-
-upcall:
-  return false;
 }
 
 auto
@@ -234,27 +223,24 @@ foxy::parse_authority(boost::basic_string_view<char32_t, std::char_traits<char32
     match =
       x3::parse(iter, end, -(x3::unicode::lit(U":") >> foxy::uri::raw[foxy::uri::unicode::port]),
                 parts.port_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
 
     match = x3::parse(iter, end, foxy::uri::raw[foxy::uri::unicode::path_abempty], parts.path_);
-    if (!match) { goto upcall; }
+    if (!match) { return false; }
   }
 
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match =
     x3::parse(iter, end, -(x3::unicode::lit(U"?") >> foxy::uri::raw[foxy::uri::unicode::query]),
               parts.query_);
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   match =
     x3::parse(iter, end, -(x3::unicode::lit(U"#") >> foxy::uri::raw[foxy::uri::unicode::fragment]),
               parts.fragment_);
 
-  if (!match) { goto upcall; }
+  if (!match) { return false; }
 
   return iter == end;
-
-upcall:
-  return false;
 }

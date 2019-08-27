@@ -1,7 +1,7 @@
 set(FOXY_BUILD_EXAMPLES ON)
 
 set(Boost_USE_STATIC_LIBS ON)
-set(Boost_DIR "/home/chris/boost-spirit-develop/lib/cmake/Boost-1.71.0")
+set(Boost_DIR "/home/chris/boost-171/install/lib/cmake/Boost-1.71.0")
 
 set(BUILD_TESTING ON)
 set(CMAKE_CXX_COMPILER "g++-7")
