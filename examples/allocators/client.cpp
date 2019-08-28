@@ -167,14 +167,14 @@ main()
   request.set(http::field::host, "www.google.com");
 
   // our parser's underlying message is comprised of 2 parts, its headers and body
-  // this means we need to forward our allocation to both the headers and the body separately
+  // this means we need to forward our allocator to both the header and the body separately
   // Beast's parser forwards arguments to the wrapped message and messages are directly
   // constructible with a header instance and any arguments we want to construct the body with
   //
   parser_type parser{http::response_header<fields_type>(alloc_handle), alloc_handle};
 
   // our client, request and response parser all now share the same memory resource
-  // this means all intermediate allocations will be done using a simple pointer incremenet
+  // this means all intermediate allocations will be done using a simple pointer increment
   //
 
   // we create an instance of our coroutine and then post it the io_context for execution
