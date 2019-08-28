@@ -32,11 +32,11 @@ TEST_CASE("Our forward proxy")
 {
   SECTION("should reject ill-formed requests")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto was_valid_response = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
       auto const addr     = ip::make_address_v4("127.0.0.1");
       auto const port     = static_cast<unsigned short>(1337);
       auto const endpoint = tcp::endpoint(addr, port);
@@ -49,7 +49,7 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client         = foxy::client_session(io, {});
+      auto client         = foxy::client_session(io.get_executor(), {});
       client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -78,11 +78,11 @@ TEST_CASE("Our forward proxy")
 
   SECTION("should act as a relay for absolute URIs")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto was_valid_response = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
       auto const addr     = ip::make_address_v4("127.0.0.1");
       auto const port     = static_cast<unsigned short>(1337);
       auto const endpoint = tcp::endpoint(addr, port);
@@ -95,7 +95,7 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client         = foxy::client_session(io, {});
+      auto client         = foxy::client_session(io.get_executor(), {});
       client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -122,11 +122,11 @@ TEST_CASE("Our forward proxy")
 
   SECTION("should relay via CONNECT")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto was_valid_response = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
       auto const addr     = ip::make_address_v4("127.0.0.1");
       auto const port     = static_cast<unsigned short>(1337);
       auto const endpoint = tcp::endpoint(addr, port);
@@ -136,7 +136,7 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client         = foxy::client_session(io, {});
+      auto client         = foxy::client_session(io.get_executor(), {});
       client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -173,11 +173,11 @@ TEST_CASE("Our forward proxy")
 
   SECTION("should reject all non-persistent connections")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto was_valid_response = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
       auto const src_addr     = ip::make_address_v4("127.0.0.1");
       auto const src_port     = static_cast<unsigned short>(1337);
       auto const src_endpoint = tcp::endpoint(src_addr, src_port);
@@ -187,7 +187,7 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr);
       proxy->async_accept();
 
-      auto client         = foxy::client_session(io, {});
+      auto client         = foxy::client_session(io.get_executor(), {});
       client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -219,11 +219,11 @@ TEST_CASE("Our forward proxy")
 
   SECTION("should forward a message over an encrypted connection")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto was_valid_response = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
       auto const src_addr     = ip::make_address_v4("127.0.0.1");
       auto const src_port     = static_cast<unsigned short>(1337);
       auto const src_endpoint = tcp::endpoint(src_addr, src_port);
@@ -236,7 +236,7 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
       proxy->async_accept();
 
-      auto client         = foxy::client_session(io, {});
+      auto client         = foxy::client_session(io.get_executor(), {});
       client.opts.timeout = 30s;
       client.async_connect("127.0.0.1", "1337", yield);
 
@@ -275,11 +275,11 @@ TEST_CASE("Our forward proxy")
 
   SECTION("should forward a one-time relay over an encrypted connection")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto was_valid_response = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
       auto const src_addr     = ip::make_address_v4("127.0.0.1");
       auto const src_port     = static_cast<unsigned short>(1337);
       auto const src_endpoint = tcp::endpoint(src_addr, src_port);
@@ -292,7 +292,7 @@ TEST_CASE("Our forward proxy")
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
       proxy->async_accept();
 
-      auto client         = foxy::client_session(io, {});
+      auto client         = foxy::client_session(io.get_executor(), {});
       client.opts.timeout = 30s;
 
       client.async_connect("127.0.0.1", "1337", yield);

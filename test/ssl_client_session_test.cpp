@@ -31,7 +31,7 @@ TEST_CASE("Our SSL client session class")
 {
   SECTION("should be able to asynchronously connect to a remote")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
@@ -39,7 +39,7 @@ TEST_CASE("Our SSL client session class")
 
     auto opts = foxy::session_opts{ctx, 30s};
 
-    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto  session_handle = boost::make_unique<foxy::client_session>(io.get_executor(), opts);
     auto& session        = *session_handle;
 
     REQUIRE(session.stream.is_ssl());
@@ -94,12 +94,12 @@ TEST_CASE("Our SSL client session class")
 
   SECTION("should timeout when the host can't be found")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
     auto opts = foxy::session_opts{ctx, 250ms};
 
-    auto  session_handle = boost::make_unique<foxy::client_session>(io, opts);
+    auto  session_handle = boost::make_unique<foxy::client_session>(io.get_executor(), opts);
     auto& session        = *session_handle;
 
     auto timed_out = false;

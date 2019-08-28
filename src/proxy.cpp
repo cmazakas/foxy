@@ -62,7 +62,7 @@ public:
 
     state(foxy::multi_stream stream, foxy::session_opts const& client_opts)
       : session(std::move(stream), {})
-      , client(session.get_executor().context(), client_opts)
+      , client(session.get_executor(), client_opts)
     {
     }
   };
@@ -153,8 +153,8 @@ foxy::proxy::proxy(boost::asio::io_context& io,
                    endpoint_type const&     endpoint,
                    bool                     reuse_addr,
                    foxy::session_opts       client_opts)
-  : stream_(io)
-  , acceptor_(io, endpoint, reuse_addr)
+  : stream_(io.get_executor())
+  , acceptor_(io.get_executor(), endpoint, reuse_addr)
   , strand_(stream_.get_executor())
   , client_opts_(std::move(client_opts))
 {

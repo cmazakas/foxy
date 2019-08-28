@@ -12,8 +12,7 @@
 
 #include <boost/variant2/variant.hpp>
 
-#include <boost/asio/io_context.hpp>
-
+#include <boost/asio/executor.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core/stream_traits.hpp>
 
@@ -33,7 +32,7 @@ public:
 
   using stream_type     = Stream;
   using ssl_stream_type = boost::beast::ssl_stream<stream_type>;
-  using executor_type   = boost::asio::io_context::executor_type;
+  using executor_type   = boost::asio::executor;
 
 private:
   boost::variant2::variant<stream_type, ssl_stream_type> stream_;
@@ -146,8 +145,7 @@ basic_multi_stream<Stream>::upgrade(boost::asio::ssl::context& ctx) -> void
   stream_     = ssl_stream_type(std::move(socket), ctx);
 }
 
-using multi_stream = basic_multi_stream<
-  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>>;
+using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
 
 } // namespace foxy
 

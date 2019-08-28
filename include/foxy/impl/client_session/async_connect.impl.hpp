@@ -17,13 +17,11 @@ namespace foxy
 namespace detail
 {
 template <class DynamicBuffer, class Handler>
-struct connect_op : boost::beast::stable_async_base<
-                      Handler,
-                      typename ::foxy::basic_session<
-                        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                         boost::asio::io_context::executor_type>,
-                        DynamicBuffer>::executor_type>,
-                    boost::asio::coroutine
+struct connect_op
+  : boost::beast::stable_async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 {
   struct state
   {
@@ -33,36 +31,31 @@ struct connect_op : boost::beast::stable_async_base<
     boost::asio::ip::tcp::resolver::results_type results;
     boost::asio::ip::tcp::endpoint               endpoint;
 
-    state(boost::asio::io_context& io, std::string host_, std::string service_)
+    state(boost::asio::executor executor, std::string host_, std::string service_)
       : host(std::move(host_))
       , service(std::move(service_))
-      , resolver(io)
+      , resolver(executor)
     {
     }
   };
 
-  ::foxy::basic_session<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    DynamicBuffer>& session;
-  state&            s;
+  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
+  state&                                                              s;
 
   connect_op()                  = default;
   connect_op(connect_op const&) = default;
   connect_op(connect_op&&)      = default;
 
-  connect_op(
-    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>& session_,
-    Handler                               handler,
-    std::string                           host,
-    std::string                           service)
+  connect_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
+             Handler                                                             handler,
+             std::string                                                         host,
+             std::string                                                         service)
     : boost::beast::stable_async_base<Handler, typename ::foxy::session::executor_type>(
         std::move(handler),
         session_.get_executor())
     , session(session_)
     , s(boost::beast::allocate_stable<state>(*this,
-                                             session.get_executor().context(),
+                                             session.get_executor(),
                                              std::move(host),
                                              std::move(service)))
   {

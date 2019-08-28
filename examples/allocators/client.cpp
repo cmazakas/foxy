@@ -155,7 +155,7 @@ main()
 
   // we construct our client with a handle to the memory resource
   //
-  auto client = client_type(io, {}, alloc_handle);
+  auto client = client_type(io.get_executor(), {}, alloc_handle);
 
   // we create our request, making sure that our headers are constructed with a handle to the
   // resource as well
@@ -180,7 +180,7 @@ main()
   // we create an instance of our coroutine and then post it the io_context for execution
   //
   auto async_op = client_op(client, request, parser, was_valid, alloc_handle);
-  asio::post(io, std::move(async_op));
+  asio::post(io.get_executor(), std::move(async_op));
 
   io.run();
 

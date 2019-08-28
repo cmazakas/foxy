@@ -27,9 +27,10 @@ TEST_CASE("Our client session class")
 {
   SECTION("should be able to asynchronously connect to a remote")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
-    auto session_handle = boost::make_unique<foxy::client_session>(io, foxy::session_opts{});
+    auto session_handle =
+      boost::make_unique<foxy::client_session>(io.get_executor(), foxy::session_opts{});
 
     auto& session = *session_handle;
 
@@ -74,12 +75,13 @@ TEST_CASE("Our client session class")
 
   SECTION("should timeout when the host can't be found")
   {
-    asio::io_context io;
+    asio::io_context io{1};
 
     auto opts    = foxy::session_opts();
     opts.timeout = std::chrono::milliseconds{250};
 
-    auto session_handle = boost::make_unique<foxy::client_session>(io, std::move(opts));
+    auto session_handle =
+      boost::make_unique<foxy::client_session>(io.get_executor(), std::move(opts));
 
     auto& session = *session_handle;
 

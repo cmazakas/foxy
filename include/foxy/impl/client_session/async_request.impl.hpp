@@ -17,38 +17,30 @@ namespace foxy
 namespace detail
 {
 template <class Request, class ResponseParser, class DynamicBuffer, class Handler>
-struct request_op : boost::beast::async_base<
-                      Handler,
-                      typename ::foxy::basic_session<
-                        boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                         boost::asio::io_context::executor_type>,
-                        DynamicBuffer>::executor_type>,
-                    boost::asio::coroutine
+struct request_op
+  : boost::beast::async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 
 {
-  ::foxy::basic_session<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    DynamicBuffer>& session;
-  Request&          request;
-  ResponseParser&   parser;
+  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
+  Request&                                                            request;
+  ResponseParser&                                                     parser;
 
   request_op()                  = delete;
   request_op(request_op const&) = default;
   request_op(request_op&&)      = default;
 
-  request_op(
-    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>& session_,
-    Handler                               handler,
-    Request&                              request_,
-    ResponseParser&                       parser_)
+  request_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
+             Handler                                                             handler,
+             Request&                                                            request_,
+             ResponseParser&                                                     parser_)
     : boost::beast::async_base<
         Handler,
-        typename ::foxy::basic_session<
-          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                           boost::asio::io_context::executor_type>,
-          DynamicBuffer>::executor_type>(std::move(handler), session_.get_executor())
+        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
+        std::move(handler),
+        session_.get_executor())
     , session(session_)
     , request(request_)
     , parser(parser_)
