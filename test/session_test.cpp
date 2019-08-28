@@ -37,117 +37,117 @@ TEST_CASE("session_test")
 {
   using test_stream = boost::beast::test::stream;
 
-  // SECTION("should be able to read a header")
-  // {
-  //   asio::io_context io;
+  SECTION("should be able to read a header")
+  {
+    asio::io_context io;
 
-  //   auto req = http::request<http::empty_body>(http::verb::get, "/", 11);
-  //   req.set(http::field::host, "www.google.com");
+    auto req = http::request<http::empty_body>(http::verb::get, "/", 11);
+    req.set(http::field::host, "www.google.com");
 
-  //   auto stream = test_stream(io);
+    auto stream = foxy::basic_multi_stream<test_stream>(io);
 
-  //   boost::beast::ostream(stream.buffer()) << req;
+    boost::beast::ostream(stream.plain().buffer()) << req;
 
-  //   auto valid_parse  = false;
-  //   auto valid_verb   = false;
-  //   auto valid_target = false;
+    auto valid_parse  = false;
+    auto valid_verb   = false;
+    auto valid_target = false;
 
-  //   asio::spawn(io, [&](asio::yield_context yield) mutable {
-  //     auto session =
-  //       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable {
+      auto session =
+        foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
-  //     http::request_parser<http::empty_body> parser;
+      http::request_parser<http::empty_body> parser;
 
-  //     session.async_read_header(parser, yield);
+      session.async_read_header(parser, yield);
 
-  //     auto const is_header_done = parser.is_header_done();
-  //     auto const is_done        = parser.is_done();
+      auto const is_header_done = parser.is_header_done();
+      auto const is_done        = parser.is_done();
 
-  //     auto msg = parser.release();
+      auto msg = parser.release();
 
-  //     valid_parse  = is_header_done && is_done;
-  //     valid_verb   = msg.method() == http::verb::get;
-  //     valid_target = msg.target() == "/";
-  //   });
+      valid_parse  = is_header_done && is_done;
+      valid_verb   = msg.method() == http::verb::get;
+      valid_target = msg.target() == "/";
+    });
 
-  //   io.run();
-  //   CHECK(valid_parse);
-  //   CHECK(valid_verb);
-  //   CHECK(valid_target);
-  // }
+    io.run();
+    CHECK(valid_parse);
+    CHECK(valid_verb);
+    CHECK(valid_target);
+  }
 
-  // SECTION("should be able to read a complete message with a body")
-  // {
-  //   asio::io_context io;
+  SECTION("should be able to read a complete message with a body")
+  {
+    asio::io_context io;
 
-  //   auto req = http::request<http::string_body>(http::verb::get, "/", 11);
-  //   req.set(http::field::host, "www.google.com");
+    auto req = http::request<http::string_body>(http::verb::get, "/", 11);
+    req.set(http::field::host, "www.google.com");
 
-  //   req.body() = "I bestow the heads of virgins and the first-born sons!!!";
-  //   req.prepare_payload();
+    req.body() = "I bestow the heads of virgins and the first-born sons!!!";
+    req.prepare_payload();
 
-  //   auto stream = test_stream(io);
+    auto stream = foxy::basic_multi_stream<test_stream>(io);
 
-  //   boost::beast::ostream(stream.buffer()) << req;
+    boost::beast::ostream(stream.plain().buffer()) << req;
 
-  //   auto valid_parse = false;
-  //   auto valid_body  = false;
+    auto valid_parse = false;
+    auto valid_body  = false;
 
-  //   asio::spawn(io, [&](asio::yield_context yield) mutable {
-  //     auto session =
-  //       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
+    asio::spawn(io, [&](asio::yield_context yield) mutable {
+      auto session =
+        foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
-  //     http::request_parser<http::string_body> parser;
+      http::request_parser<http::string_body> parser;
 
-  //     session.async_read(parser, yield);
+      session.async_read(parser, yield);
 
-  //     auto const is_header_done = parser.is_header_done();
-  //     auto const is_done        = parser.is_done();
+      auto const is_header_done = parser.is_header_done();
+      auto const is_done        = parser.is_done();
 
-  //     auto msg = parser.release();
+      auto msg = parser.release();
 
-  //     valid_parse = is_header_done && is_done;
-  //     valid_body  = msg.body().size() > 0;
-  //   });
+      valid_parse = is_header_done && is_done;
+      valid_body  = msg.body().size() > 0;
+    });
 
-  //   io.run();
-  //   CHECK(valid_parse);
-  //   CHECK(valid_body);
-  // }
+    io.run();
+    CHECK(valid_parse);
+    CHECK(valid_body);
+  }
 
-  // SECTION("should be able to write a response")
-  // {
-  //   asio::io_context io;
+  SECTION("should be able to write a response")
+  {
+    asio::io_context io;
 
-  //   auto stream      = test_stream(io);
-  //   auto peer_stream = test_stream(io);
-  //   stream.connect(peer_stream);
+    auto stream      = foxy::basic_multi_stream<test_stream>(io);
+    auto peer_stream = foxy::basic_multi_stream<test_stream>(io);
+    stream.plain().connect(peer_stream.plain());
 
-  //   auto valid_serialization = false;
+    auto valid_serialization = false;
 
-  //   asio::spawn(io, [&](asio::yield_context yield) mutable {
-  //     auto ec = boost::system::error_code();
+    asio::spawn(io, [&](asio::yield_context yield) mutable {
+      auto ec = boost::system::error_code();
 
-  //     auto session =
-  //       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
+      auto session =
+        foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
-  //     auto res = http::response<http::empty_body>(http::status::ok, 11);
-  //     http::response_serializer<http::empty_body> serializer(res);
+      auto res = http::response<http::empty_body>(http::status::ok, 11);
+      http::response_serializer<http::empty_body> serializer(res);
 
-  //     session.async_write_header(serializer, yield);
+      session.async_write_header(serializer, yield);
 
-  //     auto const is_serialization_done = peer_stream.buffer().size() > 0;
-  //     auto const is_header_done        = serializer.is_header_done();
+      auto const is_serialization_done = peer_stream.plain().buffer().size() > 0;
+      auto const is_header_done        = serializer.is_header_done();
 
-  //     session.async_write(serializer, yield);
+      session.async_write(serializer, yield);
 
-  //     auto const is_done      = serializer.is_done();
-  //     auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
+      auto const is_done      = serializer.is_done();
+      auto const valid_output = (peer_stream.plain().str() == "HTTP/1.1 200 OK\r\n\r\n");
 
-  //     valid_serialization = is_serialization_done && is_header_done && is_done && valid_output;
-  //   });
+      valid_serialization = is_serialization_done && is_header_done && is_done && valid_output;
+    });
 
-  //   io.run();
-  //   CHECK(valid_serialization);
-  // }
+    io.run();
+    CHECK(valid_serialization);
+  }
 }

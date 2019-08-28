@@ -28,6 +28,18 @@ foxy::basic_session<Stream, DynamicBuffer>::basic_session(boost::asio::executor 
 
 template <class Stream, class DynamicBuffer>
 template <class... BufferArgs>
+foxy::basic_session<Stream, DynamicBuffer>::basic_session(boost::asio::io_context& io,
+                                                          session_opts             opts_,
+                                                          BufferArgs&&... bargs)
+  : opts(std::move(opts_))
+  , stream(opts.ssl_ctx ? stream_type(io, *opts.ssl_ctx) : stream_type(io))
+  , buffer(std::forward<BufferArgs>(bargs)...)
+  , timer(io)
+{
+}
+
+template <class Stream, class DynamicBuffer>
+template <class... BufferArgs>
 foxy::basic_session<Stream, DynamicBuffer>::basic_session(stream_type  stream_,
                                                           session_opts opts_,
                                                           BufferArgs&&... bargs)
