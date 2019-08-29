@@ -206,7 +206,7 @@ TEST_CASE("iterator_test")
   }
 }
 
-TEST_CASE("Our code point view...")
+TEST_CASE("code_point_view_test")
 {
   SECTION("should interop with our Unicode URI parsers")
   {
