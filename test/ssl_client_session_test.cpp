@@ -27,7 +27,7 @@ namespace ssl  = boost::asio::ssl;
 
 using namespace std::chrono_literals;
 
-TEST_CASE("Our SSL client session class")
+TEST_CASE("ssl_client_session_test")
 {
   SECTION("should be able to asynchronously connect to a remote")
   {

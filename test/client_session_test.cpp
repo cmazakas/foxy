@@ -23,7 +23,7 @@ namespace http = boost::beast::http;
 
 using namespace std::chrono_literals;
 
-TEST_CASE("Our client session class")
+TEST_CASE("client_session_test")
 {
   SECTION("should be able to asynchronously connect to a remote")
   {

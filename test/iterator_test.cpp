@@ -24,7 +24,7 @@
 
 namespace utf = boost::locale::utf;
 
-TEST_CASE("Our Unicode code point iterator...")
+TEST_CASE("iterator_test")
 {
   SECTION("should be able to traverse a valid string and yield valid Unicode code points")
   {

@@ -21,7 +21,7 @@
 
 namespace x3 = boost::spirit::x3;
 
-TEST_CASE("Our percent encoding function/namespace...")
+TEST_CASE("pct_encode_test")
 {
   SECTION(
     "... should be able to convert any Unicode code point to its underlying UTF-8 binary "

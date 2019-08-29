@@ -28,7 +28,7 @@ namespace ssl  = boost::asio::ssl;
 
 using namespace std::chrono_literals;
 
-TEST_CASE("Our forward proxy")
+TEST_CASE("proxy_test")
 {
   SECTION("should reject ill-formed requests")
   {

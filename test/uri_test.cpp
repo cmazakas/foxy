@@ -16,7 +16,7 @@
 
 namespace x3 = boost::spirit::x3;
 
-TEST_CASE("Our URI module...")
+TEST_CASE("uri_test")
 {
   SECTION("should parse the sub-delims")
   {
