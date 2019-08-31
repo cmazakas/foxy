@@ -23,8 +23,7 @@ struct basic_multi_stream;
 ## Exported Typedefs
 
 ```c++
-using multi_stream = basic_multi_stream<
-  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>>;
+using multi_stream = basic_multi_stream<boost::asio::ip::tcp::socket>;
 ```
 
 ## Member Typedefs
@@ -32,7 +31,7 @@ using multi_stream = basic_multi_stream<
 ```c++
 using stream_type     = Stream;
 using ssl_stream_type = boost::beast::ssl_stream<stream_type>;
-using executor_type   = boost::asio::io_context::executor_type;
+using executor_type   = typename Stream::executor_type;
 ```
 
 ## Constructors

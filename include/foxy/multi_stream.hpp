@@ -32,7 +32,7 @@ public:
 
   using stream_type     = Stream;
   using ssl_stream_type = boost::beast::ssl_stream<stream_type>;
-  using executor_type   = boost::asio::executor;
+  using executor_type   = typename Stream::executor_type;
 
 private:
   boost::variant2::variant<stream_type, ssl_stream_type> stream_;
