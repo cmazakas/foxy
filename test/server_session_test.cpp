@@ -146,7 +146,7 @@ TEST_CASE("server_session_test")
 
     auto const reuse_addr = true;
 
-    auto acceptor = tcp::acceptor(io, endpoint, reuse_addr);
+    auto acceptor = tcp::acceptor(io.get_executor(), endpoint, reuse_addr);
     REQUIRE(acceptor.is_open());
 
     auto ctx = ssl::context(ssl::context::tlsv12);
@@ -155,12 +155,12 @@ TEST_CASE("server_session_test")
     opts.timeout = std::chrono::seconds{1};
     opts.ssl_ctx = ctx;
 
-    auto client = foxy::client_session(io, opts);
+    auto client = foxy::client_session(io.get_executor(), opts);
 
     asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
       auto ec = boost::system::error_code();
 
-      auto stream = foxy::multi_stream(io);
+      auto stream = foxy::multi_stream(io.get_executor());
       acceptor.async_accept(stream.plain(), yield);
 
       auto server = foxy::server_session(std::move(stream), {});
@@ -174,7 +174,7 @@ TEST_CASE("server_session_test")
       socket.close(ec);
     });
 
-    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable -> void {
       auto ec = boost::system::error_code();
 
       client.async_connect("127.0.0.1", "1337", yield[ec]);
@@ -201,7 +201,7 @@ TEST_CASE("server_session_test")
 
     auto const reuse_addr = true;
 
-    auto acceptor = tcp::acceptor(io, endpoint, reuse_addr);
+    auto acceptor = tcp::acceptor(io.get_executor(), endpoint, reuse_addr);
     REQUIRE(acceptor.is_open());
 
     auto client_ctx = ssl::context(ssl::context::tlsv12_client);
@@ -215,13 +215,13 @@ TEST_CASE("server_session_test")
 
     auto server_opts = foxy::session_opts{server_ctx, std::chrono::seconds{30}};
 
-    auto client = foxy::client_session(io, opts);
+    auto client = foxy::client_session(io.get_executor(), opts);
     client.stream.ssl().set_verify_mode(ssl::verify_none);
 
-    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable -> void {
       auto ec = boost::system::error_code();
 
-      auto stream = foxy::multi_stream(io);
+      auto stream = foxy::multi_stream(io.get_executor());
       acceptor.async_accept(stream.plain(), yield);
 
       auto server = foxy::server_session(std::move(stream), server_opts);
@@ -240,7 +240,7 @@ TEST_CASE("server_session_test")
       server.stream.ssl().async_shutdown(yield);
     });
 
-    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable -> void {
       auto ec = boost::system::error_code();
 
       client.async_connect("127.0.0.1", "1337", yield[ec]);
@@ -264,7 +264,7 @@ TEST_CASE("server_session_test")
 
     auto const reuse_addr = true;
 
-    auto acceptor = tcp::acceptor(io, endpoint, reuse_addr);
+    auto acceptor = tcp::acceptor(io.get_executor(), endpoint, reuse_addr);
     REQUIRE(acceptor.is_open());
 
     auto client_ctx = ssl::context(ssl::context::tlsv12_client);
@@ -278,13 +278,13 @@ TEST_CASE("server_session_test")
 
     auto server_opts = foxy::session_opts{server_ctx, std::chrono::seconds{30}};
 
-    auto client = foxy::client_session(io, opts);
+    auto client = foxy::client_session(io.get_executor(), opts);
     client.stream.ssl().set_verify_mode(ssl::verify_none);
 
-    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable -> void {
       auto ec = boost::system::error_code();
 
-      auto stream = foxy::multi_stream(io);
+      auto stream = foxy::multi_stream(io.get_executor());
       acceptor.async_accept(stream.plain(), yield);
 
       auto server = foxy::server_session(std::move(stream), server_opts);
@@ -303,7 +303,7 @@ TEST_CASE("server_session_test")
       server.stream.ssl().async_shutdown(yield);
     });
 
-    asio::spawn(io, [&](asio::yield_context yield) mutable -> void {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable -> void {
       auto ec = boost::system::error_code();
 
       client.async_connect("127.0.0.1", "1337", yield[ec]);

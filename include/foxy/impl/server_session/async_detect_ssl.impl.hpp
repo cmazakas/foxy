@@ -17,33 +17,25 @@ namespace foxy
 namespace detail
 {
 template <class DynamicBuffer, class Handler>
-struct detect_op : boost::beast::async_base<
-                     Handler,
-                     typename ::foxy::basic_session<
-                       boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                        boost::asio::io_context::executor_type>,
-                       DynamicBuffer>::executor_type>,
-                   boost::asio::coroutine
+struct detect_op
+  : boost::beast::async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 {
-  ::foxy::basic_session<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    DynamicBuffer>& session;
+  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
 
   detect_op()                 = delete;
   detect_op(detect_op const&) = default;
   detect_op(detect_op&&)      = default;
 
-  detect_op(
-    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>& session_,
-    Handler                               handler)
+  detect_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
+            Handler                                                             handler)
     : boost::beast::async_base<
         Handler,
-        typename ::foxy::basic_session<
-          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                           boost::asio::io_context::executor_type>,
-          DynamicBuffer>::executor_type>(std::move(handler), session_.get_executor())
+        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
+        std::move(handler),
+        session_.get_executor())
     , session(session_)
   {
     (*this)({}, false, false);

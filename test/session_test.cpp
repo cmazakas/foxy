@@ -27,14 +27,10 @@ namespace http = boost::beast::http;
 static_assert(foxy::detail::is_closable_stream_throw<boost::beast::test::stream>::value,
               "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
-static_assert(foxy::detail::is_closable_stream_throw<
-                boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                 boost::asio::io_context::executor_type>>::value,
+static_assert(foxy::detail::is_closable_stream_throw<boost::asio::ip::tcp::socket>::value,
               "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
-static_assert(foxy::detail::is_closable_stream_nothrow<
-                boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                 boost::asio::io_context::executor_type>>::value,
+static_assert(foxy::detail::is_closable_stream_nothrow<boost::asio::ip::tcp::socket>::value,
               "Incorrect implementation of foxy::detail::is_closable_stream_throw");
 
 TEST_CASE("session_test")
@@ -48,15 +44,15 @@ TEST_CASE("session_test")
     auto req = http::request<http::empty_body>(http::verb::get, "/", 11);
     req.set(http::field::host, "www.google.com");
 
-    auto stream = test_stream(io);
+    auto stream = foxy::basic_multi_stream<test_stream>(io);
 
-    boost::beast::ostream(stream.buffer()) << req;
+    boost::beast::ostream(stream.plain().buffer()) << req;
 
     auto valid_parse  = false;
     auto valid_verb   = false;
     auto valid_target = false;
 
-    asio::spawn(io, [&](asio::yield_context yield) mutable {
+    asio::spawn(io.get_executor(), [&](asio::yield_context yield) mutable {
       auto session =
         foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(stream), {});
 
@@ -90,9 +86,9 @@ TEST_CASE("session_test")
     req.body() = "I bestow the heads of virgins and the first-born sons!!!";
     req.prepare_payload();
 
-    auto stream = test_stream(io);
+    auto stream = foxy::basic_multi_stream<test_stream>(io);
 
-    boost::beast::ostream(stream.buffer()) << req;
+    boost::beast::ostream(stream.plain().buffer()) << req;
 
     auto valid_parse = false;
     auto valid_body  = false;
@@ -123,9 +119,9 @@ TEST_CASE("session_test")
   {
     asio::io_context io;
 
-    auto stream      = test_stream(io);
-    auto peer_stream = test_stream(io);
-    stream.connect(peer_stream);
+    auto stream      = foxy::basic_multi_stream<test_stream>(io);
+    auto peer_stream = foxy::basic_multi_stream<test_stream>(io);
+    stream.plain().connect(peer_stream.plain());
 
     auto valid_serialization = false;
 
@@ -140,13 +136,13 @@ TEST_CASE("session_test")
 
       session.async_write_header(serializer, yield);
 
-      auto const is_serialization_done = peer_stream.buffer().size() > 0;
+      auto const is_serialization_done = peer_stream.plain().buffer().size() > 0;
       auto const is_header_done        = serializer.is_header_done();
 
       session.async_write(serializer, yield);
 
       auto const is_done      = serializer.is_done();
-      auto const valid_output = (peer_stream.str() == "HTTP/1.1 200 OK\r\n\r\n");
+      auto const valid_output = (peer_stream.plain().str() == "HTTP/1.1 200 OK\r\n\r\n");
 
       valid_serialization = is_serialization_done && is_header_done && is_done && valid_output;
     });

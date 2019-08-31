@@ -10,7 +10,7 @@
 
 namespace x3 = boost::spirit::x3;
 
-TEST_CASE("Our pct-decoding function...")
+TEST_CASE("pct_decode_test")
 {
   SECTION("should turn a pct-encoded ascii string into its underlying utf-8 representation")
   {

@@ -178,6 +178,7 @@ if (BUILD_TESTING)
 
     test/allocator_client_test.cpp
     test/client_session_test.cpp
+    test/code_point_view_test.cpp
     test/export_connect_fields_test.cpp
     test/iterator_test.cpp
     test/main.cpp

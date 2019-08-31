@@ -118,7 +118,7 @@ TEST_CASE("allocator_client_test")
 
     auto alloc_handle = pmr::polymorphic_allocator<char>(std::addressof(resource));
 
-    auto client = client_type(io, {}, alloc_handle);
+    auto client = client_type(io.get_executor(), {}, alloc_handle);
 
     auto request = request_type(http::request_header<fields_type>(alloc_handle));
     request.method(http::verb::get);

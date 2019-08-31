@@ -22,7 +22,7 @@
 namespace http  = boost::beast::http;
 namespace range = boost::range;
 
-TEST_CASE("Our detail::export_connect_fields function")
+TEST_CASE("export_connect_fields_test")
 {
   SECTION("should export all hop-by-hops to an external Fields container")
   {
@@ -31,9 +31,8 @@ TEST_CASE("Our detail::export_connect_fields function")
     auto a = http::fields();
     auto b = http::fields();
 
-    range::for_each(connect_tokens, [&](auto const* token) {
-      a.insert(http::field::connection, token);
-    });
+    range::for_each(connect_tokens,
+                    [&](auto const* token) { a.insert(http::field::connection, token); });
 
     a.insert(http::field::transfer_encoding, "gzip");
     a.insert(http::field::transfer_encoding, "chunked");
@@ -48,17 +47,14 @@ TEST_CASE("Our detail::export_connect_fields function")
 
     foxy::detail::export_connect_fields(a, b);
 
-    auto const fields_range = a.equal_range(http::field::connection);
-    auto const missing_connect_fields =
-      std::distance(fields_range.first, fields_range.second) == 0;
+    auto const fields_range           = a.equal_range(http::field::connection);
+    auto const missing_connect_fields = std::distance(fields_range.first, fields_range.second) == 0;
 
     CHECK(missing_connect_fields);
 
     auto const has_connect =
       range::equal(b.equal_range(http::field::connection), connect_tokens,
-                   [](auto const& field, auto const ex) -> bool {
-                     return field.value() == ex;
-                   });
+                   [](auto const& field, auto const ex) -> bool { return field.value() == ex; });
 
     CHECK(has_connect);
 

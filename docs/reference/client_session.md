@@ -34,11 +34,7 @@ and the [`boost::asio::ssl::stream`](https://www.boost.org/doc/libs/release/doc/
 
 ```c++
 template <class DynamicBuffer>
-struct basic_client_session
-  : public basic_session<
-      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                       typename boost::asio::io_context::executor_type>,
-      DynamicBuffer>;
+struct basic_client_session : public basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>;
 ```
 
 ## Exported Typedefs
@@ -82,11 +78,11 @@ client_session(client_session const&) = delete;
 client_session(client_session&&)      = default;
 ```
 
-### io_context
+### executor
 
 ```c++
 template <class... BufferArgs>
-basic_client_session(boost::asio::io_context& io, session_opts opts = {}, BufferArgs&&... bargs);
+basic_client_session(boost::asio::executor executor, session_opts opts, BufferArgs&&... bargs);
 ```
 
 Forwards to the same constructor found in `foxy::basic_session`.

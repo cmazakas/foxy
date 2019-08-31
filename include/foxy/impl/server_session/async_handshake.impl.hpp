@@ -17,33 +17,25 @@ namespace foxy
 namespace detail
 {
 template <class DynamicBuffer, class Handler>
-struct handshake_op : boost::beast::async_base<
-                        Handler,
-                        typename ::foxy::basic_session<
-                          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>::executor_type>,
-                      boost::asio::coroutine
+struct handshake_op
+  : boost::beast::async_base<
+      Handler,
+      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
+    boost::asio::coroutine
 {
-  ::foxy::basic_session<
-    boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-    DynamicBuffer>& session;
+  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
 
   handshake_op()                    = delete;
   handshake_op(handshake_op const&) = default;
   handshake_op(handshake_op&&)      = default;
 
-  handshake_op(
-    ::foxy::basic_session<boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                                           boost::asio::io_context::executor_type>,
-                          DynamicBuffer>& session_,
-    Handler                               handler)
+  handshake_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
+               Handler                                                             handler)
     : boost::beast::async_base<
         Handler,
-        typename ::foxy::basic_session<
-          boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                           boost::asio::io_context::executor_type>,
-          DynamicBuffer>::executor_type>(std::move(handler), session_.get_executor())
+        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
+        std::move(handler),
+        session_.get_executor())
     , session(session_)
   {
     (*this)({}, 0, false);

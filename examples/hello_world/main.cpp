@@ -28,12 +28,12 @@ main()
   // this is the main workhorse for Asio and effectively operates the same as the event loop in
   // Node.js
   //
-  asio::io_context io;
+  asio::io_context io{1};
 
   // we now construct a `client_session` with the default parameters (no SSL, timeout of 1s on
   // read/write ops)
   //
-  auto client = foxy::client_session(io, {});
+  auto client = foxy::client_session(io.get_executor(), {});
 
   // we now choose to spin up a "stackful" coroutine
   // this essentially means that this coroutine suspends by taking a snapshot of the current call
@@ -44,7 +44,7 @@ main()
   // this effectively enables the coroutine to be suspended from below us as the actual suspension
   // happens in our underlying function calls
   //
-  asio::spawn([&](asio::yield_context yield) {
+  asio::spawn(io.get_executor(), [&](asio::yield_context yield) {
     // these arguments get forwarded directly to Asio via Foxy
     // `host` is somewhat self-explanatory but `service` can be either a port number directly or a
     // protocol as is demonstrated here

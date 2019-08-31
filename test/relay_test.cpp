@@ -26,22 +26,23 @@ namespace http  = boost::beast::http;
 
 using test_stream = boost::beast::test::stream;
 
-TEST_CASE("Our async HTTP relay")
+TEST_CASE("relay_test")
 {
   SECTION("should be able to relay messages from a server client to a remote")
   {
     net::io_context io;
 
-    auto req_stream = test_stream(io);
-    auto res_stream = test_stream(io);
+    auto req_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto res_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server_stream = test_stream(io);
-    auto client_stream = test_stream(io);
+    auto server_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto client_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
-    auto client =
-      foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
+    auto server = foxy::basic_session<test_stream, boost::beast::flat_buffer>(
+      std::move(server_stream), foxy::session_opts{});
+
+    auto client = foxy::basic_session<test_stream, boost::beast::flat_buffer>(
+      std::move(client_stream), foxy::session_opts{});
 
     auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
 
@@ -61,15 +62,15 @@ TEST_CASE("Our async HTTP relay")
     // our internal server session is what writes the response back to the
     // proxy client
     //
-    server.stream.plain().connect(res_stream);
+    server.stream.plain().connect(res_stream.plain());
 
     // our internal client is what writes the request from the proxy client
     // to the end remote
     //
-    client.stream.plain().connect(req_stream);
+    client.stream.plain().connect(req_stream.plain());
 
-    REQUIRE(req_stream.str() == "");
-    REQUIRE(res_stream.str() == "");
+    REQUIRE(req_stream.plain().str() == "");
+    REQUIRE(res_stream.plain().str() == "");
 
     net::spawn(
       [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
@@ -79,12 +80,12 @@ TEST_CASE("Our async HTTP relay")
     // this proves that our client instance successfully wrote the request to
     // the remote
     //
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nVia: 1.1 foxy\r\n\r\n");
+    CHECK(req_stream.plain().str() == "GET / HTTP/1.1\r\nVia: 1.1 foxy\r\n\r\n");
 
     // this proves that our internal server instance successfully writes the
     // response back to the proxy client
     //
-    CHECK(res_stream.str() ==
+    CHECK(res_stream.plain().str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
           "Via: 1.1 foxy\r\n"
@@ -96,14 +97,15 @@ TEST_CASE("Our async HTTP relay")
   {
     net::io_context io;
 
-    auto req_stream = test_stream(io);
-    auto res_stream = test_stream(io);
+    auto req_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto res_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server_stream = test_stream(io);
-    auto client_stream = test_stream(io);
+    auto server_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto client_stream = foxy::basic_multi_stream<test_stream>(io);
 
     auto server =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
+
     auto client =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
@@ -122,20 +124,21 @@ TEST_CASE("Our async HTTP relay")
     beast::ostream(server.stream.plain().buffer()) << request;
     beast::ostream(client.stream.plain().buffer()) << response;
 
-    server.stream.plain().connect(res_stream);
-    client.stream.plain().connect(req_stream);
+    server.stream.plain().connect(res_stream.plain());
+    client.stream.plain().connect(req_stream.plain());
 
-    REQUIRE(req_stream.str() == "");
-    REQUIRE(res_stream.str() == "");
+    REQUIRE(req_stream.plain().str() == "");
+    REQUIRE(res_stream.plain().str() == "");
 
     net::spawn(
       [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
 
     io.run();
 
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nConnection: close\r\nVia: 1.1 foxy\r\n\r\n");
+    CHECK(req_stream.plain().str() ==
+          "GET / HTTP/1.1\r\nConnection: close\r\nVia: 1.1 foxy\r\n\r\n");
 
-    CHECK(res_stream.str() ==
+    CHECK(res_stream.plain().str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
           "Connection: close\r\n"
@@ -148,14 +151,15 @@ TEST_CASE("Our async HTTP relay")
   {
     net::io_context io;
 
-    auto req_stream = test_stream(io);
-    auto res_stream = test_stream(io);
+    auto req_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto res_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server_stream = test_stream(io);
-    auto client_stream = test_stream(io);
+    auto server_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto client_stream = foxy::basic_multi_stream<test_stream>(io);
 
     auto server =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
+
     auto client =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
@@ -170,20 +174,20 @@ TEST_CASE("Our async HTTP relay")
     beast::ostream(server.stream.plain().buffer()) << request;
     beast::ostream(client.stream.plain().buffer()) << response;
 
-    server.stream.plain().connect(res_stream);
-    client.stream.plain().connect(req_stream);
+    server.stream.plain().connect(res_stream.plain());
+    client.stream.plain().connect(req_stream.plain());
 
-    REQUIRE(req_stream.str() == "");
-    REQUIRE(res_stream.str() == "");
+    REQUIRE(req_stream.plain().str() == "");
+    REQUIRE(res_stream.plain().str() == "");
 
     net::spawn(
       [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
 
     io.run();
 
-    CHECK(req_stream.str() == "GET / HTTP/1.1\r\nVia: 1.1 foxy\r\n\r\n");
+    CHECK(req_stream.plain().str() == "GET / HTTP/1.1\r\nVia: 1.1 foxy\r\n\r\n");
 
-    CHECK(res_stream.str() ==
+    CHECK(res_stream.plain().str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 58\r\n"
           "Connection: close\r\n"
@@ -196,11 +200,11 @@ TEST_CASE("Our async HTTP relay")
   {
     net::io_context io;
 
-    auto req_stream = test_stream(io);
-    auto res_stream = test_stream(io);
+    auto req_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto res_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server_stream = test_stream(io);
-    auto client_stream = test_stream(io);
+    auto server_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto client_stream = foxy::basic_multi_stream<test_stream>(io);
 
     auto server =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
@@ -222,11 +226,11 @@ TEST_CASE("Our async HTTP relay")
     beast::ostream(server.stream.plain().buffer()) << request;
     beast::ostream(client.stream.plain().buffer()) << response;
 
-    server.stream.plain().connect(res_stream);
-    client.stream.plain().connect(req_stream);
+    server.stream.plain().connect(res_stream.plain());
+    client.stream.plain().connect(req_stream.plain());
 
-    REQUIRE(req_stream.str() == "");
-    REQUIRE(res_stream.str() == "");
+    REQUIRE(req_stream.plain().str() == "");
+    REQUIRE(res_stream.plain().str() == "");
 
     net::spawn(
       [&](net::yield_context yield) mutable { foxy::detail::async_relay(server, client, yield); });
@@ -236,7 +240,7 @@ TEST_CASE("Our async HTTP relay")
     // this proves that our client instance successfully wrote the request to
     // the remote
     //
-    CHECK(req_stream.str() ==
+    CHECK(req_stream.plain().str() ==
           "POST / HTTP/1.1\r\n"
           "Transfer-Encoding: chunked\r\n"
           "Via: 1.1 foxy\r\n"
@@ -250,7 +254,7 @@ TEST_CASE("Our async HTTP relay")
     // this proves that our internal server instance successfully writes the
     // response back to the proxy client
     //
-    CHECK(res_stream.str() ==
+    CHECK(res_stream.plain().str() ==
           "HTTP/1.1 200 OK\r\n"
           "Transfer-Encoding: chunked\r\n"
           "Via: 1.1 foxy\r\n"
@@ -268,12 +272,13 @@ TEST_CASE("Our async HTTP relay")
 
     auto response =
       http::response<http::string_body>(http::status::ok, 11, "google res goes here!");
+
     response.prepare_payload();
 
     net::io_context io;
 
-    auto request_stream  = test_stream(io);
-    auto response_stream = test_stream(io);
+    auto request_stream  = foxy::basic_multi_stream<test_stream>(io);
+    auto response_stream = foxy::basic_multi_stream<test_stream>(io);
 
     auto client = foxy::basic_session<test_stream, boost::beast::flat_buffer>(io, {});
     auto server = foxy::basic_session<test_stream, boost::beast::flat_buffer>(io, {});
@@ -284,8 +289,8 @@ TEST_CASE("Our async HTTP relay")
     // the client writes the request to the stream
     // the server writes the response to the stream
     //
-    client.stream.plain().connect(request_stream);
-    server.stream.plain().connect(response_stream);
+    client.stream.plain().connect(request_stream.plain());
+    server.stream.plain().connect(response_stream.plain());
 
     net::spawn([&](net::yield_context yield) mutable {
       http::request_parser<http::empty_body> header_parser;
@@ -297,9 +302,9 @@ TEST_CASE("Our async HTTP relay")
 
     io.run();
 
-    CHECK(request_stream.str() ==
+    CHECK(request_stream.plain().str() ==
           "GET http://www.google.com HTTP/1.1\r\nHost: localhost\r\nVia: 1.1 foxy\r\n\r\n");
-    CHECK(response_stream.str() ==
+    CHECK(response_stream.plain().str() ==
           "HTTP/1.1 200 OK\r\n"
           "Content-Length: 21\r\n"
           "Via: 1.1 foxy\r\n"
@@ -311,11 +316,11 @@ TEST_CASE("Our async HTTP relay")
   {
     net::io_context io;
 
-    auto req_stream = test_stream(io);
-    auto res_stream = test_stream(io);
+    auto req_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto res_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server_stream = test_stream(io);
-    auto client_stream = test_stream(io);
+    auto server_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto client_stream = foxy::basic_multi_stream<test_stream>(io);
 
     auto server =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
@@ -341,11 +346,11 @@ TEST_CASE("Our async HTTP relay")
     beast::ostream(server.stream.plain().buffer()) << request;
     beast::ostream(client.stream.plain().buffer()) << response;
 
-    server.stream.plain().connect(res_stream);
-    client.stream.plain().connect(req_stream);
+    server.stream.plain().connect(res_stream.plain());
+    client.stream.plain().connect(req_stream.plain());
 
-    REQUIRE(req_stream.str() == "");
-    REQUIRE(res_stream.str() == "");
+    REQUIRE(req_stream.plain().str() == "");
+    REQUIRE(res_stream.plain().str() == "");
 
     auto close_tunnel = false;
 
@@ -356,8 +361,8 @@ TEST_CASE("Our async HTTP relay")
     io.run();
 
     CHECK(close_tunnel);
-    CHECK(req_stream.str() == "");
-    CHECK(res_stream.str() == "");
+    CHECK(req_stream.plain().str() == "");
+    CHECK(res_stream.plain().str() == "");
   }
 
   SECTION(
@@ -365,14 +370,15 @@ TEST_CASE("Our async HTTP relay")
   {
     net::io_context io;
 
-    auto req_stream = test_stream(io);
-    auto res_stream = test_stream(io);
+    auto req_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto res_stream = foxy::basic_multi_stream<test_stream>(io);
 
-    auto server_stream = test_stream(io);
-    auto client_stream = test_stream(io);
+    auto server_stream = foxy::basic_multi_stream<test_stream>(io);
+    auto client_stream = foxy::basic_multi_stream<test_stream>(io);
 
     auto server =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(server_stream), {});
+
     auto client =
       foxy::basic_session<test_stream, boost::beast::flat_buffer>(std::move(client_stream), {});
 
@@ -398,11 +404,11 @@ TEST_CASE("Our async HTTP relay")
     beast::ostream(server.stream.plain().buffer()) << request;
     beast::ostream(client.stream.plain().buffer()) << response;
 
-    server.stream.plain().connect(res_stream);
-    client.stream.plain().connect(req_stream);
+    server.stream.plain().connect(res_stream.plain());
+    client.stream.plain().connect(req_stream.plain());
 
-    REQUIRE(req_stream.str() == "");
-    REQUIRE(res_stream.str() == "");
+    REQUIRE(req_stream.plain().str() == "");
+    REQUIRE(res_stream.plain().str() == "");
 
     auto close_tunnel = false;
 
@@ -413,7 +419,7 @@ TEST_CASE("Our async HTTP relay")
     io.run();
 
     CHECK(close_tunnel);
-    CHECK(req_stream.str() ==
+    CHECK(req_stream.plain().str() ==
           "POST / HTTP/1.1\r\n"
           "Via: 1.1 otherserver\r\n"
           "Via: 1.1 foxy\r\n"
@@ -421,6 +427,6 @@ TEST_CASE("Our async HTTP relay")
           "\r\n"
           "Unholy Gravebirth is a good song but it can be a little off-putting "
           "when used in a test data\n");
-    CHECK(res_stream.str() == "");
+    CHECK(res_stream.plain().str() == "");
   }
 }

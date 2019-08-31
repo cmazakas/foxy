@@ -42,9 +42,7 @@ struct basic_session;
 ## Exported Typedefs
 
 ```c++
-using session = basic_session<
-  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-  boost::beast::flat_buffer>;
+using session = basic_session<boost::asio::ip::tcp::socket, boost::beast::flat_buffer>;
 ```
 
 ## Member Typedefs
@@ -74,6 +72,18 @@ basic_session()                     = delete;
 basic_session(basic_session const&) = delete;
 basic_session(basic_session&&)      = default;
 ```
+
+### executor
+
+```c++
+template <class... BufferArgs>
+basic_session(boost::asio::executor executor, session_opts opts_, BufferArgs&&... bargs);
+```
+
+Construct the session using the provided polymorphic executor. Forwards the executor to the
+construction of the underlying `Stream`.
+
+The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
 
 ### io_context
 
