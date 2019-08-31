@@ -46,18 +46,20 @@ using client_type = foxy::basic_client_session<boost::beast::basic_multi_buffer<
 
 namespace
 {
-// to write an allocator-aware operation in Asio, we need a callable object that has a get_executor
-// member function and a nested executor_type typedef
+// to write an allocator-aware operation in Asio, we need a callable object that has a get_allocator
+// member function and a nested allocator_type typedef
 //
 // to this end, an Asio stackless coroutine will suffice
 //
 // we bring in the yield/unyield headers to import the faux-keywords Asio adds
+//
 // these give us: yield, reenter
 //
 #include <boost/asio/yield.hpp>
 struct client_op : asio::coroutine
 {
   using allocator_type = pmr::polymorphic_allocator<char>;
+  using executor_type  = typename client_type::executor_type;
 
   // our async operation will own none of its required data
   //
@@ -92,6 +94,12 @@ struct client_op : asio::coroutine
   get_allocator() const noexcept -> allocator_type
   {
     return alloc;
+  }
+
+  auto
+  get_executor() const noexcept -> executor_type
+  {
+    return client.get_executor();
   }
 
   // this overload of operator() is to enable reentry from our async_connect function

@@ -56,18 +56,20 @@ using client_type = foxy::basic_client_session<boost::beast::basic_multi_buffer<
 
 namespace
 {
-// to write an allocator-aware operation in Asio, we need a callable object that has a get_executor
-// member function and a nested executor_type typedef
+// to write an allocator-aware operation in Asio, we need a callable object that has a get_allocator
+// member function and a nested allocator_type typedef
 //
 // to this end, an Asio stackless coroutine will suffice
 //
 // we bring in the yield/unyield headers to import the faux-keywords Asio adds
+//
 // these give us: yield, reenter
 //
 #include <boost/asio/yield.hpp>
 struct client_op : asio::coroutine
 {
   using allocator_type = pmr::polymorphic_allocator<char>;
+  using executor_type  = typename client_type::executor_type;
 
   // our async operation will own none of its required data
   //
@@ -81,9 +83,9 @@ struct client_op : asio::coroutine
   //
   allocator_type alloc;
 
-  client_op()                     = delete;
-  client_op(client_op const&)     = default;
-  client_op(client_op&&) noexcept = default;
+  client_op()                 = delete;
+  client_op(client_op const&) = default;
+  client_op(client_op&&)      = default;
 
   client_op(client_type&   client_,
             request_type&  request_,
@@ -104,6 +106,12 @@ struct client_op : asio::coroutine
     return alloc;
   }
 
+  auto
+  get_executor() const noexcept -> executor_type
+  {
+    return client.get_executor();
+  }
+
   // this overload of operator() is to enable reentry from our async_connect function
   //
   auto
@@ -118,7 +126,7 @@ struct client_op : asio::coroutine
   {
     reenter(this)
     {
-      yield client.async_connect("www.google.com", "80", *this);
+      yield client.async_connect("www.google.com", "80", std::move(*this));
       if (ec) {
         was_valid = false;
 
@@ -126,14 +134,12 @@ struct client_op : asio::coroutine
         yield break;
       }
 
-      yield client.async_request(request, parser, *this);
+      yield client.async_request(request, parser, std::move(*this));
       if (ec) {
         was_valid = false;
         yield break;
       }
 
-      // our example is simple, we simply want to validate that we got a successful response
-      //
       {
         auto& response = parser.get();
         was_valid      = (response.result_int() == 200 && response.body().size() > 0 &&
@@ -167,7 +173,7 @@ main()
 
   // we construct our client with a handle to the memory resource
   //
-  auto client = client_type(io, {}, alloc_handle);
+  auto client = client_type(io.get_executor(), {}, alloc_handle);
 
   // we create our request, making sure that our headers are constructed with a handle to the
   // resource as well
@@ -179,20 +185,20 @@ main()
   request.set(http::field::host, "www.google.com");
 
   // our parser's underlying message is comprised of 2 parts, its headers and body
-  // this means we need to forward our allocator to both the headers and the body separately
+  // this means we need to forward our allocator to both the header and the body separately
   // Beast's parser forwards arguments to the wrapped message and messages are directly
   // constructible with a header instance and any arguments we want to construct the body with
   //
   parser_type parser{http::response_header<fields_type>(alloc_handle), alloc_handle};
 
   // our client, request and response parser all now share the same memory resource
-  // this means all intermediate allocations will be done using a simple pointer incremenet
+  // this means all intermediate allocations will be done using a simple pointer increment
   //
 
-  // we create an instance of our coroutine and then post it to the io_context for execution
+  // we create an instance of our coroutine and then post it the io_context for execution
   //
   auto async_op = client_op(client, request, parser, was_valid, alloc_handle);
-  asio::post(io, std::move(async_op));
+  asio::post(io.get_executor(), std::move(async_op));
 
   io.run();
 
@@ -211,6 +217,7 @@ main()
 
   return 0;
 }
+
 ```
 
 ---
