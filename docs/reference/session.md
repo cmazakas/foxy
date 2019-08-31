@@ -42,9 +42,7 @@ struct basic_session;
 ## Exported Typedefs
 
 ```c++
-using session = basic_session<
-  boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>,
-  boost::beast::flat_buffer>;
+using session = basic_session<boost::asio::ip::tcp::socket, boost::beast::flat_buffer>;
 ```
 
 ## Member Typedefs
