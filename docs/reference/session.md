@@ -73,6 +73,18 @@ basic_session(basic_session const&) = delete;
 basic_session(basic_session&&)      = default;
 ```
 
+### executor
+
+```c++
+template <class... BufferArgs>
+basic_session(boost::asio::executor executor, session_opts opts_, BufferArgs&&... bargs);
+```
+
+Construct the session using the provided polymorphic executor. Forwards the executor to the
+construction of the underlying `Stream`.
+
+The construtor will instantiate the `DynamicBuffer` type with `bargs...`.
+
 ### io_context
 
 ```c++
