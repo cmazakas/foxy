@@ -66,11 +66,7 @@ and the [`boost::asio::ssl::stream`](https://www.boost.org/doc/libs/release/doc/
 
 ```c++
 template <class DynamicBuffer>
-struct basic_server_session
-  : public basic_session<
-      boost::asio::basic_stream_socket<boost::asio::ip::tcp,
-                                       typename boost::asio::io_context::executor_type>,
-      DynamicBuffer>;
+struct basic_server_session : public basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>;
 ```
 
 ## Member Typedefs
