@@ -13,6 +13,7 @@
 #include <foxy/session.hpp>
 #include <foxy/type_traits.hpp>
 #include <foxy/shared_handler_ptr.hpp>
+#include <foxy/utility.hpp>
 #include <foxy/detail/timed_op_wrapper_v2.hpp>
 
 #include <boost/system/error_code.hpp>
@@ -37,6 +38,8 @@
 
 #include <boost/container/container_fwd.hpp>
 
+#include <boost/utility/string_view.hpp>
+
 #include <chrono>
 #include <string>
 #include <utility>
@@ -59,6 +62,20 @@ public:
                                                                  std::move(opts),
                                                                  std::forward<BufferArgs>(bargs)...)
   {
+  }
+
+  auto
+  set_verify_hostname(boost::string_view const hostname, boost::system::error_code& ec)
+  {
+    auto* const ssl = this->stream.ssl().native_handle();
+    ::foxy::set_verification_hostname(ssl, hostname, 0, ec);
+  }
+
+  auto
+  add_verify_hostname(boost::string_view const hostname, boost::system::error_code& ec)
+  {
+    auto* const ssl = this->stream.ssl().native_handle();
+    ::foxy::add_verification_hostname(ssl, hostname, 0, ec);
   }
 
   template <class ConnectHandler>
