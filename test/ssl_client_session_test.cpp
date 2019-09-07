@@ -37,7 +37,7 @@ TEST_CASE("ssl_client_session_test")
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
     auto ctx = ssl::context(ssl::context::method::tlsv12_client);
-    ctx.load_verify_file("..\\test\\GlobalSign.pem");
+    ctx.load_verify_file("root-cas.pem");
     foxy::certify::enable_https_verification(ctx);
 
     ctx.set_verify_mode(ssl::context::verify_peer | ssl::context::verify_fail_if_no_peer_cert);
