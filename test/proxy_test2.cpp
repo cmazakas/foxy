@@ -47,7 +47,9 @@ TEST_CASE("proxy_test2")
 
       auto const reuse_addr = true;
 
-      auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+      auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+      ctx.load_verify_file("root-cas.pem");
+
       auto opts = foxy::session_opts{ctx, 5s};
 
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
@@ -104,7 +106,9 @@ TEST_CASE("proxy_test2")
 
       auto const reuse_addr = true;
 
-      auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+      auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+      ctx.load_verify_file("root-cas.pem");
+
       auto opts = foxy::session_opts{ctx, 5s};
 
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
@@ -152,7 +156,9 @@ TEST_CASE("proxy_test2")
 
       auto const reuse_addr = true;
 
-      auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+      auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+      ctx.load_verify_file("root-cas.pem");
+
       auto opts = foxy::session_opts{ctx, 30s};
 
       auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
@@ -209,7 +215,9 @@ TEST_CASE("proxy_test2")
 
     std::atomic_int num_valid_responses{0};
 
-    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+    ctx.load_verify_file("root-cas.pem");
+
     auto opts = foxy::session_opts{ctx, 30s};
 
     auto proxy = std::make_shared<foxy::proxy>(io, src_endpoint, reuse_addr, opts);
