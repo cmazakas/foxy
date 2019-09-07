@@ -37,10 +37,10 @@ TEST_CASE("ssl_client_session_test")
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
     auto ctx = ssl::context(ssl::context::method::tlsv12_client);
-    ctx.load_verify_file("root-cas.pem");
-    foxy::certify::enable_https_verification(ctx);
 
-    ctx.set_verify_mode(ssl::context::verify_peer | ssl::context::verify_fail_if_no_peer_cert);
+    // load in our entire list of root CAs
+    //
+    ctx.load_verify_file("root-cas.pem");
 
     auto opts = foxy::session_opts{ctx, 30s};
 
@@ -48,9 +48,6 @@ TEST_CASE("ssl_client_session_test")
     auto& session        = *session_handle;
 
     REQUIRE(session.stream.is_ssl());
-
-    foxy::certify::set_sni_hostname(session.stream.ssl(), std::string("www.google.com"));
-    foxy::certify::set_server_hostname(session.stream.ssl().native_handle(), "www.google.com");
 
     session.async_connect(
       "www.google.com", "https",

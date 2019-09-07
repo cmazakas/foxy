@@ -119,6 +119,11 @@ struct connect_op
       if (ec) { goto upcall; }
 
       if (session.stream.is_ssl()) {
+        if (session.opts.verify_peer_cert) {
+          ::foxy::certify::set_sni_hostname(session.stream.ssl(), s.host);
+          ::foxy::certify::set_server_hostname(session.stream.ssl().native_handle(), s.host);
+        }
+
         BOOST_ASIO_CORO_YIELD
         session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::client,
                                              std::move(*this));

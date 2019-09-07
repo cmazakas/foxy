@@ -73,7 +73,7 @@ set_sni_hostname(AsyncSSLStream& stream, std::string const& hostname)
   auto ec = boost::system::error_code();
 
   if (!SSL_set_tlsext_host_name(stream.native_handle(), hostname.c_str())) {
-    ec = {static_cast<int>(::ERR_get_error()), asio::error::get_ssl_category()};
+    ec = {static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
   } else {
     ec = {};
   }

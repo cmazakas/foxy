@@ -34,6 +34,8 @@ struct session_opts
 
   boost::optional<boost::asio::ssl::context&> ssl_ctx = {};
   duration_type                               timeout = std::chrono::seconds{1};
+
+  bool verify_peer_cert = true;
 };
 
 template <class Stream, class DynamicBuffer>
