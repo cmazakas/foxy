@@ -11,6 +11,7 @@
 #include <foxy/client_session.hpp>
 #include <foxy/log.hpp>
 
+#include <boost/asio/ssl/rfc2818_verification.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/smart_ptr/make_unique.hpp>
@@ -36,6 +37,10 @@ TEST_CASE("ssl_client_session_test")
     // create a client that uses TLS 1.2 and has a 30 second timeout
     //
     auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+    ctx.load_verify_file("..\\test\\GlobalSign.pem");
+    foxy::certify::enable_https_verification(ctx);
+
+    ctx.set_verify_mode(ssl::context::verify_peer | ssl::context::verify_fail_if_no_peer_cert);
 
     auto opts = foxy::session_opts{ctx, 30s};
 
@@ -44,12 +49,14 @@ TEST_CASE("ssl_client_session_test")
 
     REQUIRE(session.stream.is_ssl());
 
-    auto valid_request = false;
+    foxy::certify::set_sni_hostname(session.stream.ssl(), std::string("www.google.com"));
+    foxy::certify::set_server_hostname(session.stream.ssl().native_handle(), "www.google.com");
 
     session.async_connect(
       "www.google.com", "https",
-      [&valid_request, &session, sh = std::move(session_handle)](error_code ec,
-                                                                 tcp::endpoint) mutable -> void {
+      [&session, sh = std::move(session_handle)](error_code ec, tcp::endpoint) mutable -> void {
+        REQUIRE_FALSE(ec);
+
         auto parser_handle = boost::make_unique<http::response_parser<http::string_body>>();
         auto request_handle =
           boost::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
@@ -59,37 +66,25 @@ TEST_CASE("ssl_client_session_test")
 
         session.async_request(
           request, parser,
-          [&valid_request, &session, &parser, &request, ph = std::move(parser_handle),
+          [&session, &parser, &request, ph = std::move(parser_handle),
            rh = std::move(request_handle), sh = std::move(sh)](error_code ec) mutable -> void {
+            REQUIRE_FALSE(ec);
+
             auto response = parser.release();
 
             auto const is_valid_status = (response.result_int() == 200);
             auto const is_valid_body   = (response.body().size() > 0) &&
                                        boost::string_view(response.body()).ends_with("</html>");
 
-            valid_request = is_valid_body && is_valid_status;
+            CHECK(is_valid_status);
+            CHECK(is_valid_body);
 
-            // do this to prove that the TLS session is stable after a move
-            //
-            auto new_handler = boost::make_unique<foxy::client_session>(std::move(session));
-
-            auto& other_session = *new_handler;
-
-            other_session.stream.ssl().async_shutdown(
-              [nh = std::move(new_handler)](error_code ec) -> void {
-                if (ec == boost::asio::error::eof) {
-                  // Rationale:
-                  // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-                  ec.assign(0, ec.category());
-                }
-
-                if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
-              });
+            session.stream.ssl().async_shutdown(
+              [&session, sh = std::move(sh)](error_code ec) mutable -> void {});
           });
       });
 
     io.run();
-    REQUIRE(valid_request);
   }
 
   SECTION("should timeout when the host can't be found")
