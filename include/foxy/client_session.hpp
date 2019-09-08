@@ -70,20 +70,6 @@ public:
     }
   }
 
-  auto
-  set_verify_hostname(boost::string_view const hostname, boost::system::error_code& ec)
-  {
-    auto* const ssl = this->stream.ssl().native_handle();
-    ::foxy::set_verification_hostname(ssl, hostname, 0, ec);
-  }
-
-  auto
-  add_verify_hostname(boost::string_view const hostname, boost::system::error_code& ec)
-  {
-    auto* const ssl = this->stream.ssl().native_handle();
-    ::foxy::add_verification_hostname(ssl, hostname, 0, ec);
-  }
-
   template <class ConnectHandler>
   auto
   async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
