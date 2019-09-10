@@ -10,11 +10,11 @@
 #ifndef FOXY_SESSION_HPP_
 #define FOXY_SESSION_HPP_
 
+#include <foxy/session_opts.hpp>
 #include <foxy/multi_stream.hpp>
 #include <foxy/type_traits.hpp>
 
 #include <boost/asio/async_result.hpp>
-#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/buffer.hpp>
 
 #include <boost/asio/ssl/context.hpp>
@@ -28,16 +28,6 @@
 
 namespace foxy
 {
-struct session_opts
-{
-  using duration_type = typename boost::asio::steady_timer::duration;
-
-  boost::optional<boost::asio::ssl::context&> ssl_ctx = {};
-  duration_type                               timeout = std::chrono::seconds{1};
-
-  bool verify_peer_cert = true;
-};
-
 template <class Stream, class DynamicBuffer>
 struct basic_session
 {

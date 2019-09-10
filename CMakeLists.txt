@@ -51,6 +51,7 @@ add_library(
   include/foxy/pct_encode.hpp
   include/foxy/proxy.hpp
   include/foxy/server_session.hpp
+  include/foxy/session_opts.hpp
   include/foxy/session.hpp
   include/foxy/shared_handler_ptr.hpp
   include/foxy/type_traits.hpp
