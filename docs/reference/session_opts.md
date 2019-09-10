@@ -58,6 +58,9 @@ duration_type                               timeout          = std::chrono::seco
 // to send a certificate which it will then verify according to the hostname passed by the user when
 // calling `foxy::basic_client_session::async_connect`.
 //
+// If set to false and the SSL context is not null, no certificate verification will be performed
+// This is considered insecure and should not be used in production without good reason
+//
 bool                                        verify_peer_cert = true;
 ```
 
