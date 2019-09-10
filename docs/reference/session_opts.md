@@ -3,21 +3,12 @@
 ## Include
 
 ```c++
-#include <foxy/session.hpp>
+#include <foxy/session_opts.hpp>
 ```
 
 ## Synopsis
 
 A small class that Foxy uses for configuring its `basic_session` class.
-
-The session opts do not own the SSL context that is provided. It is the user's responsibility to
-ensure that the SSL context has appropriate lifetime.
-
-The `timeout` member serves as an absolute deadline for an asynchronous operation, i.e. if a value
-of 30 seconds is supplied, `foxy::basic_session<Stream>::async_read` had 30 seconds to complete
-in its entirety or the pending operation will be invoked with an `operation_aborted` error code.
-
-The `timeout` can be adjusted at any time.
 
 ## Declaration
 
@@ -34,13 +25,45 @@ using duration_type = typename boost::asio::steady_timer::duration;
 ## Public Members
 
 ```c++
-boost::optional<boost::asio::ssl::context&> ssl_ctx = {};
-duration_type                               timeout = std::chrono::seconds{1};
+// The session opts do not own the SSL context that is provided. It is the user's responsibility to
+// ensure that the SSL context outlives the `session_opts` instance.
+//
+boost::optional<boost::asio::ssl::context&> ssl_ctx          = {};
+
+// The `timeout` member serves as a relative deadline for an asynchronous operation, i.e. if a value
+// of 30 seconds is supplied, `foxy::basic_session<Stream>::async_read` had 30 seconds to complete
+// in its entirety or the pending operation will be invoked with an `operation_aborted` error code.
+//
+// The `timeout` can be safely adjusted any time in-between the `basic_session::async_*` methods.
+// For example:
+//
+// auto client = foxy::client_session(...);
+//
+// client.opts.timeout = 10s;
+//
+// // 10 seconds to read in the response
+// client.async_read(...);
+//
+// client.opts.timeout = 30s;
+//
+// // this time wait 30 seconds for writing the request
+// client.async_write(...);
+//
+duration_type                               timeout          = std::chrono::seconds{1};
+
+// *** Currently only affects the foxy::basic_client_session ***
+//
+// If the session options contain an SSL context and this parameter is set to true, construction of
+// a `foxy::basic_client_session` will mutate the underlying SSL context to require the remote peer
+// to send a certificate which it will then verify according to the hostname passed by the user when
+// calling `foxy::basic_client_session::async_connect`.
+//
+bool                                        verify_peer_cert = true;
 ```
 
 ## Constructors
 
-None provided.
+None provided (class is an aggregate).
 
 ---
 
