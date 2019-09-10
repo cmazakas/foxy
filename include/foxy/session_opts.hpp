@@ -21,10 +21,9 @@ struct session_opts
 {
   using duration_type = typename boost::asio::steady_timer::duration;
 
-  boost::optional<boost::asio::ssl::context&> ssl_ctx = {};
-  duration_type                               timeout = std::chrono::seconds{1};
-
-  bool verify_peer_cert = true;
+  boost::optional<boost::asio::ssl::context&> ssl_ctx          = {};
+  duration_type                               timeout          = std::chrono::seconds{1};
+  bool                                        verify_peer_cert = true;
 };
 } // namespace foxy
 
