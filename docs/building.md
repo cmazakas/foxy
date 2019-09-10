@@ -18,7 +18,7 @@ succeed.
 
 ## Boost
 
-`find_package(Boost <version> CONFIG REQUIRED system date_time)` is required to succeed for Foxy to
+`find_package(Boost <version> REQUIRED system date_time)` is required to succeed for Foxy to
 build.
 
 Boost can be built directly by downloading the releases from [boost.org](https://www.boost.org/).
