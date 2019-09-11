@@ -275,6 +275,7 @@ if (FOXY_BUILD_EXAMPLES)
       foxy
       Boost::container
       Boost::thread
+      Boost::coroutine
   )
 endif()
 
