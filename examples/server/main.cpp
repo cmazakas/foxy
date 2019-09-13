@@ -121,7 +121,7 @@ struct accept_op : asio::coroutine
     auto& f = *frame_ptr;
     reenter(*this)
     {
-      while (true) {
+      while (acceptor.is_open()) {
         yield acceptor.async_accept(f.socket, std::move(*this));
         if (ec == asio::error::operation_aborted) { yield break; }
         if (ec) {
