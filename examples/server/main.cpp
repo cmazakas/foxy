@@ -38,12 +38,10 @@ struct server_op : asio::coroutine
     }
   };
 
-  executor_type          executor;
   std::unique_ptr<frame> frame_ptr;
 
-  server_op(asio::executor executor_, tcp::socket stream)
-    : executor(executor_)
-    , frame_ptr(std::make_unique<frame>(std::move(stream),
+  server_op(tcp::socket stream)
+    : frame_ptr(std::make_unique<frame>(std::move(stream),
                                         foxy::session_opts{{}, std::chrono::seconds(30), false}))
   {
   }
@@ -91,7 +89,7 @@ struct server_op : asio::coroutine
   auto
   get_executor() const noexcept -> executor_type
   {
-    return executor;
+    return frame_ptr->server.get_executor();
   }
 };
 
@@ -109,14 +107,12 @@ struct accept_op : asio::coroutine
     }
   };
 
-  executor_type          executor;
-  std::unique_ptr<frame> frame_ptr;
   tcp::acceptor&         acceptor;
+  std::unique_ptr<frame> frame_ptr;
 
   accept_op(tcp::acceptor& acceptor_)
-    : executor(acceptor_.get_executor())
-    , frame_ptr(std::make_unique<frame>(executor))
-    , acceptor(acceptor_)
+    : acceptor(acceptor_)
+    , frame_ptr(std::make_unique<frame>(acceptor.get_executor()))
   {
   }
 
@@ -134,7 +130,7 @@ struct accept_op : asio::coroutine
           yield break;
         }
 
-        asio::post(server_op(executor, std::move(f.socket)));
+        asio::post(server_op(std::move(f.socket)));
       }
     }
   }
@@ -142,7 +138,7 @@ struct accept_op : asio::coroutine
   auto
   get_executor() const noexcept -> executor_type
   {
-    return executor;
+    return acceptor.get_executor();
   }
 };
 
@@ -150,25 +146,21 @@ struct server
 {
   using executor_type = asio::executor;
 
-  executor_type executor;
   tcp::acceptor acceptor;
-  tcp::socket   socket;
 
   server()              = delete;
   server(server const&) = delete;
   server(server&&)      = default;
 
-  server(executor_type executor_, tcp::endpoint endpoint)
-    : executor(executor_)
-    , acceptor(executor, endpoint)
-    , socket(executor)
+  server(executor_type executor, tcp::endpoint endpoint)
+    : acceptor(executor, endpoint)
   {
   }
 
   auto
-  get_executor() const noexcept -> executor_type
+  get_executor() -> executor_type
   {
-    return executor;
+    return acceptor.get_executor();
   }
 
   auto
@@ -180,7 +172,7 @@ struct server
   auto
   shutdown() -> void
   {
-    asio::post(executor, [self = this]() mutable -> void {
+    asio::post(get_executor(), [self = this]() mutable -> void {
       self->acceptor.cancel();
       self->acceptor.close();
     });
