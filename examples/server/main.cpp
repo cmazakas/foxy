@@ -101,22 +101,22 @@ struct accept_op : asio::coroutine
 
   struct frame
   {
-    tcp::acceptor acceptor;
-    tcp::socket   socket;
+    tcp::socket socket;
 
-    frame(asio::executor executor, tcp::endpoint endpoint)
-      : acceptor(executor, endpoint)
-      , socket(executor)
+    frame(asio::executor executor)
+      : socket(executor)
     {
     }
   };
 
   executor_type          executor;
   std::unique_ptr<frame> frame_ptr;
+  tcp::acceptor&         acceptor;
 
-  accept_op(asio::executor executor_, tcp::endpoint endpoint)
-    : executor(executor_)
-    , frame_ptr(std::make_unique<frame>(executor_, endpoint))
+  accept_op(tcp::acceptor& acceptor_)
+    : executor(acceptor_.get_executor())
+    , frame_ptr(std::make_unique<frame>(executor))
+    , acceptor(acceptor_)
   {
   }
 
@@ -126,7 +126,7 @@ struct accept_op : asio::coroutine
     reenter(*this)
     {
       while (true) {
-        yield f.acceptor.async_accept(f.socket, std::move(*this));
+        yield acceptor.async_accept(f.socket, std::move(*this));
         if (ec == asio::error::operation_aborted) { yield break; }
         if (ec) {
           std::cout << "Failed to accept the new connection!\n";
@@ -146,33 +146,70 @@ struct accept_op : asio::coroutine
   }
 };
 
-#include <boost/asio/unyield.hpp>
-
-auto
-launch_server(asio::executor executor) -> void
+struct server
 {
-  auto const endpoint =
-    tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
+  using executor_type = asio::executor;
 
-  asio::post(accept_op(executor, endpoint));
-}
+  executor_type executor;
+  tcp::acceptor acceptor;
+  tcp::socket   socket;
+
+  server()              = delete;
+  server(server const&) = delete;
+  server(server&&)      = default;
+
+  server(executor_type executor_, tcp::endpoint endpoint)
+    : executor(executor_)
+    , acceptor(executor, endpoint)
+    , socket(executor)
+  {
+  }
+
+  auto
+  get_executor() const noexcept -> executor_type
+  {
+    return executor;
+  }
+
+  auto
+  async_accept() -> void
+  {
+    asio::post(accept_op(acceptor));
+  }
+
+  auto
+  shutdown() -> void
+  {
+    asio::post(executor, [self = this]() mutable -> void {
+      self->acceptor.cancel();
+      self->acceptor.close();
+    });
+  }
+};
+
+#include <boost/asio/unyield.hpp>
 
 int
 main()
 {
   asio::io_context io{1};
 
-  launch_server(io.get_executor());
+  auto const endpoint =
+    tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
 
-  asio::spawn(io.get_executor(), [&io](auto yield) mutable -> void {
+  auto s = server(io.get_executor(), endpoint);
+  s.async_accept();
+
+  asio::spawn(io.get_executor(), [&](auto yield) mutable -> void {
     auto client = foxy::client_session(io.get_executor(),
                                        foxy::session_opts{{}, std::chrono::seconds(30), false});
 
     client.async_connect("127.0.0.1", "1337", yield);
 
-    auto request  = http::request<http::empty_body>(http::verb::get, "/", 11);
+    auto request = http::request<http::empty_body>(http::verb::get, "/", 11);
+    request.keep_alive(false);
+
     auto response = http::response<http::string_body>();
-    response.keep_alive(false);
 
     client.async_request(request, response, yield);
 
@@ -180,6 +217,8 @@ main()
 
     client.stream.plain().shutdown(tcp::socket::shutdown_both);
     client.stream.plain().close();
+
+    s.shutdown();
   });
 
   io.run();
