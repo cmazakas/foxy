@@ -53,12 +53,12 @@ duration_type                               timeout          = std::chrono::seco
 
 // *** Currently only affects the foxy::basic_client_session ***
 //
-// If the session options contain an SSL context and this parameter is set to true, construction of
-// a `foxy::basic_client_session` will mutate the underlying SSL context to require the remote peer
-// to send a certificate which it will then verify according to the hostname passed by the user when
-// calling `foxy::basic_client_session::async_connect`.
+// If the session options contain an SSL context and this parameter is set to true, the
+// `foxy::basic_client_session` will attempt to verify the certificate sent by the remote
 //
 // If set to false and the SSL context is not null, no certificate verification will be performed
+// but the TLS handshake will still be performed
+//
 // This is considered insecure and should not be used in production without good reason
 //
 bool                                        verify_peer_cert = true;
