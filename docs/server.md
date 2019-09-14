@@ -43,12 +43,16 @@ We begin by pulling in all of our required headers. There are quite a few but th
 into a convenience header for application development. The example chooses explicitness in this
 case.
 
+***
+
 ```c++
 #include <boost/asio/yield.hpp>
 ```
 
-This header imports Asio's fauxroutine pseudo-keyword support. This enables users to `yield` and
+This header imports Asio's "fauxroutine" pseudo-keyword support. This enables users to `yield` and
 `reenter` an [`asio::coroutine`](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/coroutine.html).
+
+***
 
 ```c++
 struct server_op : asio::coroutine
@@ -58,6 +62,8 @@ struct server_op : asio::coroutine
 This is the class that's going to implement our server's session with a specific client. In this
 case, we're implementing a stackless coroutine to represent this async operation.
 
+***
+
 ```c++
   using executor_type = asio::executor;
 ```
@@ -65,6 +71,8 @@ case, we're implementing a stackless coroutine to represent this async operation
 Asio needs this typedef to form an "executor hook". Asio will use this typedef to reason about how
 this coroutine should be executed. This is important because Asio implicitly relies upon the notion
 of a strand (either implicit or explicit) as discussed [here](https://www.boost.org/doc/libs/release/doc/html/boost_asio/overview/core/strands.html).
+
+***
 
 ```c++
   struct frame
@@ -87,6 +95,8 @@ and is really more or less a normal callback function. To persist state to our c
 `unique_ptr` to a "frame" which will contain all the state required. This makes our coroutine
 move-only but Asio has support for this.
 
+***
+
 ```c++
   server_op(tcp::socket stream)
     : frame_ptr(std::make_unique<frame>(std::move(stream),
@@ -100,6 +110,8 @@ constructed. In this case, we're constructing our session options with an empty 
 second timeout and we're disabling peer certificate verification (though the server session
 currently doesn't use this anyway).
 
+***
+
 ```c++
   auto operator()(boost::system::error_code ec = {}, std::size_t const bytes_transferred = 0)
     -> void
@@ -111,7 +123,10 @@ currently doesn't use this anyway).
 
 This is the start of the body of our coroutine. `reenter` comes from the `yield.hpp` include from
 above. Note the usage of `*this`. This is because our server operation inherits from the
-`asio::coroutine` class so in this case, we're able to bind `*this` to `asio::coroutine&`.
+`asio::coroutine` class so in this case, we're able to bind `*this` to `asio::coroutine&` which is
+required for reentry and setting the suspend point at each `yield`.
+
+***
 
 ```c++
       while (true) {
@@ -121,7 +136,7 @@ above. Note the usage of `*this`. This is because our server operation inherits 
         yield f.server.async_read(f.request, std::move(*this));
 ```
 
-We use a while-loop here to support persistent connection. This means that it's possible for our
+We use a while-loop here to support persistent connections. This means that it's possible for our
 server to read in multiple requests from the same client without disconnecting.
 
 For every request-response cycle, we clear out the request/response objects. The `yield` keyword
@@ -130,6 +145,8 @@ coroutine after this statement.
 
 Our server session begins by attempting to read in an HTTP request from the underlying stream.
 `async_read` will invoke this callable with an error code and the number of bytes transferred.
+
+***
 
 ```c++
         if (ec) {
@@ -142,6 +159,8 @@ Our server session begins by attempting to read in an HTTP request from the unde
 
 Our coroutine resumes here. If there was an error code, we print out a helpful error message and
 jump to the shutdown procedure.
+
+***
 
 ```c++
         f.response.result(http::status::ok);
@@ -160,6 +179,8 @@ jump to the shutdown procedure.
 This is a "dumb" server in the sense that we don't really process the request but instead send back
 a small Hello, World HTML document.
 
+***
+
 ```c++
         if (f.request.keep_alive()) { continue; }
 ```
@@ -167,6 +188,8 @@ a small Hello, World HTML document.
 If the request has keep-alive semantics, repeat the loop over again. For HTTP/1.1, keep-alive is
 assumed unless the client sends a `Connection: close` header. In HTTP/1.0, `Connection: keep-alive`
 must be set by the client.
+
+***
 
 ```c++
       shutdown:
@@ -181,6 +204,8 @@ must be set by the client.
 Our shutdown procedure is pretty simple. We access the plain TCP side of our session's nested
 multi-stream and follow normal Asio TCP shutdown semantics, calling `shutdown` and then `close`.
 
+***
+
 ```c++
   auto
   get_executor() const noexcept -> executor_type
@@ -193,15 +218,19 @@ multi-stream and follow normal Asio TCP shutdown semantics, calling `shutdown` a
 This is the other half of the executor hook. Asio will use this member function to grab a copy of
 our coroutine's executor and then post the resumption of our coroutine to it.
 
+***
+
 ```c++
 struct accept_op : asio::coroutine
 {
 ```
 
 Our `accept_op` is relatively similar to our `server_op` above. For our server to successfully
-handle multiple climates, we need several concurrent tasks. So we define a coroutine for the actual
+handle multiple clients, we need several concurrent tasks. So we define a coroutine for the actual
 session our server will have with a client along with a persistent async operation that will
 continue to listen for incoming TCP connections.
+
+***
 
 ```c++
   using executor_type = asio::executor;
@@ -230,6 +259,8 @@ This time our coroutine will only need to store non-owning view of an `asio::ip:
 a local socket that the `async_accept` method can use to write the connected TCP socket to. This
 socket will be used to construct our `server_session` and be re-used during future accept calls.
 
+***
+
 ```c++
   auto operator()(boost::system::error_code ec = {}) -> void
   {
@@ -247,7 +278,9 @@ socket will be used to construct our `server_session` and be re-used during futu
 ```
 
 This is the core of a TCP accept loop in Asio. We accept new connections indefinitely, assuming we
-don't have some sort of an error beyond our acceptor simply being `close`'d.
+don't have some sort of an error beyond our acceptor simply being `close`'d or `cancel`'d.
+
+***
 
 ```c++
         asio::post(server_op(std::move(f.socket)));
@@ -257,7 +290,10 @@ don't have some sort of an error beyond our acceptor simply being `close`'d.
 ```
 
 We create our `server_op` and then `asio::post` it for execution. `post` is smart enough to use the
-executor hooks on our `server_op` and will run the coroutine on that executor.
+executor hooks on our `server_op` and will run the coroutine on that executor. This is important
+for correctness.
+
+***
 
 ```c++
   auto
@@ -273,6 +309,8 @@ struct server
 
 Finally! Our actual server class. This will be what user's interact with directly. The above
 coroutines operate as implementation details of this interface.
+
+***
 
 ```c++
   using executor_type = asio::executor;
@@ -312,6 +350,8 @@ was given to the server as its executor.
 
 This is a single-threaded example though so the above note doesn't apply but it is worth mentioning.
 
+***
+
 ```c++
   auto
   shutdown() -> void
@@ -328,11 +368,15 @@ Shutting the server down is a thread-safe function because it copies the executo
 dispatches a callable that'll run in the executor. In this case, we simply call `cancel()` and
 `close()` on the TCP acceptor.
 
+***
+
 ```c++
 #include <boost/asio/unyield.hpp>
 ```
 
 This undoes the macros that create the pseudo-keywords. This is necessary for proper macro hygiene.
+
+***
 
 ```c++
 int
@@ -344,12 +388,16 @@ main()
 The `1` here is a concurrency hint to the `io_context` about how many threads we'll be running.
 Providing this knowledge to the I/O context can enable internal optimizations.
 
+***
+
 ```c++
   auto const endpoint =
     tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
 ```
 
 Our server is going to be accessible at: `127.0.0.1:1337`.
+
+***
 
 ```c++
   auto s = server(io.get_executor(), endpoint);
@@ -359,11 +407,15 @@ Our server is going to be accessible at: `127.0.0.1:1337`.
 Create the server and start the acceptance loop. We no longer touch the acceptor directly and
 instead can only call `shutdown`.
 
+***
+
 ```c++
   asio::spawn(io.get_executor(), [&](auto yield) mutable -> void {
 ```
 
 Our client operation will run on a stackful coroutine (aka a "fiber").
+
+***
 
 ```c++
     auto client = foxy::client_session(io.get_executor(),
@@ -389,6 +441,8 @@ Our client operation will run on a stackful coroutine (aka a "fiber").
 
 Once our client has connected to our localhost server, sent the request and read the response, we
 shutdown our side of the TCP connection and also request that the server close its accept loop.
+
+***
 
 ```c++
   io.run();
