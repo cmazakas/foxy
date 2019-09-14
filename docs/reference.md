@@ -11,6 +11,10 @@
 * [session_opts](./reference/session_opts.md#foxysession_opts)
 * [proxy](./reference/proxy.md#foxyproxy)
 
+#### Functions
+
+* [make_ssl_ctx](./reference/make_ssl_ctx.md#foxymake_ssl_ctx)
+
 ### URLs / Unicode Encoding
 
 #### Classes

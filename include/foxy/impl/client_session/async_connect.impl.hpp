@@ -87,6 +87,12 @@ struct connect_op
   }
 
   auto
+  operator()(boost::system::error_code ec) -> void
+  {
+    (*this)(ec, 0);
+  }
+
+  auto
   operator()(boost::system::error_code ec,
              std::size_t const         bytes_transferred,
              bool const                is_continuation = true) -> void
@@ -95,13 +101,6 @@ struct connect_op
 
     BOOST_ASIO_CORO_REENTER(*this)
     {
-      if (session.stream.is_ssl()) {
-        if (!SSL_set_tlsext_host_name(session.stream.ssl().native_handle(), s.host.c_str())) {
-          ec.assign(static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category());
-          goto upcall;
-        }
-      }
-
       BOOST_ASIO_CORO_YIELD
       s.resolver.async_resolve(s.host, s.service,
                                boost::beast::bind_front_handler(std::move(*this), on_resolve_t{}));
@@ -112,6 +111,7 @@ struct connect_op
       {
         auto& socket =
           session.stream.is_ssl() ? session.stream.ssl().next_layer() : session.stream.plain();
+
         boost::asio::async_connect(
           socket, s.results, boost::beast::bind_front_handler(std::move(*this), on_connect_t{}));
       }
@@ -119,9 +119,14 @@ struct connect_op
       if (ec) { goto upcall; }
 
       if (session.stream.is_ssl()) {
+        if (session.opts.verify_peer_cert) {
+          ::foxy::certify::set_sni_hostname(session.stream.ssl(), s.host);
+          ::foxy::certify::set_server_hostname(session.stream.ssl().native_handle(), s.host);
+        }
+
         BOOST_ASIO_CORO_YIELD
         session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::client,
-                                             boost::beast::bind_handler(std::move(*this), _1, 0));
+                                             std::move(*this));
 
         if (ec) { goto upcall; }
       }

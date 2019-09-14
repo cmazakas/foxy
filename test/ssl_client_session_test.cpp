@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -11,6 +10,7 @@
 #include <foxy/client_session.hpp>
 #include <foxy/log.hpp>
 
+#include <boost/asio/ssl/rfc2818_verification.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/smart_ptr/make_unique.hpp>
@@ -21,6 +21,7 @@
 
 using boost::system::error_code;
 using boost::asio::ip::tcp;
+
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
 namespace ssl  = boost::asio::ssl;
@@ -33,23 +34,26 @@ TEST_CASE("ssl_client_session_test")
   {
     asio::io_context io{1};
 
-    // create a client that uses TLS 1.2 and has a 30 second timeout
+    auto ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
+
+    // load in our entire list of root CAs
     //
-    auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+    ctx.load_verify_file("root-cas.pem");
 
     auto opts = foxy::session_opts{ctx, 30s};
 
+    // create a client that uses TLS 1.2 and has a 30 second timeout
+    //
     auto  session_handle = boost::make_unique<foxy::client_session>(io.get_executor(), opts);
     auto& session        = *session_handle;
 
     REQUIRE(session.stream.is_ssl());
 
-    auto valid_request = false;
-
     session.async_connect(
       "www.google.com", "https",
-      [&valid_request, &session, sh = std::move(session_handle)](error_code ec,
-                                                                 tcp::endpoint) mutable -> void {
+      [&session, sh = std::move(session_handle)](error_code ec, tcp::endpoint) mutable -> void {
+        REQUIRE_FALSE(ec);
+
         auto parser_handle = boost::make_unique<http::response_parser<http::string_body>>();
         auto request_handle =
           boost::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
@@ -59,44 +63,32 @@ TEST_CASE("ssl_client_session_test")
 
         session.async_request(
           request, parser,
-          [&valid_request, &session, &parser, &request, ph = std::move(parser_handle),
+          [&session, &parser, &request, ph = std::move(parser_handle),
            rh = std::move(request_handle), sh = std::move(sh)](error_code ec) mutable -> void {
+            REQUIRE_FALSE(ec);
+
             auto response = parser.release();
 
             auto const is_valid_status = (response.result_int() == 200);
             auto const is_valid_body   = (response.body().size() > 0) &&
                                        boost::string_view(response.body()).ends_with("</html>");
 
-            valid_request = is_valid_body && is_valid_status;
+            CHECK(is_valid_status);
+            CHECK(is_valid_body);
 
-            // do this to prove that the TLS session is stable after a move
-            //
-            auto new_handler = boost::make_unique<foxy::client_session>(std::move(session));
-
-            auto& other_session = *new_handler;
-
-            other_session.stream.ssl().async_shutdown(
-              [nh = std::move(new_handler)](error_code ec) -> void {
-                if (ec == boost::asio::error::eof) {
-                  // Rationale:
-                  // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-                  ec.assign(0, ec.category());
-                }
-
-                if (ec) { foxy::log_error(ec, "ssl client shutdown"); }
-              });
+            session.stream.ssl().async_shutdown(
+              [&session, sh = std::move(sh)](error_code ec) mutable -> void {});
           });
       });
 
     io.run();
-    REQUIRE(valid_request);
   }
 
   SECTION("should timeout when the host can't be found")
   {
     asio::io_context io{1};
 
-    auto ctx  = ssl::context(ssl::context::method::tlsv12_client);
+    auto ctx  = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
     auto opts = foxy::session_opts{ctx, 250ms};
 
     auto  session_handle = boost::make_unique<foxy::client_session>(io.get_executor(), opts);

@@ -24,7 +24,7 @@ project(
 
 find_package(
   Boost 1.71
-  CONFIG REQUIRED
+  REQUIRED
     system
     date_time
 )
@@ -51,6 +51,7 @@ add_library(
   include/foxy/pct_encode.hpp
   include/foxy/proxy.hpp
   include/foxy/server_session.hpp
+  include/foxy/session_opts.hpp
   include/foxy/session.hpp
   include/foxy/shared_handler_ptr.hpp
   include/foxy/type_traits.hpp
@@ -159,8 +160,8 @@ if (BUILD_TESTING)
 
   find_package(Catch2 CONFIG REQUIRED)
   find_package(
-    Boost 1.70
-    CONFIG REQUIRED
+    Boost 1.71
+    REQUIRED
       coroutine
       thread
       container
@@ -213,8 +214,8 @@ endif()
 
 if (FOXY_BUILD_EXAMPLES)
   find_package(
-    Boost 1.70
-    CONFIG REQUIRED
+    Boost 1.71
+    REQUIRED
       coroutine
       thread
       container
@@ -260,6 +261,21 @@ if (FOXY_BUILD_EXAMPLES)
       foxy
       Boost::container
       Boost::thread
+  )
+
+  add_executable(
+    server
+
+    examples/server/main.cpp
+  )
+
+  target_link_libraries(
+    server
+    PRIVATE
+      foxy
+      Boost::container
+      Boost::thread
+      Boost::coroutine
   )
 endif()
 
