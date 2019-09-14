@@ -62,12 +62,6 @@ public:
                                                                  std::move(opts),
                                                                  std::forward<BufferArgs>(bargs)...)
   {
-    if (this->stream.is_ssl() && this->opts.verify_peer_cert) {
-      auto& ctx = *opts.ssl_ctx;
-      foxy::certify::enable_https_verification(ctx);
-      ctx.set_verify_mode(boost::asio::ssl::context::verify_peer |
-                          boost::asio::ssl::context::verify_fail_if_no_peer_cert);
-    }
   }
 
   template <class ConnectHandler>

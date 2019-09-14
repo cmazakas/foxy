@@ -9,6 +9,7 @@
 
 #include <foxy/proxy.hpp>
 #include <foxy/client_session.hpp>
+#include <foxy/utility.hpp>
 
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -47,7 +48,7 @@ TEST_CASE("proxy_test2")
 
       auto const reuse_addr = true;
 
-      auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+      auto ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
       ctx.load_verify_file("root-cas.pem");
 
       auto opts = foxy::session_opts{ctx, 5s};
@@ -106,7 +107,7 @@ TEST_CASE("proxy_test2")
 
       auto const reuse_addr = true;
 
-      auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+      auto ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
       ctx.load_verify_file("root-cas.pem");
 
       auto opts = foxy::session_opts{ctx, 5s};
@@ -156,7 +157,7 @@ TEST_CASE("proxy_test2")
 
       auto const reuse_addr = true;
 
-      auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+      auto ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
       ctx.load_verify_file("root-cas.pem");
 
       auto opts = foxy::session_opts{ctx, 30s};
@@ -215,7 +216,7 @@ TEST_CASE("proxy_test2")
 
     std::atomic_int num_valid_responses{0};
 
-    auto ctx = ssl::context(ssl::context::method::tlsv12_client);
+    auto ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
     ctx.load_verify_file("root-cas.pem");
 
     auto opts = foxy::session_opts{ctx, 30s};

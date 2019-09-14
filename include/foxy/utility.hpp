@@ -82,6 +82,19 @@ set_sni_hostname(AsyncSSLStream& stream, std::string const& hostname)
 }
 } // namespace certify
 
+template <class... Args>
+auto
+make_ssl_ctx(Args&&... args) -> boost::asio::ssl::context
+{
+  auto ctx = asio::ssl::context(std::forward<Args>(args)...);
+
+  foxy::certify::enable_https_verification(ctx);
+  ctx.set_verify_mode(boost::asio::ssl::context::verify_peer |
+                      boost::asio::ssl::context::verify_fail_if_no_peer_cert);
+
+  return ctx;
+}
+
 } // namespace foxy
 
 #endif // FOXY_UTILITY_HPP_
