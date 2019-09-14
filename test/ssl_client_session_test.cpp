@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot
-// com)
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
 //
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
@@ -22,6 +21,7 @@
 
 using boost::system::error_code;
 using boost::asio::ip::tcp;
+
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
 namespace ssl  = boost::asio::ssl;
@@ -34,8 +34,6 @@ TEST_CASE("ssl_client_session_test")
   {
     asio::io_context io{1};
 
-    // create a client that uses TLS 1.2 and has a 30 second timeout
-    //
     auto ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
 
     // load in our entire list of root CAs
@@ -44,6 +42,8 @@ TEST_CASE("ssl_client_session_test")
 
     auto opts = foxy::session_opts{ctx, 30s};
 
+    // create a client that uses TLS 1.2 and has a 30 second timeout
+    //
     auto  session_handle = boost::make_unique<foxy::client_session>(io.get_executor(), opts);
     auto& session        = *session_handle;
 
