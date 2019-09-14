@@ -86,7 +86,7 @@ template <class... Args>
 auto
 make_ssl_ctx(Args&&... args) -> boost::asio::ssl::context
 {
-  auto ctx = asio::ssl::context(std::forward<Args>(args)...);
+  auto ctx = boost::asio::ssl::context(std::forward<Args>(args)...);
 
   foxy::certify::enable_https_verification(ctx);
   ctx.set_verify_mode(boost::asio::ssl::context::verify_peer |
