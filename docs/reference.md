@@ -13,7 +13,7 @@
 
 #### Functions
 
-* [make_ssl_ctx](./reference/make_ssl_cxt.md#foxymake_ssl_ctx)
+* [make_ssl_ctx](./reference/make_ssl_ctx.md#foxymake_ssl_ctx)
 
 ### URLs / Unicode Encoding
 
