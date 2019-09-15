@@ -187,7 +187,7 @@ public:
   }
 };
 
-static constexpr int num_client_requests = 10;
+static constexpr int num_client_requests = 1000;
 static constexpr int num_clients         = 256;
 
 struct client_op : asio::coroutine
