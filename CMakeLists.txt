@@ -277,6 +277,21 @@ if (FOXY_BUILD_EXAMPLES)
       Boost::thread
       Boost::coroutine
   )
+
+  add_executable(
+    https-server
+
+    examples/https_server/main.cpp
+  )
+
+  target_link_libraries(
+    https-server
+    PRIVATE
+      foxy
+      Boost::container
+      Boost::thread
+      Boost::coroutine
+  )
 endif()
 
 if (FOXY_FUZZ)
