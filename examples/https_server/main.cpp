@@ -274,9 +274,10 @@ struct client_op : asio::coroutine
 int
 main()
 {
-  asio::io_context io{1};
+  auto const num_threads = 4;
 
-  std::atomic_int req_count{0};
+  asio::io_context io{num_threads};
+  std::atomic_int  req_count{0};
 
   auto const endpoint =
     tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
@@ -288,8 +289,7 @@ main()
     asio::post(client_op(io.get_executor(), req_count, s));
   }
 
-  auto const num_threads = 4;
-  auto       threads     = std::vector<std::thread>();
+  auto threads = std::vector<std::thread>();
   threads.reserve(num_threads);
 
   for (auto idx = 0; idx < num_threads; ++idx) {
