@@ -19,6 +19,7 @@
 #include <atomic>
 #include <memory>
 #include <iostream>
+#include <cassert>
 
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
@@ -57,6 +58,8 @@ struct server_op : asio::coroutine
   auto operator()(boost::system::error_code ec = {}, std::size_t const bytes_transferred = 0)
     -> void
   {
+    assert(strand.running_in_this_thread());
+
     auto& f = *frame_ptr;
     reenter(*this)
     {
@@ -120,6 +123,8 @@ struct accept_op : asio::coroutine
 
   auto operator()(boost::system::error_code ec = {}) -> void
   {
+    assert(strand.running_in_this_thread());
+
     auto& f = *frame_ptr;
     reenter(*this)
     {
@@ -225,6 +230,8 @@ struct client_op : asio::coroutine
 
   auto operator()(boost::system::error_code ec = {}) -> void
   {
+    assert(strand.running_in_this_thread());
+
     auto& f = *frame_ptr;
     reenter(*this)
     {
