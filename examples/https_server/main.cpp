@@ -1,5 +1,6 @@
 #include <foxy/client_session.hpp>
 #include <foxy/server_session.hpp>
+#include <foxy/utility.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ip/address.hpp>
@@ -25,6 +26,9 @@ namespace asio = boost::asio;
 namespace http = boost::beast::http;
 
 using boost::asio::ip::tcp;
+
+static constexpr int num_client_requests = 10;
+static constexpr int num_clients         = 10;
 
 #include <boost/asio/yield.hpp>
 
@@ -181,14 +185,13 @@ public:
   shutdown() -> void
   {
     asio::post(get_executor(), [self = this]() mutable -> void {
-      self->acceptor.cancel();
-      self->acceptor.close();
+      auto ec = boost::system::error_code();
+
+      self->acceptor.cancel(ec);
+      self->acceptor.close(ec);
     });
   }
 };
-
-static constexpr int num_client_requests = 1000;
-static constexpr int num_clients         = 256;
 
 struct client_op : asio::coroutine
 {
@@ -257,8 +260,8 @@ struct client_op : asio::coroutine
       }
 
     shutdown:
-      f.client.stream.plain().shutdown(tcp::socket::shutdown_both);
-      f.client.stream.plain().close();
+      f.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
+      f.client.stream.plain().close(ec);
     }
   }
 
