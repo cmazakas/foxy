@@ -28,7 +28,7 @@ namespace http = boost::beast::http;
 using boost::asio::ip::tcp;
 
 static constexpr int num_client_requests = 10;
-static constexpr int num_clients         = 10;
+static constexpr int num_clients         = 1024;
 
 #include <boost/asio/yield.hpp>
 
@@ -279,24 +279,28 @@ main()
 {
   auto const num_threads = 4;
 
-  asio::io_context io{num_threads};
-  std::atomic_int  req_count{0};
+  asio::io_context client_io{num_threads};
+  asio::io_context server_io{1};
+
+  std::atomic_int req_count{0};
 
   auto const endpoint =
     tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
 
-  auto s = server(io.get_executor(), endpoint);
+  auto s = server(server_io.get_executor(), endpoint);
   s.async_accept();
 
   for (auto idx = 0; idx < num_clients; ++idx) {
-    asio::post(client_op(io.get_executor(), req_count, s));
+    asio::post(client_op(client_io.get_executor(), req_count, s));
   }
 
   auto threads = std::vector<std::thread>();
   threads.reserve(num_threads);
 
-  for (auto idx = 0; idx < num_threads; ++idx) {
-    threads.emplace_back([&]() { io.run(); });
+  threads.emplace_back([&] { server_io.run(); });
+
+  for (auto idx = 1; idx < num_threads; ++idx) {
+    threads.emplace_back([&] { client_io.run(); });
   }
 
   for (auto& thread : threads) { thread.join(); }
