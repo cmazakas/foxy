@@ -59,7 +59,7 @@ struct server_op : asio::coroutine
         yield f.server.async_read(f.request, std::move(*this));
         if (ec) {
           std::cout << "Encountered error when reading in the request!\n" << ec << "\n";
-          goto shutdown;
+          break;
         }
 
         std::cout << "Received message!\n" << f.request << "\n";
@@ -73,16 +73,14 @@ struct server_op : asio::coroutine
 
         if (ec) {
           std::cout << "Encountered error when writing the response!\n" << ec << "\n";
-          goto shutdown;
+          break;
         }
 
-        if (f.request.keep_alive()) { continue; }
-
-      shutdown:
-        f.server.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-        f.server.stream.plain().close(ec);
-        break;
+        if (!f.request.keep_alive()) { break; }
       }
+
+      f.server.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
+      f.server.stream.plain().close(ec);
     }
   }
 
