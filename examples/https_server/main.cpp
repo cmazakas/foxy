@@ -277,10 +277,11 @@ struct client_op : asio::coroutine
 int
 main()
 {
-  auto const num_threads = 4;
+  auto const num_client_threads = 4;
+  auto const num_server_threads = 4;
 
-  asio::io_context client_io{num_threads};
-  asio::io_context server_io{1};
+  asio::io_context client_io{num_client_threads};
+  asio::io_context server_io{num_server_threads};
 
   std::atomic_int req_count{0};
 
@@ -295,12 +296,14 @@ main()
   }
 
   auto threads = std::vector<std::thread>();
-  threads.reserve(num_threads);
+  threads.reserve(num_client_threads + num_server_threads);
 
-  threads.emplace_back([&] { server_io.run(); });
-
-  for (auto idx = 1; idx < num_threads; ++idx) {
+  for (auto idx = 0; idx < num_client_threads; ++idx) {
     threads.emplace_back([&] { client_io.run(); });
+  }
+
+  for (auto idx = num_client_threads; idx < (num_client_threads + num_server_threads); ++idx) {
+    threads.emplace_back([&] { server_io.run(); });
   }
 
   for (auto& thread : threads) { thread.join(); }
