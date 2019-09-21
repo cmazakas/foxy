@@ -365,7 +365,7 @@ main()
   auto server_ctx = ssl::context(ssl::context::method::tlsv12_server);
   load_server_certificate(server_ctx);
 
-  auto const cert = boost::string_view(
+  auto const root_ca = boost::string_view(
     "-----BEGIN CERTIFICATE-----\n"
     "MIID1zCCAr+gAwIBAgIUBzm5/pOjqdVMVfoTQgGf8RxiuAkwDQYJKoZIhvcNAQEL\n"
     "BQAwezELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExEzARBgNVBAcM\n"
@@ -391,7 +391,7 @@ main()
     "-----END CERTIFICATE-----\n");
 
   auto client_ctx = foxy::make_ssl_ctx(ssl::context::method::tlsv12_client);
-  client_ctx.add_certificate_authority(asio::const_buffer(cert.data(), cert.size()));
+  client_ctx.add_certificate_authority(asio::const_buffer(root_ca.data(), root_ca.size()));
 
   auto const num_client_threads = 4;
   auto const num_server_threads = 4;
