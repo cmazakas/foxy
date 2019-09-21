@@ -1,3 +1,12 @@
+//
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+// Official repository: https://github.com/LeonineKing1199/foxy
+//
+
 #include <foxy/client_session.hpp>
 #include <foxy/server_session.hpp>
 #include <foxy/utility.hpp>
@@ -28,8 +37,8 @@ namespace ssl  = boost::asio::ssl;
 
 using boost::asio::ip::tcp;
 
-static constexpr int num_client_requests = 1;
-static constexpr int num_clients         = 1;
+static constexpr int num_client_requests = 10;
+static constexpr int num_clients         = 128;
 
 #include <boost/asio/yield.hpp>
 
@@ -72,8 +81,6 @@ struct server_op : asio::coroutine
 
       yield f.server.stream.ssl().async_handshake(ssl::stream_base::server, std::move(*this));
       if (ec) {
-        std::cout << "look here! " << ec.message() << "\n";
-
         f.server.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
         f.server.stream.plain().close(ec);
         yield break;
@@ -98,8 +105,6 @@ struct server_op : asio::coroutine
       }
 
       yield f.server.stream.ssl().async_shutdown(std::move(*this));
-
-      if (ec) { std::cout << "right here ! " << ec.message() << "\n"; }
     }
   }
 
@@ -147,7 +152,6 @@ struct accept_op : asio::coroutine
       while (acceptor.is_open()) {
         yield acceptor.async_accept(f.socket, std::move(*this));
         if (ec == asio::error::operation_aborted) { yield break; }
-        if (ec) { std::cout << "uh oh! " << ec.message() << "\n"; }
         if (ec) { yield break; }
 
         asio::post(server_op(std::move(f.socket), ctx));
@@ -272,16 +276,11 @@ struct client_op : asio::coroutine
 
         {
           auto const curr_req_count = ++req_count;
-          std::cout << "curr req count " << curr_req_count << "\n";
           if (curr_req_count == num_clients * num_client_requests) { s.shutdown(); }
         }
       }
 
-      if (ec) { std::cout << "error! " << ec.message() << "\n"; }
-
       yield f.client.stream.ssl().async_shutdown(std::move(*this));
-      // f.client.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-      // f.client.stream.plain().close(ec);
     }
   }
 
