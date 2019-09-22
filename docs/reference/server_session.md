@@ -272,6 +272,11 @@ context found in the sessions `opts` member.
 For users wanting to use a different SSL context, a call to `upgrade` before invoking the handshake
 function will prevent the automatic upgrade.
 
+The handler function is invoked with an error code and the number of bytes consumed from the
+underlying buffer during the handshake procedure. This occurs in the case of a user detecting an SSL
+client upgrade request without physically performing it, thus filling the session's internal
+buffers.
+
 This function will timeout.
 
 ---
