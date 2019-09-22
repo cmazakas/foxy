@@ -7,6 +7,12 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+// This example builds upon the first HTTP server example that was single-threaded.
+// We now introduce TLS 1.2 using a locally signed server certificate for the IP address: 127.0.0.1
+// This enables the example to use domain name verification without requiring users to also update
+// their hosts file
+//
+
 #include <foxy/client_session.hpp>
 #include <foxy/server_session.hpp>
 #include <foxy/utility.hpp>
@@ -37,6 +43,10 @@ namespace ssl  = boost::asio::ssl;
 
 using boost::asio::ip::tcp;
 
+// Users can configure this to play around with stress-testing the example server
+// It is recommended that users doing this also build in Release mode as well
+// It can quite easy to overwhelm the acceptor.
+//
 static constexpr int num_client_requests = 10;
 static constexpr int num_clients         = 128;
 
@@ -44,6 +54,8 @@ static constexpr int num_clients         = 128;
 
 struct server_op : asio::coroutine
 {
+  // this time, our executor_type is a strand over the polymorphic executor
+  //
   using executor_type = asio::strand<asio::executor>;
 
   struct frame
@@ -61,6 +73,11 @@ struct server_op : asio::coroutine
   std::unique_ptr<frame> frame_ptr;
   executor_type          strand;
 
+  // Note, we pass an `ssl::context&` this time and also make sure that our strand is created around
+  // the server session's executor
+  // We do this because we want synchronicity for all intermediate operations associated with this
+  // server session explicitly
+  //
   server_op(tcp::socket stream, ssl::context& ctx)
     : frame_ptr(std::make_unique<frame>(std::move(stream),
                                         foxy::session_opts{ctx, std::chrono::seconds(30), false}))
@@ -79,13 +96,19 @@ struct server_op : asio::coroutine
     {
       assert(f.server.stream.is_ssl());
 
-      yield f.server.stream.ssl().async_handshake(ssl::stream_base::server, std::move(*this));
+      // start the server-side handshake process
+      // if we fail here, simply just close the underlying socket like we would a plain TCP
+      // connection
+      //
+      yield f.server.async_handshake(std::move(*this));
       if (ec) {
         f.server.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
         f.server.stream.plain().close(ec);
         yield break;
       }
 
+      // now begin the persistent connection read-loop
+      //
       while (true) {
         f.response = {};
         f.request  = {};
@@ -104,6 +127,8 @@ struct server_op : asio::coroutine
         if (!f.request.keep_alive()) { break; }
       }
 
+      // gracefully close the connection with the client
+      //
       yield f.server.stream.ssl().async_shutdown(std::move(*this));
     }
   }
@@ -129,6 +154,9 @@ struct accept_op : asio::coroutine
     }
   };
 
+  // This time around, our acceptance operation stores a non-owning reference to an SSL context.
+  // It also now stores a strand as well for thread-safety
+  //
   tcp::acceptor&         acceptor;
   std::unique_ptr<frame> frame_ptr;
   executor_type          strand;
@@ -154,6 +182,8 @@ struct accept_op : asio::coroutine
         if (ec == asio::error::operation_aborted) { yield break; }
         if (ec) { yield break; }
 
+        // Forward the SSL context to the server operation
+        //
         asio::post(server_op(std::move(f.socket), ctx));
       }
     }
@@ -172,6 +202,9 @@ public:
   using executor_type = asio::strand<asio::executor>;
 
 private:
+  // Our server now also stores a non-owning reference to an SSL context so that it may forward
+  // it to the accept op which forwards it to the server op
+  //
   tcp::acceptor acceptor;
   executor_type strand;
   ssl::context& ctx;
@@ -219,18 +252,26 @@ struct client_op : asio::coroutine
   struct frame
   {
     foxy::client_session              client;
-    http::request<http::empty_body>   request = {http::verb::get, "/", 11};
+    http::request<http::empty_body>   request;
     http::response<http::string_body> response;
 
     int       req_count    = 0;
     int const max_requests = num_client_requests;
 
+    // Note: this time around, we're constructing our client with verification of the peer
+    // certificate enabled. Because our session options also contain an SSL context, this will
+    // force the client to initiate the TLS handshake upon `async_connect` and also verify the
+    // validity and identity of the server's cert.
+    //
     frame(asio::executor executor, ssl::context& ctx)
-      : client(executor, foxy::session_opts{ctx, std::chrono::seconds(30)})
+      : client(executor, foxy::session_opts{ctx, std::chrono::seconds(30), true})
     {
     }
   };
 
+  // This time, we use an atomic `req_count` variable to keep track of all the client requests.
+  // When we've reached our threshold, we send the cancellation signal to the server
+  //
   std::unique_ptr<frame> frame_ptr;
   executor_type          strand;
   std::atomic_int&       req_count;
@@ -280,6 +321,8 @@ struct client_op : asio::coroutine
         }
       }
 
+      // Gracefully close the connection down
+      //
       yield f.client.stream.ssl().async_shutdown(std::move(*this));
     }
   }
@@ -293,6 +336,11 @@ struct client_op : asio::coroutine
 
 #include <boost/asio/unyield.hpp>
 
+// This function is largely a copy-paste of the `load_server_ceritificate` function found in the
+// Beast examples. We, however, choose to use a different certificate. We use a locally-signed
+// certificate for the IP address 127.0.0.1 and we also skip touching anything to do with the DH
+// params involved in the handshake process.
+//
 auto
 load_server_certificate(boost::asio::ssl::context& ctx) -> void
 {
@@ -347,9 +395,6 @@ load_server_certificate(boost::asio::ssl::context& ctx) -> void
     "84+kQvgny42OaKjwmvTbRCqv7/iOZzSqCSwMytcFVx11NO4+FMFSUp4=\n"
     "-----END RSA PRIVATE KEY-----\n");
 
-  ctx.set_password_callback(
-    [](std::size_t, ssl::context_base::password_purpose) { return "password"; });
-
   ctx.set_options(boost::asio::ssl::context::default_workarounds |
                   boost::asio::ssl::context::no_sslv2 | boost::asio::ssl::context::single_dh_use);
 
@@ -362,9 +407,13 @@ load_server_certificate(boost::asio::ssl::context& ctx) -> void
 int
 main()
 {
+  // Create an SSL context specifically to be used by our server
+  //
   auto server_ctx = ssl::context(ssl::context::method::tlsv12_server);
   load_server_certificate(server_ctx);
 
+  // This is our root CA that was used to sign the server's certificate
+  //
   auto const root_ca = boost::string_view(
     "-----BEGIN CERTIFICATE-----\n"
     "MIID1zCCAr+gAwIBAgIUBzm5/pOjqdVMVfoTQgGf8RxiuAkwDQYJKoZIhvcNAQEL\n"
@@ -396,6 +445,8 @@ main()
   auto const num_client_threads = 4;
   auto const num_server_threads = 4;
 
+  // For the sake of performance, we give our client and server separate threadpools
+  //
   asio::io_context client_io{num_client_threads};
   asio::io_context server_io{num_server_threads};
 
