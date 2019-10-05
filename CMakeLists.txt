@@ -45,6 +45,7 @@ add_library(
   include/foxy/client_session.hpp
   include/foxy/code_point_iterator.hpp
   include/foxy/error.hpp
+  include/foxy/listener.hpp
   include/foxy/log.hpp
   include/foxy/multi_stream.hpp
   include/foxy/pct_decode.hpp
@@ -182,6 +183,7 @@ if (BUILD_TESTING)
     test/code_point_view_test.cpp
     test/export_connect_fields_test.cpp
     test/iterator_test.cpp
+    test/listener_test.cpp
     test/main.cpp
     test/pct_decode_test.cpp
     test/pct_encode_test.cpp
