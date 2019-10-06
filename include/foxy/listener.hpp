@@ -41,14 +41,14 @@ struct server_op : boost::asio::coroutine
 
   struct frame
   {
-    ::foxy::server_session                                             server;
+    std::unique_ptr<::foxy::server_session>                            server_handle;
+    RequestHandler                                                     handler;
     boost::beast::http::request_parser<boost::beast::http::empty_body> shutdown_parser;
     bool                                                               is_ssl = false;
 
-    frame(boost::asio::ip::tcp::socket socket, ::foxy::session_opts opts)
-      : server(opts.ssl_ctx ? ::foxy::multi_stream(std::move(socket), *opts.ssl_ctx)
-                            : ::foxy::multi_stream(std::move(socket)),
-               opts)
+    frame(std::unique_ptr<::foxy::server_session>&& server_handle_, RequestHandler&& handler_)
+      : server_handle(std::move(server_handle_))
+      , handler(std::move(handler_))
     {
     }
   };
@@ -56,10 +56,9 @@ struct server_op : boost::asio::coroutine
   std::unique_ptr<frame> frame_ptr;
   executor_type          strand;
 
-  server_op(boost::asio::ip::tcp::socket stream, boost::optional<boost::asio::ssl::context&> ctx)
-    : frame_ptr(std::make_unique<frame>(std::move(stream),
-                                        foxy::session_opts{ctx, std::chrono::seconds(30), false}))
-    , strand(boost::asio::make_strand(frame_ptr->server.get_executor()))
+  server_op(std::unique_ptr<::foxy::server_session>&& server_handle_, RequestHandler&& handler_)
+    : frame_ptr(std::make_unique<frame>(std::move(server_handle_), std::move(handler_)))
+    , strand(boost::asio::make_strand(frame_ptr->server_handle->get_executor()))
   {
   }
 
@@ -79,33 +78,33 @@ struct server_op : boost::asio::coroutine
   {
     BOOST_ASSERT(strand.running_in_this_thread());
 
-    auto& f = *frame_ptr;
+    auto& f      = *frame_ptr;
+    auto& server = *f.server_handle;
     BOOST_ASIO_CORO_REENTER(*this)
     {
       BOOST_ASIO_CORO_YIELD
-      f.server.async_detect_ssl(
-        boost::beast::bind_front_handler(std::move(*this), on_ssl_detect{}));
+      server.async_detect_ssl(boost::beast::bind_front_handler(std::move(*this), on_ssl_detect{}));
       if (ec) { goto shutdown; }
 
       BOOST_ASIO_CORO_YIELD
       boost::asio::async_compose<std::decay_t<decltype(*this)>,
-                                 void(boost::system::error_code, std::size_t)>(
-        RequestHandler(f.server), *this, strand);
+                                 void(boost::system::error_code, std::size_t)>(std::move(f.handler),
+                                                                               *this, strand);
 
       if (ec) { goto shutdown; }
 
     shutdown:
-      f.server.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+      server.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 
       BOOST_ASIO_CORO_YIELD
-      f.server.async_read(f.shutdown_parser, std::move(*this));
+      server.async_read(f.shutdown_parser, std::move(*this));
 
       if (ec && ec != boost::beast::http::error::end_of_stream) {
         foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
       }
 
-      f.server.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
-      f.server.stream.plain().close(ec);
+      server.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
+      server.stream.plain().close(ec);
     }
   }
 
@@ -116,7 +115,7 @@ struct server_op : boost::asio::coroutine
   }
 };
 
-template <class RequestHandler>
+template <class RequestHandlerFactory>
 struct accept_op : boost::asio::coroutine
 {
   using executor_type = boost::asio::strand<boost::asio::executor>;
@@ -124,9 +123,11 @@ struct accept_op : boost::asio::coroutine
   struct frame
   {
     boost::asio::ip::tcp::socket socket;
+    RequestHandlerFactory        factory;
 
-    frame(boost::asio::executor executor)
+    frame(boost::asio::executor executor, RequestHandlerFactory&& factory_)
       : socket(executor)
+      , factory(std::move(factory_))
     {
     }
   };
@@ -136,18 +137,21 @@ struct accept_op : boost::asio::coroutine
   executor_type                               strand;
   boost::optional<boost::asio::ssl::context&> ctx;
 
-  accept_op(boost::asio::ip::tcp::acceptor& acceptor_, executor_type strand_)
+  accept_op(boost::asio::ip::tcp::acceptor& acceptor_,
+            executor_type                   strand_,
+            RequestHandlerFactory&&         factory_)
     : acceptor(acceptor_)
-    , frame_ptr(std::make_unique<frame>(acceptor.get_executor()))
+    , frame_ptr(std::make_unique<frame>(acceptor.get_executor(), std::move(factory_)))
     , strand(strand_)
   {
   }
 
   accept_op(boost::asio::ip::tcp::acceptor& acceptor_,
             executor_type                   strand_,
-            boost::asio::ssl::context&      ctx_)
+            boost::asio::ssl::context&      ctx_,
+            RequestHandlerFactory&&         factory_)
     : acceptor(acceptor_)
-    , frame_ptr(std::make_unique<frame>(acceptor.get_executor()))
+    , frame_ptr(std::make_unique<frame>(acceptor.get_executor(), std::move(factory_)))
     , strand(strand_)
     , ctx(ctx_)
   {
@@ -165,7 +169,20 @@ struct accept_op : boost::asio::coroutine
         if (ec == boost::asio::error::operation_aborted) { return; }
         if (ec) { return; }
 
-        boost::asio::post(server_op<RequestHandler>(std::move(f.socket), ctx));
+        {
+          auto session_handle = ctx ? std::make_unique<::foxy::server_session>(
+                                        ::foxy::multi_stream(std::move(f.socket), *ctx),
+                                        ::foxy::session_opts{ctx, std::chrono::seconds(30), false})
+                                    : std::make_unique<::foxy::server_session>(
+                                        ::foxy::multi_stream(std::move(f.socket)),
+                                        ::foxy::session_opts{ctx, std::chrono::seconds(30), false});
+
+          auto handler = f.factory(*session_handle);
+
+          using handler_type = std::decay_t<decltype(handler)>;
+
+          boost::asio::post(server_op<handler_type>(std::move(session_handle), std::move(handler)));
+        }
       }
     }
   }
@@ -178,7 +195,6 @@ struct accept_op : boost::asio::coroutine
 };
 } // namespace detail
 
-template <class RequestHandler>
 struct listener
 {
 public:
@@ -215,14 +231,17 @@ public:
     return strand_;
   }
 
+  template <class RequestHandlerFactory>
   auto
-  async_accept() -> void
+  async_accept(RequestHandlerFactory&& factory) -> void
   {
     if (ctx_) {
-      return boost::asio::post(detail::accept_op<RequestHandler>(acceptor_, strand_, *ctx_));
+      return boost::asio::post(
+        detail::accept_op<RequestHandlerFactory>(acceptor_, strand_, *ctx_, std::move(factory)));
     }
 
-    boost::asio::post(detail::accept_op<RequestHandler>(acceptor_, strand_));
+    boost::asio::post(
+      detail::accept_op<RequestHandlerFactory>(acceptor_, strand_, std::move(factory)));
   }
 
   auto

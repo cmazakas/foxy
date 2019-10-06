@@ -79,8 +79,8 @@ TEST_CASE("listener_test")
     auto const endpoint =
       tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
 
-    auto listener = foxy::listener<handler>(io.get_executor(), endpoint);
-    listener.async_accept();
+    auto listener = foxy::listener(io.get_executor(), endpoint);
+    listener.async_accept([](auto& server_session) { return handler(server_session); });
 
     asio::spawn(io.get_executor(), [&](auto yield) mutable {
       auto client = foxy::client_session(io.get_executor(), {{}, std::chrono::seconds(4), false});
