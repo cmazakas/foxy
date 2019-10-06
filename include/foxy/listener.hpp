@@ -82,9 +82,11 @@ struct server_op : boost::asio::coroutine
     auto& server = *f.server_handle;
     BOOST_ASIO_CORO_REENTER(*this)
     {
-      BOOST_ASIO_CORO_YIELD
-      server.async_detect_ssl(boost::beast::bind_front_handler(std::move(*this), on_ssl_detect{}));
-      if (ec) { goto shutdown; }
+      if (server.stream.is_ssl()) {
+        BOOST_ASIO_CORO_YIELD
+        server.async_handshake(std::move(*this));
+        if (ec) { goto shutdown; }
+      }
 
       BOOST_ASIO_CORO_YIELD
       boost::asio::async_compose<std::decay_t<decltype(*this)>,
@@ -94,7 +96,17 @@ struct server_op : boost::asio::coroutine
       if (ec) { goto shutdown; }
 
     shutdown:
-      server.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+      if (server.stream.is_ssl()) {
+        BOOST_ASIO_CORO_YIELD
+        server.stream.ssl().async_shutdown(std::move(*this));
+      }
+
+      {
+        auto& tcp_stream =
+          server.stream.is_ssl() ? server.stream.ssl().next_layer() : server.stream.plain();
+
+        tcp_stream.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+      }
 
       BOOST_ASIO_CORO_YIELD
       server.async_read(f.shutdown_parser, std::move(*this));
@@ -103,8 +115,13 @@ struct server_op : boost::asio::coroutine
         foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
       }
 
-      server.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
-      server.stream.plain().close(ec);
+      {
+        auto& tcp_stream =
+          server.stream.is_ssl() ? server.stream.ssl().next_layer() : server.stream.plain();
+
+        tcp_stream.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
+        tcp_stream.close(ec);
+      }
     }
   }
 
@@ -113,7 +130,7 @@ struct server_op : boost::asio::coroutine
   {
     return strand;
   }
-};
+}; // namespace detail
 
 template <class RequestHandlerFactory>
 struct accept_op : boost::asio::coroutine
