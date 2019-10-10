@@ -44,7 +44,6 @@ struct server_op : boost::asio::coroutine
     std::unique_ptr<::foxy::server_session>                            server_handle;
     RequestHandler                                                     handler;
     boost::beast::http::request_parser<boost::beast::http::empty_body> shutdown_parser;
-    bool                                                               is_ssl = false;
 
     frame(std::unique_ptr<::foxy::server_session>&& server_handle_, RequestHandler&& handler_)
       : server_handle(std::move(server_handle_))
@@ -60,17 +59,6 @@ struct server_op : boost::asio::coroutine
     : frame_ptr(std::make_unique<frame>(std::move(server_handle_), std::move(handler_)))
     , strand(boost::asio::make_strand(frame_ptr->server_handle->get_executor()))
   {
-  }
-
-  struct on_ssl_detect
-  {
-  };
-
-  auto
-  operator()(on_ssl_detect, boost::system::error_code ec, bool is_ssl) -> void
-  {
-    frame_ptr->is_ssl = is_ssl;
-    (*this)(ec, 0);
   }
 
   auto operator()(boost::system::error_code ec = {}, std::size_t const bytes_transferred = 0)
@@ -183,16 +171,19 @@ struct accept_op : boost::asio::coroutine
     {
       while (acceptor.is_open()) {
         BOOST_ASIO_CORO_YIELD acceptor.async_accept(f.socket, std::move(*this));
-        if (ec == boost::asio::error::operation_aborted) { return; }
-        if (ec) { return; }
+        if (ec) {
+          if (ec != boost::asio::error::operation_aborted) {
+            ::foxy::log_error(ec, "foxy::listener::accept_op");
+          }
+
+          return;
+        }
 
         {
-          auto session_handle = ctx ? std::make_unique<::foxy::server_session>(
-                                        ::foxy::multi_stream(std::move(f.socket), *ctx),
-                                        ::foxy::session_opts{ctx, std::chrono::seconds(30), false})
-                                    : std::make_unique<::foxy::server_session>(
-                                        ::foxy::multi_stream(std::move(f.socket)),
-                                        ::foxy::session_opts{ctx, std::chrono::seconds(30), false});
+          auto session_handle = std::make_unique<::foxy::server_session>(
+            ctx ? ::foxy::multi_stream(std::move(f.socket), *ctx)
+                : ::foxy::multi_stream(std::move(f.socket)),
+            ::foxy::session_opts{ctx, std::chrono::seconds{30}, false});
 
           auto handler = f.factory(*session_handle);
 

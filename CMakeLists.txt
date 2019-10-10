@@ -168,12 +168,20 @@ if (BUILD_TESTING)
       container
   )
 
-  add_library(test_utils INTERFACE)
+  add_library(
+    test_utils
+
+    test/include/foxy/test/helpers/ssl_ctx.hpp
+    test/include/foxy/test/helpers/ssl_ctx.cpp
+  )
+
   target_include_directories(
     test_utils
-    INTERFACE
-      ${CMAKE_CURRENT_SOURCE_DIR}/test/include
+    PUBLIC
+      test/include
   )
+
+  target_link_libraries(test_utils PUBLIC foxy)
 
   add_executable(
     foxy_tests
@@ -202,7 +210,6 @@ if (BUILD_TESTING)
   target_link_libraries(
     foxy_tests
     PRIVATE
-      foxy
       test_utils
       Catch2::Catch2
       Boost::coroutine
