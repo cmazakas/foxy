@@ -10,6 +10,7 @@
 * [basic_multi_stream](./reference/multi_stream.md#foxybasic_multi_stream)
 * [session_opts](./reference/session_opts.md#foxysession_opts)
 * [proxy](./reference/proxy.md#foxyproxy)
+* [listener](./reference/listener.md#foxylistener)
 
 #### Functions
 
