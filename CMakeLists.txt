@@ -230,6 +230,11 @@ if (FOXY_BUILD_EXAMPLES)
       container
   )
 
+  find_package(PostgreSQL REQUIRED)
+
+  find_path(PQXX_INCLUDE_DIR connection.hxx)
+  find_library(PQXX_LIBRARY NAMES libpqxx)
+
   add_executable(
     hello-world
 
@@ -300,6 +305,27 @@ if (FOXY_BUILD_EXAMPLES)
       Boost::container
       Boost::thread
       Boost::coroutine
+  )
+
+  add_executable(
+    listener
+
+    examples/listener/main.cpp
+  )
+
+  target_link_directories(
+    listener
+    PRIVATE
+      ${PostgreSQL_INCLUDE_DIRS}
+      ${PQXX_INCLUDE_DIR}
+  )
+
+  target_link_libraries(
+    listener
+    PRIVATE
+      foxy
+      ${PostgreSQL_LIBRARIES}
+      ${PQXX_LIBRARY}
   )
 endif()
 
