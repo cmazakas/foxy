@@ -141,12 +141,7 @@ TEST_CASE("listener_test")
       CHECK(res.result_int() == 200);
       CHECK(res.body() == "hello, world!");
 
-      client.stream.ssl().async_shutdown(yield);
-
-      auto ec = boost::system::error_code();
-      client.stream.ssl().next_layer().shutdown(tcp::socket::shutdown_both, ec);
-      client.stream.ssl().next_layer().close(ec);
-
+      client.async_shutdown(yield);
       listener.shutdown();
     });
 

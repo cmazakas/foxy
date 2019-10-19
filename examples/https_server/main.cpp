@@ -323,7 +323,7 @@ struct client_op : asio::coroutine
 
       // Gracefully close the connection down
       //
-      yield f.client.stream.ssl().async_shutdown(std::move(*this));
+      yield f.client.async_shutdown(std::move(*this));
     }
   }
 

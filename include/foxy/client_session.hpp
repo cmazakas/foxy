@@ -76,6 +76,12 @@ public:
   async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
     typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                        void(boost::system::error_code)>::return_type;
+
+  template <class ShutdownHandler>
+  auto
+  async_shutdown(ShutdownHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
+                                       void(boost::system::error_code)>::return_type;
 };
 
 using client_session = basic_client_session<boost::beast::flat_buffer>;
@@ -91,5 +97,6 @@ using client_session = basic_client_session<
 
 #include <foxy/impl/client_session/async_connect.impl.hpp>
 #include <foxy/impl/client_session/async_request.impl.hpp>
+#include <foxy/impl/client_session/async_shutdown.impl.hpp>
 
 #endif // FOXY_CLIENT_SESSION_HPP_

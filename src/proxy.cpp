@@ -129,8 +129,7 @@ public:
 
       if (s.client.stream.is_ssl()) {
         BOOST_ASIO_CORO_YIELD
-        s.client.stream.ssl().async_shutdown(
-          boost::beast::bind_handler(std::move(*this), _1, true));
+        s.client.async_shutdown(boost::beast::bind_handler(std::move(*this), _1, true));
 
         if (ec == boost::asio::error::eof) {
           // Rationale:

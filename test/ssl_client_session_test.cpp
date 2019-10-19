@@ -76,7 +76,7 @@ TEST_CASE("ssl_client_session_test")
             CHECK(is_valid_status);
             CHECK(is_valid_body);
 
-            session.stream.ssl().async_shutdown(
+            session.async_shutdown(
               [&session, sh = std::move(sh)](error_code ec) mutable -> void {});
           });
       });
