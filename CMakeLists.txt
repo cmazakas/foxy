@@ -223,7 +223,7 @@ if (FOXY_BUILD_EXAMPLES)
   target_link_libraries(https-server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
   add_executable(listener examples/listener/main.cpp)
-  target_link_libraries(listener PRIVATE foxy)
+  target_link_libraries(listener PRIVATE foxy Boost::thread Boost::coroutine)
 endif()
 
 if (FOXY_FUZZ)
