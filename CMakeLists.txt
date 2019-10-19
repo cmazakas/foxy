@@ -128,13 +128,7 @@ if(FOXY_FAST_BUILD)
       BOOST_BEAST_SEPARATE_COMPILATION=1
   )
 
-  target_sources(
-    foxy
-
-    PRIVATE
-      src/asio.cpp
-      src/beast.cpp
-  )
+  target_sources(foxy PRIVATE src/asio.cpp src/beast.cpp)
 endif()
 
 target_include_directories(
@@ -160,13 +154,7 @@ if (BUILD_TESTING)
   include(CTest)
 
   find_package(Catch2 CONFIG REQUIRED)
-  find_package(
-    Boost 1.71
-    REQUIRED
-      coroutine
-      thread
-      container
-  )
+  find_package(Boost 1.71 REQUIRED coroutine thread container)
 
   add_library(
     test_utils
@@ -175,12 +163,7 @@ if (BUILD_TESTING)
     test/include/foxy/test/helpers/ssl_ctx.cpp
   )
 
-  target_include_directories(
-    test_utils
-    PUBLIC
-      test/include
-  )
-
+  target_include_directories(test_utils PUBLIC test/include)
   target_link_libraries(test_utils PUBLIC foxy)
 
   add_executable(
@@ -222,137 +205,32 @@ if (BUILD_TESTING)
 endif()
 
 if (FOXY_BUILD_EXAMPLES)
-  find_package(
-    Boost 1.71
-    REQUIRED
-      coroutine
-      thread
-      container
-  )
+  find_package(Boost 1.71 REQUIRED coroutine thread container)
 
-  find_package(PostgreSQL REQUIRED)
+  add_executable(hello-world examples/hello_world/main.cpp)
+  target_link_libraries(hello-world PRIVATE foxy Boost::coroutine Boost::thread)
 
-  find_path(PQXX_INCLUDE_DIR connection.hxx)
-  find_library(PQXX_LIBRARY NAMES libpqxx)
+  add_executable(ip-parser examples/uri_combinators/ip_parser.cpp)
+  target_link_libraries(ip-parser PRIVATE foxy Boost::coroutine Boost::thread)
 
-  add_executable(
-    hello-world
+  add_executable(client examples/allocators/client.cpp)
+  target_link_libraries(client PRIVATE foxy Boost::container Boost::thread)
 
-    examples/hello_world/main.cpp
-  )
+  add_executable(server examples/server/main.cpp)
+  target_link_libraries(server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
-  target_link_libraries(
-    hello-world
-    PRIVATE
-      foxy
-      Boost::coroutine
-      Boost::thread
-  )
+  add_executable(https-server examples/https_server/main.cpp)
+  target_link_libraries(https-server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
-  add_executable(
-    ip-parser
-
-    examples/uri_combinators/ip_parser.cpp
-  )
-
-  target_link_libraries(
-    ip-parser
-    PRIVATE
-      foxy
-      Boost::coroutine
-      Boost::thread
-  )
-
-  add_executable(
-    client
-
-    examples/allocators/client.cpp
-  )
-
-  target_link_libraries(
-    client
-    PRIVATE
-      foxy
-      Boost::container
-      Boost::thread
-  )
-
-  add_executable(
-    server
-
-    examples/server/main.cpp
-  )
-
-  target_link_libraries(
-    server
-    PRIVATE
-      foxy
-      Boost::container
-      Boost::thread
-      Boost::coroutine
-  )
-
-  add_executable(
-    https-server
-
-    examples/https_server/main.cpp
-  )
-
-  target_link_libraries(
-    https-server
-    PRIVATE
-      foxy
-      Boost::container
-      Boost::thread
-      Boost::coroutine
-  )
-
-  add_executable(
-    listener
-
-    examples/listener/main.cpp
-  )
-
-  target_link_directories(
-    listener
-    PRIVATE
-      ${PostgreSQL_INCLUDE_DIRS}
-      ${PQXX_INCLUDE_DIR}
-  )
-
-  target_link_libraries(
-    listener
-    PRIVATE
-      foxy
-      ${PostgreSQL_LIBRARIES}
-      ${PQXX_LIBRARY}
-  )
+  add_executable(listener examples/listener/main.cpp)
+  target_link_libraries(listener PRIVATE foxy)
 endif()
 
 if (FOXY_FUZZ)
-  add_executable(
-    uri-parser
-
-    fuzz/parse_uri.cpp
-  )
-
-  target_link_libraries(
-    uri-parser
-    PRIVATE
-      foxy
-  )
-
-  target_compile_options(
-    uri-parser
-    PRIVATE
-      "-fsanitize=fuzzer"
-  )
-
-  target_link_options(
-    uri-parser
-    PRIVATE
-      "-fsanitize=fuzzer"
-  )
+  add_executable(uri-parser fuzz/parse_uri.cpp)
+  target_link_libraries(uri-parser PRIVATE foxy)
+  target_compile_options(uri-parser PRIVATE "-fsanitize=fuzzer")
+  target_link_options(uri-parser PRIVATE "-fsanitize=fuzzer")
 endif()
 
 # installation

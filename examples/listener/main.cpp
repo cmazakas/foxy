@@ -1,8 +1,7 @@
-#include <pqxx/connection.hxx>
+#include <iostream>
 
 int
 main()
 {
-  pqxx::connection db_conn{"postgresql://postgres@localhost:5432"};
   return 0;
 }
