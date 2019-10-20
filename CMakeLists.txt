@@ -150,21 +150,21 @@ target_link_libraries(
     Threads::Threads
 )
 
+add_library(
+  test_utils
+
+  test/include/foxy/test/helpers/ssl_ctx.hpp
+  test/include/foxy/test/helpers/ssl_ctx.cpp
+)
+
+target_include_directories(test_utils PUBLIC test/include)
+target_link_libraries(test_utils PUBLIC foxy)
+
 if (BUILD_TESTING)
   include(CTest)
 
   find_package(Catch2 CONFIG REQUIRED)
   find_package(Boost 1.71 REQUIRED coroutine thread container)
-
-  add_library(
-    test_utils
-
-    test/include/foxy/test/helpers/ssl_ctx.hpp
-    test/include/foxy/test/helpers/ssl_ctx.cpp
-  )
-
-  target_include_directories(test_utils PUBLIC test/include)
-  target_link_libraries(test_utils PUBLIC foxy)
 
   add_executable(
     foxy_tests
@@ -223,7 +223,7 @@ if (FOXY_BUILD_EXAMPLES)
   target_link_libraries(https-server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
   add_executable(listener examples/listener/main.cpp)
-  target_link_libraries(listener PRIVATE foxy Boost::thread Boost::coroutine)
+  target_link_libraries(listener PRIVATE foxy test_utils Boost::thread Boost::coroutine)
 endif()
 
 if (FOXY_FUZZ)
