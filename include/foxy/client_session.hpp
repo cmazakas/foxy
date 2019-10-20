@@ -68,8 +68,7 @@ public:
   auto
   async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
     typename boost::asio::async_result<std::decay_t<ConnectHandler>,
-                                       void(boost::system::error_code,
-                                            boost::asio::ip::tcp::endpoint)>::return_type;
+                                       void(boost::system::error_code)>::return_type;
 
   template <class Request, class ResponseParser, class RequestHandler>
   auto

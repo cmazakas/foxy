@@ -131,10 +131,7 @@ struct connect_op
         if (ec) { goto upcall; }
       }
 
-      {
-        auto endpoint = std::move(s.endpoint);
-        return this->complete_now(boost::system::error_code{}, std::move(endpoint));
-      }
+      return this->complete_now(boost::system::error_code{});
 
     upcall:
       if (!is_continuation) {
@@ -142,7 +139,7 @@ struct connect_op
         boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
       }
 
-      return this->complete_now(ec, boost::asio::ip::tcp::endpoint{});
+      return this->complete_now(ec);
     }
   }
 };
@@ -155,11 +152,10 @@ basic_client_session<DynamicBuffer>::async_connect(std::string      host,
                                                    std::string      service,
                                                    ConnectHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<ConnectHandler>,
-                                     void(boost::system::error_code,
-                                          boost::asio::ip::tcp::endpoint)>::return_type
+                                     void(boost::system::error_code)>::return_type
 {
   return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code, boost::asio::ip::tcp::endpoint),
+    void(boost::system::error_code),
     boost::mp11::mp_bind_front<::foxy::detail::connect_op, DynamicBuffer>::template fn>(
     *this, std::forward<ConnectHandler>(handler), std::move(host), std::move(service));
 }

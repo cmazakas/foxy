@@ -38,8 +38,7 @@ TEST_CASE("client_session_test")
 
     session.async_connect(
       "www.google.com", "80",
-      [&valid_request, &session, sh = std::move(session_handle)](error_code ec,
-                                                                 tcp::endpoint) mutable -> void {
+      [&valid_request, &session, sh = std::move(session_handle)](error_code ec) mutable -> void {
         if (ec) {
           session.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
           return;
@@ -87,11 +86,11 @@ TEST_CASE("client_session_test")
 
     auto timed_out = false;
 
-    session.async_connect("www.google.com", "1337",
-                          [&timed_out, &session, sh = std::move(session_handle)](
-                            error_code ec, tcp::endpoint) mutable -> void {
-                            timed_out = (ec == boost::asio::error::operation_aborted);
-                          });
+    session.async_connect(
+      "www.google.com", "1337",
+      [&timed_out, &session, sh = std::move(session_handle)](error_code ec) mutable -> void {
+        timed_out = (ec == boost::asio::error::operation_aborted);
+      });
 
     io.run();
     REQUIRE(timed_out);
