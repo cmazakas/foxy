@@ -66,6 +66,7 @@ add_library(
   include/foxy/detail/has_token.hpp
   include/foxy/detail/relay.hpp
   include/foxy/detail/timed_op_wrapper_v2.hpp
+  include/foxy/detail/timed_op_wrapper_v3.hpp
   include/foxy/detail/tunnel.hpp
 
   include/foxy/impl/session.impl.hpp
@@ -184,6 +185,7 @@ if (BUILD_TESTING)
     test/server_session_test.cpp
     test/session_test.cpp
     test/ssl_client_session_test.cpp
+    test/timed_op_wrapper_v3.cpp
     test/unicode_uri_test.cpp
     test/uri_parts_test.cpp
     test/uri_test.cpp
