@@ -89,12 +89,14 @@ public:
     : session_(session)
     , p_(std::forward<DeducedHandler>(handler), session_.get_executor())
   {
+    auto const self = *this;
+
     // we will rely on the Op's constructor to be a non-blocking initiating function
     //
-    Op<timed_op_wrapper_v2>(session, *this, std::forward<ConstructorArgs>(args)...);
+    Op<timed_op_wrapper_v2>(session, self, std::forward<ConstructorArgs>(args)...);
 
     session_.timer.expires_after(session_.opts.timeout);
-    session_.timer.async_wait(boost::beast::bind_front_handler(*this, on_timer_t{}));
+    session_.timer.async_wait(boost::beast::bind_front_handler(self, on_timer_t{}));
     (*this)(on_completion_t{}, {});
 
     p_.reset();
