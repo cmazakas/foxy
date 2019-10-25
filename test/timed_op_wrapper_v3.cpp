@@ -18,5 +18,6 @@ TEST_CASE("timed_op_wrapper_v3")
 
   foxy::detail::async_timer<void(boost::system::error_code ec, std::size_t bytes_transferred)>(
     std::move(impl), session, [](boost::system::error_code ec, std::size_t bytes_transferred) {});
+
   io.run();
 }

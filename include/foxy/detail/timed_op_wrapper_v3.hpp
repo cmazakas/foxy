@@ -71,10 +71,10 @@ struct async_timer_initiation<Ret(Args...)>
     struct intermediate_completion_handler
     {
       using executor_type = boost::asio::associated_executor_t<
-        CompletionHandler,
+        std::decay_t<CompletionHandler>,
         typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>;
 
-      using allocator_type = boost::asio::associated_allocator_t<CompletionHandler>;
+      using allocator_type = boost::asio::associated_allocator_t<std::decay_t<CompletionHandler>>;
 
       boost::shared_ptr<state>                      p_;
       ::foxy::basic_session<Stream, DynamicBuffer>& session_;
@@ -85,11 +85,10 @@ struct async_timer_initiation<Ret(Args...)>
 
       intermediate_completion_handler(CompletionHandler&& completion_handler,
                                       ::foxy::basic_session<Stream, DynamicBuffer>& session)
-        : p_(
-            boost::allocate_shared<state>(boost::asio::get_associated_allocator(completion_handler),
-                                          std::move(completion_handler)))
-        , session_(session)
+        : session_(session)
       {
+        auto const allocator = boost::asio::get_associated_allocator(completion_handler);
+        p_ = boost::allocate_shared<state>(allocator, std::move(completion_handler));
       }
 
       auto
@@ -108,8 +107,26 @@ struct async_timer_initiation<Ret(Args...)>
       operator()(Args&&... args) -> void
       {
         p_->results = std::make_tuple(std::move(args)...);
-        p_->done    = true;
 
+        // if we're already marked as done here, it means the time naturally expired so our
+        // user's async op was cancelled
+        // deallocate the state and invoke the user's completion handler
+        //
+        if (p_->done) {
+          auto results = std::move(*(p_->results));
+          auto cb      = std::move(p_->handler_);
+
+          p_.reset();
+
+          auto f = [&](auto&&... args) { cb(std::forward<decltype(args)>(args)...); };
+          boost::hof::unpack(f)(std::move(results));
+          return;
+        }
+
+        // our user's async op completed before the timer did, mark the op as true and cancel
+        // the pending cancel op
+        //
+        p_->done = true;
         session_.timer.cancel();
       }
 
@@ -127,14 +144,17 @@ struct async_timer_initiation<Ret(Args...)>
             //
             if (s.done) { break; }
 
+            session_.timer.expires_after(session_.opts.timeout);
+
             BOOST_ASIO_CORO_YIELD
-            session_.timer.async_wait(boost::beast::bind_front_handler(*this, on_timer_t{}));
+            session_.timer.async_wait(
+              boost::beast::bind_front_handler(std::move(*this), on_timer_t{}));
           }
         }
 
         if (!s.timer_coro.is_complete()) { return; }
 
-        if (ec || s.done) {
+        if (s.done) {
           auto args = std::move(*(s.results));
           auto cb   = std::move(s.handler_);
 
@@ -144,6 +164,13 @@ struct async_timer_initiation<Ret(Args...)>
           boost::hof::unpack(f)(std::move(args));
           return;
         }
+
+        // maybe handle if (ec) { ... } here
+        //
+
+        // the timer expired naturally, mark the op as done and close the stream
+        //
+        p_->done = true;
 
         auto& stream =
           session_.stream.is_ssl() ? session_.stream.ssl().next_layer() : session_.stream.plain();
@@ -156,11 +183,12 @@ struct async_timer_initiation<Ret(Args...)>
       intermediate_completion_handler(std::forward<CompletionHandler>(handler), session);
 
     session.timer.expires_after(session.opts.timeout);
-    session.timer.async_wait(boost::beast::bind_front_handler(intermediate_handler, on_timer_t{}));
+    session.timer.async_wait(boost::beast::bind_front_handler(
+      static_cast<intermediate_completion_handler const&>(intermediate_handler), on_timer_t{}));
 
     boost::asio::async_compose<intermediate_completion_handler, Ret(Args...)>(
       std::forward<Implementation>(implementation), intermediate_handler,
-      session.stream.get_executor());
+      session.stream.get_executor(), session.timer.get_executor());
   }
 };
 
