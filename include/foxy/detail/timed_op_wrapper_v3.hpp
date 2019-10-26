@@ -187,8 +187,8 @@ struct async_timer_initiation<Ret(Args...)>
       static_cast<intermediate_completion_handler const&>(intermediate_handler), on_timer_t{}));
 
     boost::asio::async_compose<intermediate_completion_handler, Ret(Args...)>(
-      std::forward<Implementation>(implementation), intermediate_handler,
-      session.stream.get_executor(), session.timer.get_executor());
+      std::move(implementation), intermediate_handler, session.stream.get_executor(),
+      session.timer.get_executor());
   }
 };
 
@@ -204,8 +204,7 @@ async_timer(Implementation&&                              implementation,
   typename boost::asio::async_result<std::decay_t<CompletionToken>, Signature>::return_type
 {
   return boost::asio::async_initiate<CompletionToken, Signature>(
-    async_timer_initiation<Signature>{}, token, std::forward<Implementation>(implementation),
-    session);
+    async_timer_initiation<Signature>{}, token, std::move(implementation), session);
 }
 } // namespace detail
 } // namespace foxy

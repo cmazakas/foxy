@@ -19,6 +19,8 @@
 
 #include <catch2/catch.hpp>
 
+#include <iostream>
+
 using boost::system::error_code;
 using boost::asio::ip::tcp;
 
@@ -39,6 +41,7 @@ namespace
 #include <boost/asio/yield.hpp>
 struct client_op : asio::coroutine
 {
+  using executor_type  = typename boost::asio::io_context::executor_type;
   using allocator_type = pmr::polymorphic_allocator<char>;
 
   client_type&  client;
@@ -47,6 +50,7 @@ struct client_op : asio::coroutine
   bool&         was_valid;
 
   allocator_type alloc;
+  executor_type  executor;
 
   client_op()                 = delete;
   client_op(client_op const&) = default;
@@ -56,12 +60,14 @@ struct client_op : asio::coroutine
             request_type&  request_,
             parser_type&   parser_,
             bool&          was_valid_,
-            allocator_type alloc_)
+            allocator_type alloc_,
+            executor_type  executor_)
     : client(client_)
     , request(request_)
     , parser(parser_)
     , was_valid(was_valid_)
     , alloc(std::move(alloc_))
+    , executor(executor_)
   {
   }
 
@@ -70,6 +76,12 @@ struct client_op : asio::coroutine
   {
     return alloc;
   }
+
+  auto
+  get_executor() const noexcept -> executor_type
+  {
+    return executor;
+  };
 
   auto
   operator()(error_code ec, tcp::endpoint) -> void
@@ -92,6 +104,8 @@ struct client_op : asio::coroutine
         was_valid = false;
         yield break;
       }
+
+      yield client.async_shutdown(std::move(*this));
 
       {
         auto& response = parser.get();
@@ -128,7 +142,7 @@ TEST_CASE("allocator_client_test")
 
     parser_type parser{http::response_header<fields_type>(alloc_handle), alloc_handle};
 
-    auto async_op = client_op(client, request, parser, was_valid, alloc_handle);
+    auto async_op = client_op(client, request, parser, was_valid, alloc_handle, io.get_executor());
     CHECK(async_op.get_allocator() == alloc_handle);
 
     asio::post(io, std::move(async_op));
