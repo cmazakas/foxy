@@ -37,12 +37,10 @@ basic_client_session<DynamicBuffer>::async_shutdown(ShutdownHandler&& handler) &
         } else {
           s.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
           s.stream.plain().close(ec);
-
-          BOOST_ASIO_CORO_YIELD boost::asio::post(std::move(cb));
         }
 
       upcall:
-        cb.complete(ec);
+        return cb.complete(ec);
       }
     },
     *this, std::forward<ShutdownHandler>(handler));

@@ -74,14 +74,13 @@ struct connect_op : boost::asio::coroutine
              boost::asio::ip::tcp::endpoint endpoint_) -> void
   {
     p_->endpoint = std::move(endpoint_);
-    (*this)(self, ec, 0, true);
+    (*this)(self, ec, 0);
   }
 
   template <class Self>
   auto operator()(Self&                     self,
                   boost::system::error_code ec                = {},
-                  std::size_t const         bytes_transferred = 0,
-                  bool const                is_continuation   = true) -> void
+                  std::size_t const         bytes_transferred = 0) -> void
   {
     auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(*this)
@@ -117,15 +116,7 @@ struct connect_op : boost::asio::coroutine
         if (ec) { goto upcall; }
       }
 
-      p_.release();
-      return self.complete(boost::system::error_code{});
-
     upcall:
-      if (!is_continuation) {
-        BOOST_ASIO_CORO_YIELD
-        boost::asio::post(boost::beast::bind_handler(std::move(self), ec, 0));
-      }
-
       p_.release();
       return self.complete(ec);
     }
