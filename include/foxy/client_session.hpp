@@ -15,6 +15,7 @@
 #include <foxy/shared_handler_ptr.hpp>
 #include <foxy/utility.hpp>
 #include <foxy/detail/timed_op_wrapper_v2.hpp>
+#include <foxy/detail/timed_op_wrapper_v3.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -34,7 +35,9 @@
 #include <boost/beast/core/bind_handler.hpp>
 
 #include <boost/optional/optional.hpp>
+
 #include <boost/smart_ptr/make_shared.hpp>
+#include <boost/smart_ptr/allocate_unique.hpp>
 
 #include <boost/container/container_fwd.hpp>
 
