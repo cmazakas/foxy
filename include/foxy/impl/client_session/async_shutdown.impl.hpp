@@ -14,62 +14,6 @@
 
 namespace foxy
 {
-namespace detail
-{
-template <class DynamicBuffer, class Handler>
-struct shutdown_op
-  : boost::beast::async_base<
-      Handler,
-      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
-    boost::asio::coroutine
-
-{
-  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
-
-  shutdown_op()                   = delete;
-  shutdown_op(shutdown_op const&) = default;
-  shutdown_op(shutdown_op&&)      = default;
-
-  shutdown_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
-              Handler                                                             handler)
-    : boost::beast::async_base<
-        Handler,
-        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
-    , session(session_)
-  {
-    (*this)({}, 0, false);
-  }
-
-  auto
-  operator()(boost::system::error_code ec,
-             std::size_t const         bytes_transferred = 0,
-             bool const                is_continuation   = true) -> void
-  {
-    namespace http = boost::beast::http;
-
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      if (session.stream.is_ssl()) {
-        BOOST_ASIO_CORO_YIELD session.stream.ssl().async_shutdown(std::move(*this));
-        if (ec) { goto upcall; }
-
-        session.stream.ssl().next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-        session.stream.ssl().next_layer().close(ec);
-      } else {
-        session.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-        session.stream.plain().close(ec);
-      }
-
-    upcall:
-      this->complete(is_continuation, ec);
-    }
-  }
-};
-
-} // namespace detail
-
 template <class DynamicBuffer>
 template <class ShutdownHandler>
 auto
@@ -77,9 +21,30 @@ basic_client_session<DynamicBuffer>::async_shutdown(ShutdownHandler&& handler) &
   typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
                                      void(boost::system::error_code)>::return_type
 {
-  return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code),
-    boost::mp11::mp_bind_front<::foxy::detail::shutdown_op, DynamicBuffer>::template fn>(
+  return ::foxy::detail::async_timer<void(boost::system::error_code)>(
+    [self = this, coro = boost::asio::coroutine()](auto& cb, boost::system::error_code ec = {},
+                                                   std::size_t bytes_transferrred = 0) mutable {
+      auto& s = *self;
+
+      BOOST_ASIO_CORO_REENTER(coro)
+      {
+        if (s.stream.is_ssl()) {
+          BOOST_ASIO_CORO_YIELD s.stream.ssl().async_shutdown(std::move(cb));
+          if (ec) { goto upcall; }
+
+          s.stream.ssl().next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+          s.stream.ssl().next_layer().close(ec);
+        } else {
+          s.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+          s.stream.plain().close(ec);
+
+          BOOST_ASIO_CORO_YIELD boost::asio::post(std::move(cb));
+        }
+
+      upcall:
+        cb.complete(ec);
+      }
+    },
     *this, std::forward<ShutdownHandler>(handler));
 }
 
