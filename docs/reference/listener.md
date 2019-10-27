@@ -23,6 +23,9 @@ New connections are given their own strand and the TCP accept loop runs on its o
 means that user's request handlers are given an implicit strand even when the `io_context` is being
 run across multiple threads.
 
+The `foxy::listener` handles the creation and teardown of server-based connections so users do not
+need to do any direct handling of connection lifetimes themselves.
+
 ## Declaration
 
 ```c++
@@ -54,6 +57,10 @@ listener(boost::asio::executor executor, boost::asio::ip::tcp::endpoint endpoint
 Create a new `listener` which will use the supplied `executor` for its I/O objects and an `endpoint`
 which the `listener` will bind to and listen on during construction.
 
+Callers must _not_ supply an `asio::strand` for the executor. The `foxy::listener` will wrap the
+supplied executor in a strand for the caller. Passing in an explicit strand will simply
+double-strand the nested executor (not incorrect but not ideal).
+
 ```c++
 listener(boost::asio::executor          executor,
          boost::asio::ip::tcp::endpoint endpoint,
@@ -62,6 +69,10 @@ listener(boost::asio::executor          executor,
 
 Create a new `listener` that will perform a TLS/SSL handshake using the supplied `ssl::context`. The
 `listener` will _require_ clients perform an SSL handshake.
+
+Callers must _not_ supply an `asio::strand` for the executor. The `foxy::listener` will wrap the
+supplied executor in a strand for the caller. Passing in an explicit strand will simply
+double-strand the nested executor (not incorrect but not ideal).
 
 ## Member Functions
 
@@ -82,9 +93,11 @@ auto
 async_accept(RequestHandlerFactory&& factory) -> void;
 ```
 
-Begin the TCP acceptance loop. The user is required to supply a "request handler factory" which, in
-this case, is a callable that accepts a `foxy::server_session&` and returns a type such that
-`asio::async_compose` is well-formed using the `factory`'s return as the initiator.
+Begin the TCP acceptance loop.
+
+The caller is required to supply a "request handler factory" which is a callable that accepts a
+`foxy::server_session&` and returns a type such that `asio::async_compose` is well-formed using the
+`factory`'s return as the initiator.
 
 As an example:
 
@@ -108,7 +121,7 @@ request_handler_factory(foxy::server_session& server) -> request_handler
 }
 ```
 
-### cancel
+### shutdown
 
 ```c++
 auto
@@ -121,7 +134,7 @@ Does not block.
 
 ## Example
 
-TODO: link to example
+An example can be found [here](../../examples/listener/main.cpp).
 
 ---
 
