@@ -11,8 +11,6 @@
 #define FOXY_IMPL_CLIENT_SESSION_ASYNC_CONNECT_IMPL_HPP_
 
 #include <foxy/client_session.hpp>
-#include <foxy/detail/timed_op_wrapper_v3.hpp>
-#include <boost/smart_ptr/allocate_unique.hpp>
 
 namespace foxy
 {
