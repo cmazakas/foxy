@@ -54,7 +54,6 @@ add_library(
   include/foxy/server_session.hpp
   include/foxy/session_opts.hpp
   include/foxy/session.hpp
-  include/foxy/shared_handler_ptr.hpp
   include/foxy/type_traits.hpp
   include/foxy/uri_parts.hpp
   include/foxy/uri.hpp
@@ -65,12 +64,10 @@ add_library(
   include/foxy/detail/export_connect_fields.hpp
   include/foxy/detail/has_token.hpp
   include/foxy/detail/relay.hpp
-  include/foxy/detail/timed_op_wrapper_v2.hpp
   include/foxy/detail/timed_op_wrapper_v3.hpp
   include/foxy/detail/tunnel.hpp
 
   include/foxy/impl/session.impl.hpp
-  include/foxy/impl/shared_handler_ptr.impl.hpp
 
   include/foxy/impl/client_session/async_connect.impl.hpp
   include/foxy/impl/client_session/async_request.impl.hpp

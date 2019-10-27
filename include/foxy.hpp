@@ -22,7 +22,6 @@
 #include <foxy/server_session.hpp>
 #include <foxy/session_opts.hpp>
 #include <foxy/session.hpp>
-#include <foxy/shared_handler_ptr.hpp>
 #include <foxy/type_traits.hpp>
 #include <foxy/uri_parts.hpp>
 #include <foxy/uri.hpp>
