@@ -14,52 +14,6 @@
 
 namespace foxy
 {
-namespace detail
-{
-template <class DynamicBuffer, class Handler>
-struct detect_op
-  : boost::beast::async_base<
-      Handler,
-      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
-    boost::asio::coroutine
-{
-  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
-
-  detect_op()                 = delete;
-  detect_op(detect_op const&) = default;
-  detect_op(detect_op&&)      = default;
-
-  detect_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
-            Handler                                                             handler)
-    : boost::beast::async_base<
-        Handler,
-        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
-    , session(session_)
-  {
-    (*this)({}, false, false);
-  }
-
-  auto
-  operator()(boost::system::error_code ec, bool detected_ssl, bool const is_continuation = true)
-    -> void
-  {
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      BOOST_ASIO_CORO_YIELD
-      boost::beast::async_detect_ssl(session.stream, session.buffer, std::move(*this));
-      if (ec) { goto upcall; }
-
-      return this->complete(is_continuation, boost::system::error_code{}, detected_ssl);
-
-    upcall:
-      this->complete(is_continuation, ec, false);
-    }
-  }
-};
-} // namespace detail
-
 template <class DynamicBuffer>
 template <class DetectHandler>
 auto
@@ -67,9 +21,16 @@ basic_server_session<DynamicBuffer>::async_detect_ssl(DetectHandler&& handler) -
   typename boost::asio::async_result<std::decay_t<DetectHandler>,
                                      void(boost::system::error_code, bool)>::return_type
 {
-  return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code, bool),
-    boost::mp11::mp_bind_front<::foxy::detail::detect_op, DynamicBuffer>::template fn>(
+  return ::foxy::detail::async_timer<void(boost::system::error_code, bool)>(
+    [self = this, coro = boost::asio::coroutine()](auto& cb, boost::system::error_code ec = {},
+                                                   bool detected_ssl = false) mutable {
+      auto& s = *self;
+      BOOST_ASIO_CORO_REENTER(coro)
+      {
+        BOOST_ASIO_CORO_YIELD boost::beast::async_detect_ssl(s.stream, s.buffer, std::move(cb));
+        return cb.complete(ec, detected_ssl);
+      }
+    },
     *this, std::forward<DetectHandler>(handler));
 }
 
