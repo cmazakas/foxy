@@ -14,72 +14,6 @@
 
 namespace foxy
 {
-namespace detail
-{
-template <class DynamicBuffer, class Handler>
-struct handshake_op
-  : boost::beast::async_base<
-      Handler,
-      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
-    boost::asio::coroutine
-{
-  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
-
-  handshake_op()                    = delete;
-  handshake_op(handshake_op const&) = default;
-  handshake_op(handshake_op&&)      = default;
-
-  handshake_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
-               Handler                                                             handler)
-    : boost::beast::async_base<
-        Handler,
-        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
-    , session(session_)
-  {
-    (*this)({}, 0, false);
-  }
-
-  auto
-  operator()(boost::system::error_code ec,
-             std::size_t               bytes_transferred = 0,
-             bool const                is_continuation   = true) -> void
-  {
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      // forces all users to pay for a branch
-      // also saves new users from not updating their underlying stream type
-      //
-      if (!session.stream.is_ssl() && session.opts.ssl_ctx) {
-        session.stream.upgrade(*session.opts.ssl_ctx);
-      }
-
-      if (session.buffer.size() > 0) {
-        BOOST_ASIO_CORO_YIELD
-        session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::server,
-                                             session.buffer.data(), std::move(*this));
-
-        if (ec) { goto upcall; }
-
-        session.buffer.consume(bytes_transferred);
-
-        return this->complete(is_continuation, boost::system::error_code{}, bytes_transferred);
-      }
-
-      BOOST_ASIO_CORO_YIELD
-      session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::server, std::move(*this));
-      if (ec) { goto upcall; }
-
-      return this->complete(is_continuation, boost::system::error_code{}, 0);
-
-    upcall:
-      this->complete(is_continuation, ec, 0);
-    }
-  }
-};
-} // namespace detail
-
 template <class DynamicBuffer>
 template <class HandshakeHandler>
 auto
@@ -87,9 +21,35 @@ basic_server_session<DynamicBuffer>::async_handshake(HandshakeHandler&& handler)
   typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
-  return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code, std::size_t),
-    boost::mp11::mp_bind_front<::foxy::detail::handshake_op, DynamicBuffer>::template fn>(
+  return ::foxy::detail::async_timer<void(boost::system::error_code, std::size_t)>(
+    [self = this, coro = boost::asio::coroutine()](auto& cb, boost::system::error_code ec = {},
+                                                   std::size_t bytes_transferred = 0) mutable {
+      auto& s = *self;
+      BOOST_ASIO_CORO_REENTER(coro)
+      {
+        if (!s.stream.is_ssl() && s.opts.ssl_ctx) { s.stream.upgrade(*s.opts.ssl_ctx); }
+
+        if (s.buffer.size() > 0) {
+          BOOST_ASIO_CORO_YIELD
+          s.stream.ssl().async_handshake(boost::asio::ssl::stream_base::server, s.buffer.data(),
+                                         std::move(cb));
+          if (ec) { goto upcall; }
+
+          s.buffer.consume(bytes_transferred);
+
+          return cb.complete(boost::system::error_code{}, bytes_transferred);
+        }
+
+        BOOST_ASIO_CORO_YIELD
+        s.stream.ssl().async_handshake(boost::asio::ssl::stream_base::server, std::move(cb));
+        if (ec) { goto upcall; }
+
+        return cb.complete(boost::system::error_code{}, 0);
+
+      upcall:
+        return cb.complete(ec, 0);
+      }
+    },
     *this, std::forward<HandshakeHandler>(handler));
 }
 
