@@ -31,11 +31,11 @@ basic_client_session<DynamicBuffer>::async_request(Request&         request,
       BOOST_ASIO_CORO_REENTER(coro)
       {
         BOOST_ASIO_CORO_YIELD
-        http::async_write(s.stream, request, std::move(cb));
+        boost::beast::http::async_write(s.stream, request, std::move(cb));
         if (ec) { goto upcall; }
 
         BOOST_ASIO_CORO_YIELD
-        http::async_read(s.stream, s.buffer, parser, std::move(cb));
+        boost::beast::http::async_read(s.stream, s.buffer, parser, std::move(cb));
         if (ec) { goto upcall; }
 
       upcall:
