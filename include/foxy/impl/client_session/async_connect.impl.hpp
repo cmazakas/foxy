@@ -117,7 +117,7 @@ struct connect_op : boost::asio::coroutine
       }
 
     upcall:
-      p_.release();
+      p_.reset();
       return self.complete(ec);
     }
   }
