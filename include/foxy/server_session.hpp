@@ -11,12 +11,9 @@
 #define FOXY_SERVER_SESSION_HPP_
 
 #include <foxy/session.hpp>
-#include <foxy/detail/timed_op_wrapper_v2.hpp>
-
+#include <foxy/detail/timed_op_wrapper_v3.hpp>
 #include <boost/beast/core/detect_ssl.hpp>
-
 #include <boost/asio/async_result.hpp>
-
 #include <type_traits>
 
 namespace foxy

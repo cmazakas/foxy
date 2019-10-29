@@ -16,50 +16,36 @@ namespace foxy
 {
 namespace detail
 {
-template <class DynamicBuffer, class Handler>
-struct connect_op
-  : boost::beast::stable_async_base<
-      Handler,
-      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
-    boost::asio::coroutine
+template <class DynamicBuffer, class Executor, class Allocator>
+struct connect_op : boost::asio::coroutine
 {
   struct state
   {
+    boost::asio::ip::tcp::resolver               resolver;
+    boost::asio::ip::tcp::resolver::results_type endpoint_range;
+    boost::asio::ip::tcp::endpoint               endpoint;
     std::string                                  host;
     std::string                                  service;
-    boost::asio::ip::tcp::resolver               resolver;
-    boost::asio::ip::tcp::resolver::results_type results;
-    boost::asio::ip::tcp::endpoint               endpoint;
-
-    state(boost::asio::executor executor, std::string host_, std::string service_)
-      : host(std::move(host_))
-      , service(std::move(service_))
-      , resolver(executor)
-    {
-    }
   };
 
+  std::unique_ptr<state, boost::alloc_deleter<state, Allocator>>      p_;
   ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
-  state&                                                              s;
 
-  connect_op()                  = default;
-  connect_op(connect_op const&) = default;
+  connect_op()                  = delete;
+  connect_op(connect_op const&) = delete;
   connect_op(connect_op&&)      = default;
 
-  connect_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
-             Handler                                                             handler,
-             std::string                                                         host,
-             std::string                                                         service)
-    : boost::beast::stable_async_base<Handler, typename ::foxy::session::executor_type>(
-        std::move(handler),
-        session_.get_executor())
+  connect_op(Allocator const&                                                    allocator,
+             Executor                                                            executor,
+             std::string                                                         host_,
+             std::string                                                         service_,
+             ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_)
+    : p_(boost::allocate_unique<state>(
+        allocator,
+        {boost::asio::ip::tcp::resolver(executor), boost::asio::ip::tcp::resolver::results_type{},
+         boost::asio::ip::tcp::endpoint{}, std::move(host_), std::move(service_)}))
     , session(session_)
-    , s(boost::beast::allocate_stable<state>(*this,
-                                             session.get_executor(),
-                                             std::move(host),
-                                             std::move(service)))
   {
-    (*this)({}, 0, false);
   }
 
   struct on_resolve_t
@@ -69,41 +55,39 @@ struct connect_op
   {
   };
 
+  template <class Self>
   auto
-  operator()(on_resolve_t,
+  operator()(Self& self,
+             on_resolve_t,
              boost::system::error_code                    ec,
              boost::asio::ip::tcp::resolver::results_type results) -> void
   {
-    s.results = std::move(results);
-    (*this)(ec, 0);
+    p_->endpoint_range = std::move(results);
+    (*this)(self, ec, 0);
   }
 
+  template <class Self>
   auto
-  operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::endpoint endpoint)
-    -> void
+  operator()(Self& self,
+             on_connect_t,
+             boost::system::error_code      ec,
+             boost::asio::ip::tcp::endpoint endpoint_) -> void
   {
-    s.endpoint = std::move(endpoint);
-    (*this)(ec, 0);
+    p_->endpoint = std::move(endpoint_);
+    (*this)(self, ec, 0);
   }
 
-  auto
-  operator()(boost::system::error_code ec) -> void
+  template <class Self>
+  auto operator()(Self&                     self,
+                  boost::system::error_code ec                = {},
+                  std::size_t const         bytes_transferred = 0) -> void
   {
-    (*this)(ec, 0);
-  }
-
-  auto
-  operator()(boost::system::error_code ec,
-             std::size_t const         bytes_transferred,
-             bool const                is_continuation = true) -> void
-  {
-    using namespace std::placeholders;
-
+    auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(*this)
     {
       BOOST_ASIO_CORO_YIELD
       s.resolver.async_resolve(s.host, s.service,
-                               boost::beast::bind_front_handler(std::move(*this), on_resolve_t{}));
+                               boost::beast::bind_front_handler(std::move(self), on_resolve_t{}));
 
       if (ec) { goto upcall; }
 
@@ -113,7 +97,8 @@ struct connect_op
           session.stream.is_ssl() ? session.stream.ssl().next_layer() : session.stream.plain();
 
         boost::asio::async_connect(
-          socket, s.results, boost::beast::bind_front_handler(std::move(*this), on_connect_t{}));
+          socket, s.endpoint_range,
+          boost::beast::bind_front_handler(std::move(self), on_connect_t{}));
       }
 
       if (ec) { goto upcall; }
@@ -126,26 +111,18 @@ struct connect_op
 
         BOOST_ASIO_CORO_YIELD
         session.stream.ssl().async_handshake(boost::asio::ssl::stream_base::client,
-                                             std::move(*this));
+                                             std::move(self));
 
         if (ec) { goto upcall; }
       }
 
-      {
-        auto endpoint = std::move(s.endpoint);
-        return this->complete_now(boost::system::error_code{}, std::move(endpoint));
-      }
-
     upcall:
-      if (!is_continuation) {
-        BOOST_ASIO_CORO_YIELD
-        boost::asio::post(boost::beast::bind_handler(std::move(*this), ec, 0));
-      }
-
-      return this->complete_now(ec, boost::asio::ip::tcp::endpoint{});
+      p_.reset();
+      return self.complete(ec);
     }
   }
 };
+
 } // namespace detail
 
 template <class DynamicBuffer>
@@ -155,13 +132,16 @@ basic_client_session<DynamicBuffer>::async_connect(std::string      host,
                                                    std::string      service,
                                                    ConnectHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<ConnectHandler>,
-                                     void(boost::system::error_code,
-                                          boost::asio::ip::tcp::endpoint)>::return_type
+                                     void(boost::system::error_code)>::return_type
 {
-  return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code, boost::asio::ip::tcp::endpoint),
-    boost::mp11::mp_bind_front<::foxy::detail::connect_op, DynamicBuffer>::template fn>(
-    *this, std::forward<ConnectHandler>(handler), std::move(host), std::move(service));
+  auto const allocator = boost::asio::get_associated_allocator(handler);
+  auto const executor  = boost::asio::get_associated_executor(handler, this->stream.get_executor());
+
+  return ::foxy::detail::async_timer<void(boost::system::error_code)>(
+    ::foxy::detail::connect_op<DynamicBuffer, std::decay_t<decltype(executor)>,
+                               std::decay_t<decltype(allocator)>>(
+      allocator, executor, std::move(host), std::move(service), *this),
+    *this, std::forward<ConnectHandler>(handler));
 }
 
 } // namespace foxy

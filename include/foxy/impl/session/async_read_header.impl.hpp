@@ -11,56 +11,10 @@
 #define FOXY_IMPL_SESSION_ASYNC_READ_HEADER_IMPL_HPP_
 
 #include <foxy/session.hpp>
-#include <foxy/detail/timed_op_wrapper_v2.hpp>
+#include <foxy/detail/timed_op_wrapper_v3.hpp>
 
 namespace foxy
 {
-namespace detail
-{
-template <class Stream, class DynamicBuffer, class Parser, class Handler>
-struct read_header_op
-  : boost::beast::async_base<Handler,
-                             typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>,
-    boost::asio::coroutine
-{
-  ::foxy::basic_session<Stream, DynamicBuffer>& session;
-  Parser&                                       parser;
-
-  read_header_op()                      = default;
-  read_header_op(read_header_op const&) = default;
-  read_header_op(read_header_op&&)      = default;
-
-  read_header_op(::foxy::basic_session<Stream, DynamicBuffer>& session_,
-                 Handler                                       handler,
-                 Parser&                                       parser_)
-    : boost::beast::
-        async_base<Handler, typename ::foxy::basic_session<Stream, DynamicBuffer>::executor_type>(
-          std::move(handler),
-          session_.get_executor())
-    , session(session_)
-    , parser(parser_)
-  {
-    (*this)({}, 0, false);
-  }
-
-  auto
-  operator()(boost::system::error_code ec,
-             std::size_t const         bytes_transferred,
-             bool const                is_continuation = true) -> void
-  {
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      BOOST_ASIO_CORO_YIELD
-      boost::beast::http::async_read_header(session.stream, session.buffer, parser,
-                                            std::move(*this));
-
-      this->complete(is_continuation, ec, bytes_transferred);
-    }
-  }
-};
-
-} // namespace detail
-
 template <class Stream, class DynamicBuffer>
 template <class Parser, class ReadHandler>
 auto
@@ -68,11 +22,18 @@ basic_session<Stream, DynamicBuffer>::async_read_header(Parser& parser, ReadHand
   typename boost::asio::async_result<std::decay_t<ReadHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {
-  return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code, std::size_t),
-    boost::mp11::mp_bind_front<::foxy::detail::read_header_op, Stream, DynamicBuffer,
-                               Parser>::template fn>(*this, std::forward<ReadHandler>(handler),
-                                                     parser);
+  return ::foxy::detail::async_timer<void(boost::system::error_code, std::size_t)>(
+    [&parser, self = this, coro = boost::asio::coroutine()](
+      auto& cb, boost::system::error_code ec = {}, std::size_t bytes_transferrred = 0) mutable {
+      BOOST_ASIO_CORO_REENTER(coro)
+      {
+        BOOST_ASIO_CORO_YIELD boost::beast::http::async_read_header(self->stream, self->buffer,
+                                                                    parser, std::move(cb));
+
+        cb.complete(ec, bytes_transferrred);
+      }
+    },
+    *this, std::forward<ReadHandler>(handler));
 }
 
 } // namespace foxy

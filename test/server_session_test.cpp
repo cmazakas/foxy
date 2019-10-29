@@ -248,7 +248,7 @@ TEST_CASE("server_session_test")
       auto const handshake_failed = static_cast<bool>(ec);
       CHECK_FALSE(handshake_failed);
 
-      client.stream.ssl().async_shutdown(yield);
+      client.async_shutdown(yield);
     });
 
     io.run();
@@ -311,7 +311,7 @@ TEST_CASE("server_session_test")
       auto const handshake_failed = static_cast<bool>(ec);
       CHECK_FALSE(handshake_failed);
 
-      client.stream.ssl().async_shutdown(yield);
+      client.async_shutdown(yield);
     });
 
     io.run();

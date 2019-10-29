@@ -93,7 +93,7 @@ public:
              bool const                is_continuation = true) -> void;
 
   auto
-  operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::endpoint) -> void;
+  operator()(on_connect_t, boost::system::error_code ec) -> void;
 
   auto
   operator()(on_relay_t, boost::system::error_code ec, bool close_tunnel) -> void;
@@ -104,8 +104,7 @@ public:
 
 template <class TunnelHandler>
 auto
-tunnel_op<TunnelHandler>::
-operator()(on_connect_t, boost::system::error_code ec, boost::asio::ip::tcp::endpoint) -> void
+tunnel_op<TunnelHandler>::operator()(on_connect_t, boost::system::error_code ec) -> void
 {
   (*this)(ec, 0);
 }

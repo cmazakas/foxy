@@ -7,5 +7,16 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <boost/asio/ssl/context.hpp>
+
+namespace foxy
+{
+namespace test
+{
+auto
+make_server_ssl_ctx() -> boost::asio::ssl::context;
+
+auto
+make_client_ssl_ctx() -> boost::asio::ssl::context;
+} // namespace test
+} // namespace foxy

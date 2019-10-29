@@ -45,6 +45,7 @@ add_library(
   include/foxy/client_session.hpp
   include/foxy/code_point_iterator.hpp
   include/foxy/error.hpp
+  include/foxy/listener.hpp
   include/foxy/log.hpp
   include/foxy/multi_stream.hpp
   include/foxy/pct_decode.hpp
@@ -53,7 +54,6 @@ add_library(
   include/foxy/server_session.hpp
   include/foxy/session_opts.hpp
   include/foxy/session.hpp
-  include/foxy/shared_handler_ptr.hpp
   include/foxy/type_traits.hpp
   include/foxy/uri_parts.hpp
   include/foxy/uri.hpp
@@ -64,11 +64,10 @@ add_library(
   include/foxy/detail/export_connect_fields.hpp
   include/foxy/detail/has_token.hpp
   include/foxy/detail/relay.hpp
-  include/foxy/detail/timed_op_wrapper_v2.hpp
+  include/foxy/detail/timed_op_wrapper_v3.hpp
   include/foxy/detail/tunnel.hpp
 
   include/foxy/impl/session.impl.hpp
-  include/foxy/impl/shared_handler_ptr.impl.hpp
 
   include/foxy/impl/client_session/async_connect.impl.hpp
   include/foxy/impl/client_session/async_request.impl.hpp
@@ -127,13 +126,7 @@ if(FOXY_FAST_BUILD)
       BOOST_BEAST_SEPARATE_COMPILATION=1
   )
 
-  target_sources(
-    foxy
-
-    PRIVATE
-      src/asio.cpp
-      src/beast.cpp
-  )
+  target_sources(foxy PRIVATE src/asio.cpp src/beast.cpp)
 endif()
 
 target_include_directories(
@@ -155,24 +148,21 @@ target_link_libraries(
     Threads::Threads
 )
 
+add_library(
+  test_utils
+
+  test/include/foxy/test/helpers/ssl_ctx.hpp
+  test/include/foxy/test/helpers/ssl_ctx.cpp
+)
+
+target_include_directories(test_utils PUBLIC test/include)
+target_link_libraries(test_utils PUBLIC foxy)
+
 if (BUILD_TESTING)
   include(CTest)
 
   find_package(Catch2 CONFIG REQUIRED)
-  find_package(
-    Boost 1.71
-    REQUIRED
-      coroutine
-      thread
-      container
-  )
-
-  add_library(test_utils INTERFACE)
-  target_include_directories(
-    test_utils
-    INTERFACE
-      ${CMAKE_CURRENT_SOURCE_DIR}/test/include
-  )
+  find_package(Boost 1.71 REQUIRED coroutine thread container)
 
   add_executable(
     foxy_tests
@@ -182,6 +172,7 @@ if (BUILD_TESTING)
     test/code_point_view_test.cpp
     test/export_connect_fields_test.cpp
     test/iterator_test.cpp
+    test/listener_test.cpp
     test/main.cpp
     test/pct_decode_test.cpp
     test/pct_encode_test.cpp
@@ -191,6 +182,7 @@ if (BUILD_TESTING)
     test/server_session_test.cpp
     test/session_test.cpp
     test/ssl_client_session_test.cpp
+    test/timed_op_wrapper_v3.cpp
     test/unicode_uri_test.cpp
     test/uri_parts_test.cpp
     test/uri_test.cpp
@@ -200,7 +192,6 @@ if (BUILD_TESTING)
   target_link_libraries(
     foxy_tests
     PRIVATE
-      foxy
       test_utils
       Catch2::Catch2
       Boost::coroutine
@@ -213,111 +204,32 @@ if (BUILD_TESTING)
 endif()
 
 if (FOXY_BUILD_EXAMPLES)
-  find_package(
-    Boost 1.71
-    REQUIRED
-      coroutine
-      thread
-      container
-  )
+  find_package(Boost 1.71 REQUIRED coroutine thread container)
 
-  add_executable(
-    hello-world
+  add_executable(hello-world examples/hello_world/main.cpp)
+  target_link_libraries(hello-world PRIVATE foxy Boost::coroutine Boost::thread)
 
-    examples/hello_world/main.cpp
-  )
+  add_executable(ip-parser examples/uri_combinators/ip_parser.cpp)
+  target_link_libraries(ip-parser PRIVATE foxy Boost::coroutine Boost::thread)
 
-  target_link_libraries(
-    hello-world
-    PRIVATE
-      foxy
-      Boost::coroutine
-      Boost::thread
-  )
+  add_executable(client examples/allocators/client.cpp)
+  target_link_libraries(client PRIVATE foxy Boost::container Boost::thread)
 
-  add_executable(
-    ip-parser
+  add_executable(server examples/server/main.cpp)
+  target_link_libraries(server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
-    examples/uri_combinators/ip_parser.cpp
-  )
+  add_executable(https-server examples/https_server/main.cpp)
+  target_link_libraries(https-server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
-  target_link_libraries(
-    ip-parser
-    PRIVATE
-      foxy
-      Boost::coroutine
-      Boost::thread
-  )
-
-  add_executable(
-    client
-
-    examples/allocators/client.cpp
-  )
-
-  target_link_libraries(
-    client
-    PRIVATE
-      foxy
-      Boost::container
-      Boost::thread
-  )
-
-  add_executable(
-    server
-
-    examples/server/main.cpp
-  )
-
-  target_link_libraries(
-    server
-    PRIVATE
-      foxy
-      Boost::container
-      Boost::thread
-      Boost::coroutine
-  )
-
-  add_executable(
-    https-server
-
-    examples/https_server/main.cpp
-  )
-
-  target_link_libraries(
-    https-server
-    PRIVATE
-      foxy
-      Boost::container
-      Boost::thread
-      Boost::coroutine
-  )
+  add_executable(listener examples/listener/main.cpp)
+  target_link_libraries(listener PRIVATE foxy test_utils Boost::thread Boost::coroutine)
 endif()
 
 if (FOXY_FUZZ)
-  add_executable(
-    uri-parser
-
-    fuzz/parse_uri.cpp
-  )
-
-  target_link_libraries(
-    uri-parser
-    PRIVATE
-      foxy
-  )
-
-  target_compile_options(
-    uri-parser
-    PRIVATE
-      "-fsanitize=fuzzer"
-  )
-
-  target_link_options(
-    uri-parser
-    PRIVATE
-      "-fsanitize=fuzzer"
-  )
+  add_executable(uri-parser fuzz/parse_uri.cpp)
+  target_link_libraries(uri-parser PRIVATE foxy)
+  target_compile_options(uri-parser PRIVATE "-fsanitize=fuzzer")
+  target_link_options(uri-parser PRIVATE "-fsanitize=fuzzer")
 endif()
 
 # installation

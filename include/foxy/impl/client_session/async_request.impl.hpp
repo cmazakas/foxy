@@ -14,65 +14,6 @@
 
 namespace foxy
 {
-namespace detail
-{
-template <class Request, class ResponseParser, class DynamicBuffer, class Handler>
-struct request_op
-  : boost::beast::async_base<
-      Handler,
-      typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>,
-    boost::asio::coroutine
-
-{
-  ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session;
-  Request&                                                            request;
-  ResponseParser&                                                     parser;
-
-  request_op()                  = delete;
-  request_op(request_op const&) = default;
-  request_op(request_op&&)      = default;
-
-  request_op(::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>& session_,
-             Handler                                                             handler,
-             Request&                                                            request_,
-             ResponseParser&                                                     parser_)
-    : boost::beast::async_base<
-        Handler,
-        typename ::foxy::basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>::executor_type>(
-        std::move(handler),
-        session_.get_executor())
-    , session(session_)
-    , request(request_)
-    , parser(parser_)
-  {
-    (*this)({}, 0, false);
-  }
-
-  auto
-  operator()(boost::system::error_code ec,
-             std::size_t const         bytes_transferred,
-             bool const                is_continuation = true) -> void
-  {
-    namespace http = boost::beast::http;
-
-    BOOST_ASIO_CORO_REENTER(*this)
-    {
-      BOOST_ASIO_CORO_YIELD
-      http::async_write(session.stream, request, std::move(*this));
-      if (ec) { goto upcall; }
-
-      BOOST_ASIO_CORO_YIELD
-      http::async_read(session.stream, session.buffer, parser, std::move(*this));
-      if (ec) { goto upcall; }
-
-    upcall:
-      this->complete(is_continuation, ec);
-    }
-  }
-};
-
-} // namespace detail
-
 template <class DynamicBuffer>
 template <class Request, class ResponseParser, class RequestHandler>
 auto
@@ -82,11 +23,26 @@ basic_client_session<DynamicBuffer>::async_request(Request&         request,
   typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                      void(boost::system::error_code)>::return_type
 {
-  return ::foxy::detail::timer_initiate<
-    void(boost::system::error_code),
-    boost::mp11::mp_bind_front<::foxy::detail::request_op, Request, ResponseParser,
-                               DynamicBuffer>::template fn>(
-    *this, std::forward<RequestHandler>(handler), request, parser);
+  return ::foxy::detail::async_timer<void(boost::system::error_code)>(
+    [&request, &parser, self = this, coro = boost::asio::coroutine()](
+      auto& cb, boost::system::error_code ec = {}, std::size_t bytes_transferrred = 0) mutable {
+      auto& s = *self;
+
+      BOOST_ASIO_CORO_REENTER(coro)
+      {
+        BOOST_ASIO_CORO_YIELD
+        boost::beast::http::async_write(s.stream, request, std::move(cb));
+        if (ec) { goto upcall; }
+
+        BOOST_ASIO_CORO_YIELD
+        boost::beast::http::async_read(s.stream, s.buffer, parser, std::move(cb));
+        if (ec) { goto upcall; }
+
+      upcall:
+        cb.complete(ec);
+      }
+    },
+    *this, std::forward<RequestHandler>(handler));
 }
 
 } // namespace foxy

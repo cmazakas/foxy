@@ -51,7 +51,7 @@ TEST_CASE("ssl_client_session_test")
 
     session.async_connect(
       "www.google.com", "https",
-      [&session, sh = std::move(session_handle)](error_code ec, tcp::endpoint) mutable -> void {
+      [&session, sh = std::move(session_handle)](error_code ec) mutable -> void {
         REQUIRE_FALSE(ec);
 
         auto parser_handle = boost::make_unique<http::response_parser<http::string_body>>();
@@ -76,7 +76,7 @@ TEST_CASE("ssl_client_session_test")
             CHECK(is_valid_status);
             CHECK(is_valid_body);
 
-            session.stream.ssl().async_shutdown(
+            session.async_shutdown(
               [&session, sh = std::move(sh)](error_code ec) mutable -> void {});
           });
       });
@@ -96,11 +96,11 @@ TEST_CASE("ssl_client_session_test")
 
     auto timed_out = false;
 
-    session.async_connect("www.google.com", "1337",
-                          [&timed_out, &session, sh = std::move(session_handle)](
-                            error_code ec, tcp::endpoint) mutable -> void {
-                            timed_out = (ec == boost::asio::error::operation_aborted);
-                          });
+    session.async_connect(
+      "www.google.com", "1337",
+      [&timed_out, &session, sh = std::move(session_handle)](error_code ec) mutable -> void {
+        timed_out = (ec == boost::asio::error::operation_aborted);
+      });
 
     io.run();
     REQUIRE(timed_out);

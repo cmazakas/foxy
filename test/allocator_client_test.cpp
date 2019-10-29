@@ -19,6 +19,8 @@
 
 #include <catch2/catch.hpp>
 
+#include <iostream>
+
 using boost::system::error_code;
 using boost::asio::ip::tcp;
 
@@ -92,6 +94,8 @@ struct client_op : asio::coroutine
         was_valid = false;
         yield break;
       }
+
+      yield client.async_shutdown(std::move(*this));
 
       {
         auto& response = parser.get();

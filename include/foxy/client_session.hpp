@@ -12,9 +12,8 @@
 
 #include <foxy/session.hpp>
 #include <foxy/type_traits.hpp>
-#include <foxy/shared_handler_ptr.hpp>
 #include <foxy/utility.hpp>
-#include <foxy/detail/timed_op_wrapper_v2.hpp>
+#include <foxy/detail/timed_op_wrapper_v3.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -34,7 +33,9 @@
 #include <boost/beast/core/bind_handler.hpp>
 
 #include <boost/optional/optional.hpp>
+
 #include <boost/smart_ptr/make_shared.hpp>
+#include <boost/smart_ptr/allocate_unique.hpp>
 
 #include <boost/container/container_fwd.hpp>
 
@@ -68,13 +69,18 @@ public:
   auto
   async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
     typename boost::asio::async_result<std::decay_t<ConnectHandler>,
-                                       void(boost::system::error_code,
-                                            boost::asio::ip::tcp::endpoint)>::return_type;
+                                       void(boost::system::error_code)>::return_type;
 
   template <class Request, class ResponseParser, class RequestHandler>
   auto
   async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
     typename boost::asio::async_result<std::decay_t<RequestHandler>,
+                                       void(boost::system::error_code)>::return_type;
+
+  template <class ShutdownHandler>
+  auto
+  async_shutdown(ShutdownHandler&& handler) & ->
+    typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
                                        void(boost::system::error_code)>::return_type;
 };
 
@@ -91,5 +97,6 @@ using client_session = basic_client_session<
 
 #include <foxy/impl/client_session/async_connect.impl.hpp>
 #include <foxy/impl/client_session/async_request.impl.hpp>
+#include <foxy/impl/client_session/async_shutdown.impl.hpp>
 
 #endif // FOXY_CLIENT_SESSION_HPP_
