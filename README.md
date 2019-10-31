@@ -1,7 +1,5 @@
 # Foxy
 
-[![Build Status](https://travis-ci.org/LeonineKing1199/foxy.svg?branch=master)](https://travis-ci.org/LeonineKing1199/foxy)
-
 Session-based Beast/Asio wrapper + URL parsing and pct-encoding
 
 Read the docs [here](./docs/index.md#table-of-contents).
