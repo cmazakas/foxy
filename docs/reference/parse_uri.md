@@ -21,7 +21,8 @@ parse_uri(boost::basic_string_view<char32_t, std::char_traits<char32_t>> const u
 ## Synopsis
 
 Parse the string denoted by `uri`. If a valid URI has been supplied, this function will return a
-non-empty `basic_uri_parts`. Otherwise, a default-constructed instance is returned.
+non-empty [`basic_uri_parts`](./uri_parts.md#foxybasic_uri_parts). Otherwise, a
+default-constructed instance is returned.
 
 ## Example
 
