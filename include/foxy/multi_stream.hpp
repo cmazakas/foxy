@@ -112,7 +112,8 @@ template <class Stream>
   basic_multi_stream<Stream>::plain() &
   noexcept -> stream_type&
 {
-  return boost::variant2::get<stream_type>(stream_);
+  return this->is_ssl() ? boost::variant2::get<ssl_stream_type>(stream_).next_layer()
+                        : boost::variant2::get<stream_type>(stream_);
 }
 
 template <class Stream>
