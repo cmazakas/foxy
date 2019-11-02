@@ -73,7 +73,7 @@ public:
 
   template <class Request, class ResponseParser, class RequestHandler>
   auto
-  async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
+  async_request(Request const& request, ResponseParser& parser, RequestHandler&& handler) & ->
     typename boost::asio::async_result<std::decay_t<RequestHandler>,
                                        void(boost::system::error_code)>::return_type;
 
