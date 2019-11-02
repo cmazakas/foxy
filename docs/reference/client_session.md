@@ -11,24 +11,10 @@
 The `basic_client_session` is one of Foxy's main workhorses. It gives users an easy way to connect
 to a remote server and then send and receive messages.
 
-Users will manually have to disconnect and close their connections.
-
-For plain connections, users are advised to simply just use:
-```c++
-auto ec = boost::system::error_code();
-
-session.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-session.stream.plain().close(ec);
-```
-
-For TLS/SSL connections, users should use the `async_shutdown` method:
-```c++
-session.stream.ssl().async_shutdown(shutdown_handler);
-```
-
-For more information on these methods, see the corresponding documentation for the
-[`boost::asio::ip::tcp::socket`](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/ip__tcp/socket.html)
-and the [`boost::asio::ssl::stream`](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/ssl__stream.html)
+Users are responsible for the lifetime of the HTTP session including the creation and teeardown.
+These functions are handled by `basic_client_session::async_connect` and
+`basic_client_session::async_shutdown`. `async_connect` begins the lifetime of the HTTP session
+while `async_shutdown` will perform the TLS closing handshake and then close the TCP connection.
 
 ## Declaration
 
@@ -96,8 +82,7 @@ template <class ConnectHandler>
 auto
 async_connect(std::string host, std::string service, ConnectHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<ConnectHandler>,
-                                      void(boost::system::error_code,
-                                          boost::asio::ip::tcp::endpoint)>::return_type;
+                                     void(boost::system::error_code)>::return_type;
 ```
 
 Asynchronously connect to the remote denoted by the `host` and `service`. This function performs
@@ -112,21 +97,19 @@ session options contain an SSL context.
 
 The `handler` must be an invocable with a signature of:
 ```c++
-void(boost::system::error_code, boost::asio::ip::tcp::endpoint)
+void(boost::system::error_code)
 ```
 
-The `endpoint` supplied to the handler is the one that was used for the connection.
-
-This function will timeout.
+This function will timeout using `client_sesion.opts.timeout` as its duration.
 
 ### async_request
 
 ```c++
 template <class Request, class ResponseParser, class RequestHandler>
 auto
-async_request(Request& request, ResponseParser& parser, RequestHandler&& handler) & ->
+async_request(Request const& request, ResponseParser& parser, RequestHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<RequestHandler>,
-                                      void(boost::system::error_code)>::return_type;
+                                     void(boost::system::error_code)>::return_type;
 ```
 
 Write the provided request object to the underlying stream and then read the response back using
@@ -140,7 +123,26 @@ The `handler` must be an invocable with a signature of:
 void(boost::system::error_code)
 ```
 
-This function will timeout.
+This function will timeout using `client_sesion.opts.timeout` as its duration.
+
+### async_shutdown
+
+```c++
+template <class ShutdownHandler>
+auto
+async_shutdown(ShutdownHandler&& handler) & ->
+  typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
+                                     void(boost::system::error_code)>::return_type;
+```
+
+Asynchronously shutdown the connection, performing the TLS closing handshake if necessary.
+
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code)
+```
+
+This function will timeout using `client_sesion.opts.timeout` as its duration.
 
 ### get_executor
 
