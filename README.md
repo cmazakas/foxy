@@ -1,6 +1,6 @@
 # Foxy
 
-Session-based Beast/Asio wrapper + URL parsing and pct-encoding
+Low-level HTTP session primitives for Beast/Asio + URL parsing and pct-coding
 
 [Examples and Reference](./docs/index.md#table-of-contents)
 
@@ -20,16 +20,23 @@ GCC 7+, Clang 6+, MSVC 2019
 
 ## Features
 
+* HTTP(S) server similar to Node.js' [http.Server](https://nodejs.org/api/http.html#http_class_http_server)
+* HTTP(S) client that handles DNS, TLS and certificate name verification
+* URL parsing and encoding
 * built-in timeouts for HTTP operations
-* transparent support for encrypted/non-encrypted streams
+* `AsyncStream` type with transparent support for encrypted/non-encrypted streams
 * supports Asio's universal async model
 * TLS forward proxy
-* URL parsing and encoding
 
 ## High-Level Overview
 
+Foxy is a C++14 library that aims to make idiomatic usage of
+[Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html) and
+[Boost.Asio](https://www.boost.org/doc/libs/1_71_0/doc/html/boost_asio.html)
+easier.
+
 Foxy offers users low-level HTTP session primitives. These come in 3 forms:
-[session](./reference/session.md#foxybasic_session),
+[session](./docs/reference/session.md#foxybasic_session),
 [client_session](./docs/reference/client_session.md#foxybasic_client_session) and
 [server_session](./docs/reference/server_session.md#foxybasic_server_session).
 
@@ -54,3 +61,9 @@ along with Boost.Spirit's library,
 [X3](https://www.boost.org/doc/libs/1_71_0/libs/spirit/doc/x3/html/index.html). Foxy does not treat
 these libraries as implementation details but exposes them directly. To this end, Foxy is as
 powerful as plain Beast/Asio are and anything one can do in Beast, one can do using Foxy.
+
+Foxy aims to be competitive with the HTTP libraries offered by both Node.js and Go.
+
+While these languages are significantly higher-level than C++ is, their standard HTTP libraries are
+low-level from an abstract perspective. The success of these languages and their libraries has shown
+that the modern web development is favoring an ever-lower set of HTTP APIs.
