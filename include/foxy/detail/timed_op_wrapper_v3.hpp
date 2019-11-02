@@ -27,6 +27,8 @@
 
 #include <boost/system/error_code.hpp>
 
+#include <boost/assert.hpp>
+
 #include <utility>
 #include <tuple>
 #include <type_traits>
@@ -85,10 +87,11 @@ struct async_timer_initiation<Ret(Args...)>
 
       intermediate_completion_handler(CompletionHandler&& completion_handler,
                                       ::foxy::basic_session<Stream, DynamicBuffer>& session)
-        : session_(session)
+        : p_(
+            boost::allocate_shared<state>(boost::asio::get_associated_allocator(completion_handler),
+                                          std::move(completion_handler)))
+        , session_(session)
       {
-        auto const allocator = boost::asio::get_associated_allocator(completion_handler);
-        p_ = boost::allocate_shared<state>(allocator, std::move(completion_handler));
       }
 
       auto
@@ -117,6 +120,7 @@ struct async_timer_initiation<Ret(Args...)>
           auto cb      = std::move(p_->handler_);
 
           p_.reset();
+          BOOST_ASSERT(p_.use_count() == 0);
 
           auto f = [&](auto&&... args) { cb(std::forward<decltype(args)>(args)...); };
           boost::hof::unpack(f)(std::move(results));
@@ -159,6 +163,7 @@ struct async_timer_initiation<Ret(Args...)>
           auto cb   = std::move(s.handler_);
 
           p_.reset();
+          BOOST_ASSERT(p_.use_count() == 0);
 
           auto f = [&](auto&&... args) { cb(std::forward<decltype(args)>(args)...); };
           boost::hof::unpack(f)(std::move(args));
