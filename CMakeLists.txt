@@ -44,6 +44,7 @@ add_library(
 
   include/foxy/client_session.hpp
   include/foxy/code_point_iterator.hpp
+  include/foxy/code_point_view.hpp
   include/foxy/error.hpp
   include/foxy/listener.hpp
   include/foxy/log.hpp

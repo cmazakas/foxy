@@ -9,6 +9,7 @@
 
 #include <foxy/server_session.hpp>
 #include <foxy/log.hpp>
+#include <foxy/code_point_view.hpp>
 
 #include <boost/asio/executor.hpp>
 #include <boost/asio/strand.hpp>

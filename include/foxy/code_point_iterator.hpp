@@ -7,8 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#ifndef FOXY_ITERATOR_HPP_
-#define FOXY_ITERATOR_HPP_
+#ifndef FOXY_CODE_POINT_ITERATOR_HPP_
+#define FOXY_CODE_POINT_ITERATOR_HPP_
 
 #include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>
@@ -131,39 +131,6 @@ make_code_point_iterator(Iterator const iterator, Iterator const end)
   return code_point_iterator<Iterator>(iterator, end);
 }
 
-template <class Char, class Traits = std::char_traits<Char>>
-struct code_point_view
-{
-public:
-  using iterator_type =
-    code_point_iterator<typename boost::basic_string_view<Char, Traits>::iterator>;
-
-private:
-  boost::basic_string_view<Char, Traits> view_;
-
-public:
-  code_point_view()                       = default;
-  code_point_view(code_point_view const&) = default;
-  code_point_view(code_point_view&&)      = default;
-
-  code_point_view(boost::basic_string_view<Char, Traits> view)
-    : view_(view)
-  {
-  }
-
-  auto
-  begin() const noexcept -> iterator_type
-  {
-    return make_code_point_iterator(view_.begin(), view_.end());
-  }
-
-  auto
-  end() const noexcept -> iterator_type
-  {
-    return make_code_point_iterator(view_.end(), view_.end());
-  }
-};
-
 } // namespace foxy
 
-#endif // FOXY_ITERATOR_HPP_
+#endif // FOXY_CODE_POINT_ITERATOR_HPP_
