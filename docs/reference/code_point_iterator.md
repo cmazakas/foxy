@@ -14,6 +14,8 @@ type and output Unicode code points in the form of `char32_t`.
 The `code_point_iterator` is an "iterator adapter" and wraps an iterator pair as it must know when
 the range terminates.
 
+See [operator*](#dereference) for details on behavior.
+
 ## Declaration
 
 ```c++
@@ -85,6 +87,27 @@ is found or if one cannot be found, an invalid code point will be returned.
 Returns `0xFFFFFFFFu` when the character sequence contains an illegal code point and then returns
 `0xFFFFFFFEu` for an incomplete code point, i.e. 2 out of 3 valid utf-8 bytes were found but then
 the string abruptly ends.
+
+The internal iterator will point to the last consumed character thus enabling the following:
+
+```c++
+SECTION("should handle invalid and valid data in one string")
+{
+  // 0xff is an invalid utf-8 sequence
+  // 'a' and 'b', however, are valid
+  //
+  auto const input = std::array<char, 3>{'\xff', 'a', 'b'};
+
+  auto       pos = foxy::code_point_iterator<decltype(input.begin())>(input.begin(), input.end());
+  auto const end = foxy::code_point_iterator<decltype(input.begin())>(input.end(), input.end());
+
+  CHECK(*pos++ == 0xFFFFFFFFu);
+  CHECK(*pos++ == U'a');
+  CHECK(*pos++ == U'b');
+
+  CHECK(pos == end);
+}
+```
 
 ### Pre-Increment
 
