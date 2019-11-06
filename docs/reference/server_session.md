@@ -21,7 +21,8 @@ methods.
 
 The session enables users to decouple detecting a client request for a TLS upgrade from performing
 the actual handshake. Using this, users can support both plain HTTP and HTTPS on the same port as
-is the case with the [example server in Beast](https://www.boost.org/doc/libs/release/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp).
+is the case with the
+[example server in Beast](https://www.boost.org/doc/libs/release/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp).
 
 When constructing the `basic_server_session`, the supplied `session_opts` are stored but they are
 not used. The session's underlying stream will be that of the user-supplied one (this means the
