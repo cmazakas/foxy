@@ -49,6 +49,7 @@ add_library(
   include/foxy/listener.hpp
   include/foxy/log.hpp
   include/foxy/multi_stream.hpp
+  include/foxy/parse_uri.hpp
   include/foxy/pct_decode.hpp
   include/foxy/pct_encode.hpp
   include/foxy/proxy.hpp
@@ -83,7 +84,7 @@ add_library(
 
   src/log.cpp
   src/proxy.cpp
-  src/uri_parts.cpp
+  src/parse_uri.cpp
   src/utility.cpp
 
   # TODO: someday make this work
@@ -175,6 +176,7 @@ if (BUILD_TESTING)
     test/iterator_test.cpp
     test/listener_test.cpp
     test/main.cpp
+    test/parse_uri_test.cpp
     test/pct_decode_test.cpp
     test/pct_encode_test.cpp
     test/proxy_test.cpp
@@ -185,7 +187,6 @@ if (BUILD_TESTING)
     test/ssl_client_session_test.cpp
     test/timed_op_wrapper_v3.cpp
     test/unicode_uri_test.cpp
-    test/uri_parts_test.cpp
     test/uri_test.cpp
     test/utility_test.cpp
   )

@@ -7,7 +7,7 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
-#include <foxy/uri_parts.hpp>
+#include <foxy/parse_uri.hpp>
 #include <foxy/uri.hpp>
 
 namespace x3 = boost::spirit::x3;

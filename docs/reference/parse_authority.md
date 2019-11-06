@@ -1,5 +1,11 @@
 # foxy::parse_authority
 
+## Include
+
+```c++
+#include <foxy/parse_uri.hpp>
+```
+
 ## Declaration
 
 ```c++

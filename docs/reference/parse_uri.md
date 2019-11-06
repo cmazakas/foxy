@@ -3,7 +3,7 @@
 ## Include
 
 ```c++
-#include <foxy/uri_parts.hpp>
+#include <foxy/parse_uri.hpp>
 ```
 
 ## Declaration
