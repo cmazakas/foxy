@@ -31,6 +31,18 @@ basic_server_session<DynamicBuffer>::async_shutdown(ShutdownHandler&& handler) &
           BOOST_ASIO_CORO_YIELD s.stream.ssl().async_shutdown(std::move(cb));
         }
 
+        // http rfc 7230 section 6.6 Tear-down
+        // -----------------------------------
+        // To avoid the TCP reset problem, servers typically close a connection
+        // in stages.  First, the server performs a half-close by closing only
+        // the write side of the read/write connection.  The server then
+        // continues to read from the connection until it receives a
+        // corresponding close by the client, or until the server is reasonably
+        // certain that its own TCP stack has received the client's
+        // acknowledgement of the packet(s) containing the server's last
+        // response.  Finally, the server fully closes the connection.
+        //
+
         s.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 
         BOOST_ASIO_CORO_YIELD s.stream.async_read_some(s.buffer.prepare(1024), std::move(cb));
