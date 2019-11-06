@@ -17,7 +17,7 @@ namespace foxy
 template <class DynamicBuffer>
 template <class HandshakeHandler>
 auto
-basic_server_session<DynamicBuffer>::async_handshake(HandshakeHandler&& handler) ->
+basic_server_session<DynamicBuffer>::async_handshake(HandshakeHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
                                      void(boost::system::error_code, std::size_t)>::return_type
 {

@@ -17,7 +17,7 @@ namespace foxy
 template <class DynamicBuffer>
 template <class DetectHandler>
 auto
-basic_server_session<DynamicBuffer>::async_detect_ssl(DetectHandler&& handler) ->
+basic_server_session<DynamicBuffer>::async_detect_ssl(DetectHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<DetectHandler>,
                                      void(boost::system::error_code, bool)>::return_type
 {
