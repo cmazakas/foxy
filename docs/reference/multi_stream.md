@@ -8,10 +8,13 @@
 
 ## Synopsis
 
-A class templated over a user-supplied [`Stream`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/concepts/streams.html#beast.concepts.streams.AsyncStream)
-that emulates dynamic polymorphism by either reading/writing plain bytes or using SSL/TLS.
+A class templated over a user-supplied
+[`Stream`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/concepts/streams.html#beast.concepts.streams.AsyncStream)
+that emulates dynamic polymorphism by reading/writing plain or encrypted bytes.
 
-Can be used with the [`boost::beast::test::stream`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__test__stream.html).
+Can be used with the
+[`boost::beast::test::stream`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__test__stream.html)
+but without SSL support.
 
 ## Declaration
 
@@ -72,7 +75,9 @@ plain() & noexcept -> stream_type&;
 ```
 
 Return a reference to the `stream_type` member of the internal variant. If the session is using SSL,
-this method invokes undefined behavior.
+this method returns the plain TCP portion of the layered SSL stream. This is typically only useful
+for constructing the stream in SSL mode but using the plain TCP portions for connection setup
+and teardown.
 
 ### ssl
 
