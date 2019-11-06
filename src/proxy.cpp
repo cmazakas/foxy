@@ -104,31 +104,8 @@ public:
         if (close_tunnel) { break; }
       }
 
-      // http rfc 7230 section 6.6 Tear-down
-      // -----------------------------------
-      // To avoid the TCP reset problem, servers typically close a connection
-      // in stages.  First, the server performs a half-close by closing only
-      // the write side of the read/write connection.  The server then
-      // continues to read from the connection until it receives a
-      // corresponding close by the client, or until the server is reasonably
-      // certain that its own TCP stack has received the client's
-      // acknowledgement of the packet(s) containing the server's last
-      // response.  Finally, the server fully closes the connection.
-      //
-      s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
-
-      BOOST_ASIO_CORO_YIELD
-      s.session.async_read(s.shutdown_parser, std::move(*this));
-
-      if (ec && ec != http::error::end_of_stream) {
-        foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
-      }
-
-      s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
-      s.session.stream.plain().close(ec);
-
-      BOOST_ASIO_CORO_YIELD
-      s.client.async_shutdown(boost::beast::bind_handler(std::move(*this), _1, true));
+      BOOST_ASIO_CORO_YIELD s.session.async_shutdown(std::move(*this));
+      BOOST_ASIO_CORO_YIELD s.client.async_shutdown(std::move(*this));
 
       if (ec == boost::asio::error::eof) {
         // Rationale:
