@@ -221,7 +221,15 @@ if (FOXY_BUILD_EXAMPLES)
   target_link_libraries(server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
   add_executable(https-server examples/https_server/main.cpp)
-  target_link_libraries(https-server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
+  target_link_libraries(
+    https-server
+    PRIVATE
+      foxy
+      test_utils
+      Boost::container
+      Boost::thread
+      Boost::coroutine
+  )
 
   add_executable(listener examples/listener/main.cpp)
   target_link_libraries(listener PRIVATE foxy test_utils Boost::thread Boost::coroutine)
