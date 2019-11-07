@@ -11,25 +11,23 @@
 The `basic_server_session` encapsulates a small subset of what a server may need to do to handle an
 HTTP transaction.
 
-The server session can only be constructed by a living socket which must be moved into the session's
-constructor.
+The server session can only be constructed by a connected socket which must be moved into the
+session's constructor.
 
 This is to have the design follow that of [`accept`](http://man7.org/linux/man-pages/man2/accept.2.html)
 which returns a new file handle to a socket upon successfully accepting a connection. The server
 session is intended to be constructed by `asio::ip::tcp::acceptor`'s `accept` or `async_accept`
 methods.
 
-The session enables users to decouple detecting a client request for a TLS upgrade from performing
-the actual handshake. Using this, users can support both plain HTTP and HTTPS on the same port as
-is the case with the
+The session also enables users to decouple detecting a client request for a TLS upgrade from
+performing the actual handshake. Using this, users can support both plain HTTP and HTTPS on the same
+port as is the case with the
 [example server in Beast](https://www.boost.org/doc/libs/release/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp).
 
-When constructing the `basic_server_session`, the supplied `session_opts` are stored but they are
-not used. The session's underlying stream will be that of the user-supplied one (this means the
-timeout value and SSL context in the session options are not used during construction).
-
-The session's embedded options instead act as a cache that the user can interact with at their will.
-This is required for using the `async_handshake` method which accepts an `ssl::context&`.
+When constructing the `basic_server_session`, if the supplied `session_opts` contain an
+`ssl::context`, it is _not_ used to upgrade the underlying stream. Instead, they are stored as for
+later use either by `basic_server_session::async_handshake` or `multi_stream::upgrade` (which the
+handshake function calls under the hood anyway).
 
 ## Declaration
 
@@ -76,6 +74,72 @@ basic_server_session(multi_stream stream_, session_opts opts, BufferArgs&&... ba
 Construct the server session by moving the supplied `multi_stream`.
 
 ## Member Functions
+
+### async_detect_ssl
+
+```c++
+template <class DetectHandler>
+auto
+async_detect_ssl(DetectHandler&& handler) ->
+  typename boost::asio::async_result<std::decay_t<DetectHandler>,
+                                     void(boost::system::error_code, bool)>::return_type;
+```
+
+A version of [`boost::beast::async_detect_ssl`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__async_detect_ssl.html)
+that supports timeouts.
+
+This function will read from the socket until it either detects a client SSL handshake, reads in
+enough data to know it is not receiving a handshake or the connection is timed out or any other
+error occurs while reading from the socket.
+
+This function is intended to be used when the server session is in its plain mode.
+
+The `handler` must be an invocable with a signature of:
+```c++
+void(boost::system::error_code, bool)
+```
+
+The supplied boolean indicates whether or not an SSL handshake was detected.
+
+This function will timeout using `server_sesion.opts.timeout` as its duration.
+
+### async_handshake
+
+```c++
+template <class HandshakeHandler>
+auto
+async_handshake(HandshakeHandler&& handler) ->
+  typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
+                                     void(boost::system::error_code, std::size_t)>::return_type;
+```
+
+Performs the server portion of an SSL handshake.
+
+This function will automatically [`upgrade`](./multi_stream.md#upgrade) the session's internal
+stream object to SSL mode if the stream is not already. This function will `upgrade` with SSL
+context found in the sessions `opts` member.
+
+The handler function is invoked with an error code and the number of bytes consumed from the
+underlying buffer during the handshake procedure. This occurs in the case of a user detecting an SSL
+client upgrade request without physically performing it, thus filling the session's internal
+buffers.
+
+This function will timeout using `server_sesion.opts.timeout` as its duration.
+
+### async_shutdown
+
+```c++
+template <class ShutdownHandler>
+auto
+async_shutdown(ShutdownHandler&& handler) & ->
+  typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
+                                     void(boost::system::error_code)>::return_type;
+```
+
+This function will perform a TLS shutdown should it be required and then perform a TCP connection
+close such that it avoids the TCP reset problem as highlighted by RFC 7230.
+
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ### get_executor
 
@@ -191,75 +255,6 @@ void(boost::system::error_code, std::size_t)
 
 The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
 stream.
-
-This function will timeout using `server_sesion.opts.timeout` as its duration.
-
-### async_detect_ssl
-
-```c++
-template <class DetectHandler>
-auto
-async_detect_ssl(DetectHandler&& handler) ->
-  typename boost::asio::async_result<std::decay_t<DetectHandler>,
-                                     void(boost::system::error_code, bool)>::return_type;
-```
-
-A version of [`boost::beast::async_detect_ssl`](https://www.boost.org/doc/libs/release/libs/beast/doc/html/beast/ref/boost__beast__async_detect_ssl.html)
-that supports timeouts.
-
-This function will read from the socket until it either detects a client SSL handshake, reads in
-enough data to know it is not receiving a handshake or the connection is timed out or any other
-error occurs while reading from the socket.
-
-This function is intended to be used when the server session is in its plain mode.
-
-The `handler` must be an invocable with a signature of:
-```c++
-void(boost::system::error_code, bool)
-```
-
-The supplied boolean indicates whether or not an SSL handshake was detected.
-
-This function will timeout using `server_sesion.opts.timeout` as its duration.
-
-### async_handshake
-
-```c++
-template <class HandshakeHandler>
-auto
-async_handshake(HandshakeHandler&& handler) ->
-  typename boost::asio::async_result<std::decay_t<HandshakeHandler>,
-                                     void(boost::system::error_code, std::size_t)>::return_type;
-```
-
-Performs the server portion of an SSL handshake.
-
-This function will automatically [`upgrade`](./multi_stream.md#upgrade) the session's internal
-stream object to SSL mode if the stream is not already. This function will `upgrade` with SSL
-context found in the sessions `opts` member.
-
-For users wanting to use a different SSL context, a call to `upgrade` before invoking the handshake
-function will prevent the automatic upgrade.
-
-The handler function is invoked with an error code and the number of bytes consumed from the
-underlying buffer during the handshake procedure. This occurs in the case of a user detecting an SSL
-client upgrade request without physically performing it, thus filling the session's internal
-buffers.
-
-This function will timeout using `server_sesion.opts.timeout` as its duration.
-
-### async_shutdown
-
-```c++
-template <class ShutdownHandler>
-auto
-async_shutdown(ShutdownHandler&& handler) & ->
-  typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
-                                     void(boost::system::error_code)>::return_type;
-```
-
-This function will perform a TLS shutdown should it be required and then perform a TCP connection
-close such that it avoids the TCP reset problem as highlighted by RFC 7230.
 
 This function will timeout using `server_sesion.opts.timeout` as its duration.
 
