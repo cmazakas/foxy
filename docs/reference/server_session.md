@@ -31,38 +31,6 @@ timeout value and SSL context in the session options are not used during constru
 The session's embedded options instead act as a cache that the user can interact with at their will.
 This is required for using the `async_handshake` method which accepts an `ssl::context&`.
 
-Users will have to manually disconnect and close their connections.
-
-For plain connections, users are advised to do something like:
-```c++
-// http rfc 7230 section 6.6 Tear-down
-// -----------------------------------
-// To avoid the TCP reset problem, servers typically close a connection
-// in stages.  First, the server performs a half-close by closing only
-// the write side of the read/write connection.  The server then
-// continues to read from the connection until it receives a
-// corresponding close by the client, or until the server is reasonably
-// certain that its own TCP stack has received the client's
-// acknowledgement of the packet(s) containing the server's last
-// response.  Finally, the server fully closes the connection.
-//
-s.session.stream.plain().shutdown(tcp::socket::shutdown_send, ec);
-
-BOOST_ASIO_CORO_YIELD
-s.session.async_read(s.shutdown_parser, std::move(*this));
-
-if (ec && ec != http::error::end_of_stream) {
-  foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
-}
-
-s.session.stream.plain().shutdown(tcp::socket::shutdown_receive, ec);
-s.session.stream.plain().close(ec);
-```
-
-For more information on these methods, see the corresponding documentation for the
-[`boost::asio::ip::tcp::socket`](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/ip__tcp/socket.html)
-and the [`boost::asio::ssl::stream`](https://www.boost.org/doc/libs/release/doc/html/boost_asio/reference/ssl__stream.html)
-
 ## Declaration
 
 ```c++
@@ -143,7 +111,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes read from the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ### async_read
 
@@ -170,7 +138,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes read from the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ### async_write_header
 
@@ -197,7 +165,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ### async_write
 
@@ -224,7 +192,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ### async_detect_ssl
 
@@ -252,7 +220,7 @@ void(boost::system::error_code, bool)
 
 The supplied boolean indicates whether or not an SSL handshake was detected.
 
-This function will timeout.
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ### async_handshake
 
@@ -278,7 +246,22 @@ underlying buffer during the handshake procedure. This occurs in the case of a u
 client upgrade request without physically performing it, thus filling the session's internal
 buffers.
 
-This function will timeout.
+This function will timeout using `server_sesion.opts.timeout` as its duration.
+
+### async_shutdown
+
+```c++
+template <class ShutdownHandler>
+auto
+async_shutdown(ShutdownHandler&& handler) & ->
+  typename boost::asio::async_result<std::decay_t<ShutdownHandler>,
+                                     void(boost::system::error_code)>::return_type;
+```
+
+This function will perform a TLS shutdown should it be required and then perform a TCP connection
+close such that it avoids the TCP reset problem as highlighted by RFC 7230.
+
+This function will timeout using `server_sesion.opts.timeout` as its duration.
 
 ---
 
