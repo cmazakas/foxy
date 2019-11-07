@@ -148,7 +148,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes read from the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `sesion.opts.timeout` as its duration.
 
 ### async_read
 
@@ -175,7 +175,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes read from the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `sesion.opts.timeout` as its duration.
 
 ### async_write_header
 
@@ -202,7 +202,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `sesion.opts.timeout` as its duration.
 
 ### async_write
 
@@ -229,7 +229,7 @@ void(boost::system::error_code, std::size_t)
 The `std::size_t` supplied to the handler is the total number of bytes written to the underlying
 stream.
 
-This function will timeout.
+This function will timeout using `sesion.opts.timeout` as its duration.
 
 ---
 
