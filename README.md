@@ -18,17 +18,17 @@ Low-level HTTP session primitives for Beast/Asio + URL parsing and pct-coding
 
 GCC 7+, Clang 6+, MSVC 2019
 
-## Features
+## Why Foxy?
 
-* HTTP(S) server similar to Node.js' [http.Server](https://nodejs.org/api/http.html#http_class_http_server)
-* HTTP(S) client that handles DNS, TLS and certificate name verification
-* URL parsing and encoding
-* built-in timeouts for HTTP operations
-* `AsyncStream` type with transparent support for encrypted/non-encrypted streams
-* supports Asio's universal async model
-* TLS forward proxy
+* You're a Beast user who wants a reliable HTTP session vocabulary type
+* You want a client session abstraction that automatically handles DNS, TLS and certificate verification
+* You want a server session abstraction that can detect TLS handshakes and perform them
+* You need a URL parser
+* You need percent encoding and decoding
+* You need a TLS forward proxy
+* You want a convenient HTTP(S) server abstraction that handles connection setup + teardown
 
-## High-Level Overview
+## Description
 
 Foxy is a C++14 library that aims to make idiomatic usage of
 [Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html) and
@@ -57,10 +57,10 @@ percent encoding and dedoding URL components.
 Foxy is built on top of
 [Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html)
 and [Boost.Asio](https://www.boost.org/doc/libs/1_71_0/doc/html/boost_asio.html)
-along with Boost.Spirit's library,
-[X3](https://www.boost.org/doc/libs/1_71_0/libs/spirit/doc/x3/html/index.html). Foxy does not treat
-these libraries as implementation details but exposes them directly. To this end, Foxy is as
-powerful as plain Beast/Asio are and anything one can do in Beast, one can do using Foxy.
+along with Boost.Spirit's library, [X3](https://www.boost.org/doc/libs/1_71_0/libs/spirit/doc/x3/html/index.html).
+Foxy does not treat these libraries as implementation details but exposes them directly. To this
+end, Foxy is as powerful as plain Beast/Asio are and anything one can do in Beast, one can do using
+Foxy.
 
 Foxy aims to be competitive with the HTTP libraries offered by both Node.js and Go.
 
