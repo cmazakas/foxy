@@ -7,4 +7,3 @@
 * [HTTP Server](./server.md#writing-your-own-server)
 * [Allocator-Aware GET Request](./allocator-client.md#allocator-aware-client)
 * [Fuzzing](./fuzzing.md#fuzzing)
-* [FAQ](./faq.md#frequently-asked-questions)
