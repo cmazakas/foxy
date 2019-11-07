@@ -12,7 +12,7 @@
 
 #include <foxy/uri.hpp>
 #include <foxy/utf8.hpp>
-#include <foxy/code_point_iterator.hpp>
+#include <foxy/code_point_view.hpp>
 
 #include <boost/utility/string_view.hpp>
 #include <boost/locale/utf.hpp>

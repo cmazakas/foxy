@@ -30,14 +30,12 @@ basic_client_session<DynamicBuffer>::async_shutdown(ShutdownHandler&& handler) &
       {
         if (s.stream.is_ssl()) {
           BOOST_ASIO_CORO_YIELD s.stream.ssl().async_shutdown(std::move(cb));
+          if (ec == boost::asio::ssl::error::stream_truncated) { ec = {}; }
           if (ec) { goto upcall; }
-
-          s.stream.ssl().next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-          s.stream.ssl().next_layer().close(ec);
-        } else {
-          s.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-          s.stream.plain().close(ec);
         }
+
+        s.stream.plain().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+        s.stream.plain().close(ec);
 
       upcall:
         return cb.complete(ec);

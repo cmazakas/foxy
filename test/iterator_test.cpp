@@ -26,6 +26,20 @@ namespace utf = boost::locale::utf;
 
 TEST_CASE("iterator_test")
 {
+  SECTION("should handle invalid and valid data in one string")
+  {
+    auto const input = std::array<char, 3>{'\xff', 'a', 'b'};
+
+    auto       pos = foxy::code_point_iterator<decltype(input.begin())>(input.begin(), input.end());
+    auto const end = foxy::code_point_iterator<decltype(input.begin())>(input.end(), input.end());
+
+    CHECK(*pos++ == 0xFFFFFFFFu);
+    CHECK(*pos++ == U'a');
+    CHECK(*pos++ == U'b');
+
+    CHECK(pos == end);
+  }
+
   SECTION("should be able to traverse a valid string and yield valid Unicode code points")
   {
     auto const input = boost::wstring_view(L"hello, world!");

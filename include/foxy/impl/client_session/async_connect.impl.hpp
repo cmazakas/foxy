@@ -85,21 +85,14 @@ struct connect_op : boost::asio::coroutine
     auto& s = *p_;
     BOOST_ASIO_CORO_REENTER(*this)
     {
-      BOOST_ASIO_CORO_YIELD
-      s.resolver.async_resolve(s.host, s.service,
-                               boost::beast::bind_front_handler(std::move(self), on_resolve_t{}));
+      BOOST_ASIO_CORO_YIELD s.resolver.async_resolve(
+        s.host, s.service, boost::beast::bind_front_handler(std::move(self), on_resolve_t{}));
 
       if (ec) { goto upcall; }
 
-      BOOST_ASIO_CORO_YIELD
-      {
-        auto& socket =
-          session.stream.is_ssl() ? session.stream.ssl().next_layer() : session.stream.plain();
-
-        boost::asio::async_connect(
-          socket, s.endpoint_range,
-          boost::beast::bind_front_handler(std::move(self), on_connect_t{}));
-      }
+      BOOST_ASIO_CORO_YIELD boost::asio::async_connect(
+        session.stream.plain(), s.endpoint_range,
+        boost::beast::bind_front_handler(std::move(self), on_connect_t{}));
 
       if (ec) { goto upcall; }
 

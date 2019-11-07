@@ -44,10 +44,12 @@ add_library(
 
   include/foxy/client_session.hpp
   include/foxy/code_point_iterator.hpp
+  include/foxy/code_point_view.hpp
   include/foxy/error.hpp
   include/foxy/listener.hpp
   include/foxy/log.hpp
   include/foxy/multi_stream.hpp
+  include/foxy/parse_uri.hpp
   include/foxy/pct_decode.hpp
   include/foxy/pct_encode.hpp
   include/foxy/proxy.hpp
@@ -82,7 +84,7 @@ add_library(
 
   src/log.cpp
   src/proxy.cpp
-  src/uri_parts.cpp
+  src/parse_uri.cpp
   src/utility.cpp
 
   # TODO: someday make this work
@@ -174,6 +176,7 @@ if (BUILD_TESTING)
     test/iterator_test.cpp
     test/listener_test.cpp
     test/main.cpp
+    test/parse_uri_test.cpp
     test/pct_decode_test.cpp
     test/pct_encode_test.cpp
     test/proxy_test.cpp
@@ -184,7 +187,6 @@ if (BUILD_TESTING)
     test/ssl_client_session_test.cpp
     test/timed_op_wrapper_v3.cpp
     test/unicode_uri_test.cpp
-    test/uri_parts_test.cpp
     test/uri_test.cpp
     test/utility_test.cpp
   )
@@ -219,7 +221,15 @@ if (FOXY_BUILD_EXAMPLES)
   target_link_libraries(server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
 
   add_executable(https-server examples/https_server/main.cpp)
-  target_link_libraries(https-server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
+  target_link_libraries(
+    https-server
+    PRIVATE
+      foxy
+      test_utils
+      Boost::container
+      Boost::thread
+      Boost::coroutine
+  )
 
   add_executable(listener examples/listener/main.cpp)
   target_link_libraries(listener PRIVATE foxy test_utils Boost::thread Boost::coroutine)

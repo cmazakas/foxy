@@ -99,6 +99,13 @@ The caller is required to supply a "request handler factory" which is a callable
 `foxy::server_session&` and returns a type such that `asio::async_compose` is well-formed using the
 `factory`'s return as the initiator.
 
+Callables to `async_compose` must accept a mutable lvalue reference to the handler (which Asio
+automatically wraps around theirs). The callable must be invocable as: `callable(self)` which
+means if a user wants their callable to accept arguments, they need to be defaulted explicitly.
+
+It is worth noting that once a user performs `std::move(self)`, the callable is then in a moved-from
+state so all variables embedded in the callable are now moved-from as well.
+
 As an example:
 
 ```c++
@@ -131,6 +138,8 @@ shutdown() -> void;
 Submit a cancellation to the TCP acceptor, interrupting its loop and not re-starting it.
 
 Does not block.
+
+All currently active running sessions will continue to run until they naturally close.
 
 ## Example
 

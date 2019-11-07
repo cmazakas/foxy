@@ -1,10 +1,8 @@
 # Foxy
 
-[![Build Status](https://travis-ci.org/LeonineKing1199/foxy.svg?branch=master)](https://travis-ci.org/LeonineKing1199/foxy)
+Low-level HTTP session primitives for Beast/Asio + URL parsing and pct-coding
 
-Session-based Beast/Asio wrapper + URL parsing and pct-encoding
-
-Read the docs [here](./docs/index.md#table-of-contents).
+[Examples and Reference](./docs/index.md#table-of-contents)
 
 ## Requirements
 
@@ -18,31 +16,54 @@ Read the docs [here](./docs/index.md#table-of-contents).
 
 ## Supported Compilers
 
-`gcc-7`, `clang-6`, `clang-8`, latest `msvc`
+GCC 7+, Clang 6+, MSVC 2019
 
-## High-Level Overview
+## Why Foxy?
 
-Foxy is built on top of [Beast](https://www.boost.org/doc/libs/release/libs/beast/doc/html/index.html)
-and [Asio](https://www.boost.org/doc/libs/release/doc/html/boost_asio.html)
-and requires some degree of familiarity with both of these libraries to be used successfully.
+* You're a Beast user who wants a reliable HTTP session vocabulary type
+* You want a client session abstraction that automatically handles DNS, TLS and certificate verification
+* You want a server session abstraction that can detect TLS handshakes and perform them
+* You need a URL parser
+* You need percent encoding and decoding
+* You need a TLS forward proxy
+* You want a convenient HTTP(S) server abstraction that handles connection setup + teardown
 
-One of Foxy's core tenets is rewarding users for deepening their knowledge and understanding of
-Beast and Asio and this is reflected in the design.
+## Description
 
-Foxy provides primitives for HTTP sessions as well as a rich set of URI parser combinators along
-with methods for parsing (and pct-encoding) URLs in both ASCII and Unicode. Foxy bases its Unicode
-handling off of `char32_t`. An experimental TLS forward proxy is provided as well.
+Foxy is a C++14 library that aims to make idiomatic usage of
+[Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html) and
+[Boost.Asio](https://www.boost.org/doc/libs/1_71_0/doc/html/boost_asio.html)
+easier.
 
-## Features
+Foxy offers users low-level HTTP session primitives. These come in 3 forms:
+[session](./docs/reference/session.md#foxybasic_session),
+[client_session](./docs/reference/client_session.md#foxybasic_client_session) and
+[server_session](./docs/reference/server_session.md#foxybasic_server_session).
 
-* built-in timeouts
-* transparent support for encrypted/non-encrypted streams
-* supports Asio's universal async model
-* TLS forward proxy
-* URL parsing and encoding
+The `session` class is direction-agnostic while the `client_session` and `server_session` offer
+additional functionality that implementors of clients and servers may find useful.
 
-## Current Status and Roadmap
+The utility of the session abstractions is that they abstract away the typical boilerplate required
+for using [Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html).
+Sessions encapsulate sockets, buffers and timers which are all used during stream operations. They
+also reduce the API surface and enable implementors to focus solely on using Beast's `message` class
+and Asio's executor model.
 
-Project is young but the `client_session` and `server_session` classes are usable.
+Foxy also touts a best-in-class [URL parser](./docs/reference/parse_uri.md#foxyparse_uri)
+along with a set of URI parsing combinators adopted from
+[RFC 3996](https://tools.ietf.org/html/rfc3986#appendix-A). In addition, there are routines for
+percent encoding and dedoding URL components.
 
-Initial minimum viable product is a proxy-aware HTTP client and a small proxy server implementation.
+Foxy is built on top of
+[Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html)
+and [Boost.Asio](https://www.boost.org/doc/libs/1_71_0/doc/html/boost_asio.html)
+along with Boost.Spirit's library, [X3](https://www.boost.org/doc/libs/1_71_0/libs/spirit/doc/x3/html/index.html).
+Foxy does not treat these libraries as implementation details but exposes them directly. To this
+end, Foxy is as powerful as plain Beast/Asio are and anything one can do in Beast, one can do using
+Foxy.
+
+Foxy aims to be competitive with the HTTP libraries offered by both Node.js and Go.
+
+While these languages are significantly higher-level than C++ is, their standard HTTP libraries are
+low-level from an abstract perspective. The success of these languages and their libraries has shown
+that the modern web development is favoring an ever-lower set of HTTP APIs.

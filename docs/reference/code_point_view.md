@@ -3,12 +3,13 @@
 ## Include
 
 ```c++
-#include <foxy/code_point_iterator.hpp>
+#include <foxy/code_point_view.hpp>
 ```
 
 ## Synopsis
 
-A Range-like type that makes working with [code point iterators](./code_point_iterator.md#foxycode_point_iterator)
+A Range-like type that makes working with
+[code point iterators](./code_point_iterator.md#foxycode_point_iterator)
 easier.
 
 ## Declaration

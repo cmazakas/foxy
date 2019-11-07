@@ -1,11 +1,7 @@
 # Writing Your Own Server
 
-Foxy doesn't do many things. One of those is provide a universal server abstraction. It's not within
-Foxy's immediate scope to provide users with a way of creating a TCP accept loop as there's no one
-universal abstraction in C++ that'll satisfy all needs.
-
-This example attempts to demonstrate how one would begin to write an HTTP server using Foxy by
-providing readers with a working example of a `server` class they can model their own after.
+Foxy provides users a `listener` class that encapsulates the TCP accept loop and connection set-up
+and teardown.
 
 ---
 
@@ -14,17 +10,16 @@ For the sake of simplicity, we'll only go through one request-response cycle bef
 server down.
 
 ```c++
+#include <foxy/listener.hpp>
 #include <foxy/client_session.hpp>
 #include <foxy/server_session.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ip/address.hpp>
-
 #include <boost/asio/coroutine.hpp>
-#include <boost/asio/spawn.hpp>
-
-#include <boost/asio/post.hpp>
 #include <boost/asio/executor.hpp>
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/asio/spawn.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -55,7 +50,7 @@ This header imports Asio's "fauxroutine" pseudo-keyword support. This enables us
 ***
 
 ```c++
-struct server_op : asio::coroutine
+struct request_handler : asio::coroutine
 {
 ```
 
@@ -65,28 +60,13 @@ case, we're implementing a stackless coroutine to represent this async operation
 ***
 
 ```c++
-  using executor_type = asio::executor;
-```
-
-Asio needs this typedef to form an "executor hook". Asio will use this typedef to reason about how
-this coroutine should be executed. This is important because Asio implicitly relies upon the notion
-of a strand (either implicit or explicit) as discussed [here](https://www.boost.org/doc/libs/release/doc/html/boost_asio/overview/core/strands.html).
-
-***
-
-```c++
   struct frame
   {
-    foxy::server_session              server;
     http::request<http::empty_body>   request;
     http::response<http::string_body> response;
-
-    frame(tcp::socket socket, foxy::session_opts opts)
-      : server(foxy::multi_stream(std::move(socket)), opts)
-    {
-    }
   };
 
+  foxy::server_session&  server;
   std::unique_ptr<frame> frame_ptr;
 ```
 
@@ -98,23 +78,23 @@ move-only but Asio has support for this.
 ***
 
 ```c++
-  server_op(tcp::socket stream)
-    : frame_ptr(std::make_unique<frame>(std::move(stream),
-                                        foxy::session_opts{{}, std::chrono::seconds(30), false}))
+  request_handler(foxy::server_session& server_)
+    : server(server_)
+    , frame_ptr(std::make_unique<frame>())
   {
   }
 ```
 
-Our `server_session` will need a connected TCP socket along with an options object to be
-constructed. In this case, we're constructing our session options with an empty SSL context, a 30
-second timeout and we're disabling peer certificate verification (though the server session
-currently doesn't use this anyway).
+Our request handler need only store a reference to the server session as the lifetime is owned by
+the `foxy::listener`. We also persist storage for our request and response objects.
 
 ***
 
 ```c++
-  auto operator()(boost::system::error_code ec = {}, std::size_t const bytes_transferred = 0)
-    -> void
+  template <class Self>
+  auto operator()(Self&                     self,
+                  boost::system::error_code ec                = {},
+                  std::size_t const         bytes_transferred = 0) -> void
   {
     auto& f = *frame_ptr;
     reenter(*this)
@@ -133,7 +113,7 @@ required for reentry and setting the suspend point at each `yield`.
         f.response = {};
         f.request  = {};
 
-        yield f.server.async_read(f.request, std::move(*this));
+        yield server.async_read(f.request, std::move(self));
 ```
 
 We use a while-loop here to support persistent connections. This means that it's possible for our
@@ -146,19 +126,22 @@ coroutine after this statement.
 Our server session begins by attempting to read in an HTTP request from the underlying stream.
 `async_read` will invoke this callable with an error code and the number of bytes transferred.
 
+`self` is our handler that's given to us by the `foxy::listener`. It wraps our `request_handler` so
+`std::move`'ing `self` does indeed `move` the `request_handler` itself.
+
 ***
 
 ```c++
         if (ec) {
           std::cout << "Encountered error when reading in the request!\n" << ec << "\n";
-          goto shutdown;
+          break;
         }
 
         std::cout << "Received message!\n" << f.request << "\n";
 ```
 
 Our coroutine resumes here. If there was an error code, we print out a helpful error message and
-jump to the shutdown procedure.
+let the coroutine end naturally.
 
 ***
 
@@ -168,11 +151,11 @@ jump to the shutdown procedure.
         f.response.body() = "<html><p>Hello, world!</p></html>";
         f.response.prepare_payload();
 
-        yield f.server.async_write(f.response, std::move(*this));
+        yield server.async_write(f.response, std::move(self));
 
         if (ec) {
           std::cout << "Encountered error when writing the response!\n" << ec << "\n";
-          goto shutdown;
+          break;
         }
 ```
 
@@ -182,191 +165,27 @@ a small Hello, World HTML document.
 ***
 
 ```c++
-        if (f.request.keep_alive()) { continue; }
+        if (!f.request.keep_alive()) { break; }
+      }
 ```
 
 If the request has keep-alive semantics, repeat the loop over again. For HTTP/1.1, keep-alive is
 assumed unless the client sends a `Connection: close` header. In HTTP/1.0, `Connection: keep-alive`
 must be set by the client.
 
+This marks the end of our while-loop.
+
 ***
 
 ```c++
-      shutdown:
-        f.server.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-        f.server.stream.plain().close(ec);
-        break;
-      }
+      return self.complete({}, 0);
     }
-  }
-```
-
-Our shutdown procedure is pretty simple. We access the plain TCP side of our session's nested
-multi-stream and follow normal Asio TCP shutdown semantics, calling `shutdown` and then `close`.
-
-***
-
-```c++
-  auto
-  get_executor() const noexcept -> executor_type
-  {
-    return frame_ptr->server.get_executor();
   }
 };
 ```
 
-This is the other half of the executor hook. Asio will use this member function to grab a copy of
-our coroutine's executor and then post the resumption of our coroutine to it.
-
-***
-
-```c++
-struct accept_op : asio::coroutine
-{
-```
-
-Our `accept_op` is relatively similar to our `server_op` above. For our server to successfully
-handle multiple clients, we need several concurrent tasks. So we define a coroutine for the actual
-session our server will have with a client along with a persistent async operation that will
-continue to listen for incoming TCP connections.
-
-***
-
-```c++
-  using executor_type = asio::executor;
-
-  struct frame
-  {
-    tcp::socket socket;
-
-    frame(asio::executor executor)
-      : socket(executor)
-    {
-    }
-  };
-
-  tcp::acceptor&         acceptor;
-  std::unique_ptr<frame> frame_ptr;
-
-  accept_op(tcp::acceptor& acceptor_)
-    : acceptor(acceptor_)
-    , frame_ptr(std::make_unique<frame>(acceptor.get_executor()))
-  {
-  }
-```
-
-This time our coroutine will only need to store non-owning view of an `asio::ip::tcp::acceptor` and
-a local socket that the `async_accept` method can use to write the connected TCP socket to. This
-socket will be used to construct our `server_session` and be re-used during future accept calls.
-
-***
-
-```c++
-  auto operator()(boost::system::error_code ec = {}) -> void
-  {
-    auto& f = *frame_ptr;
-    reenter(*this)
-    {
-      while (acceptor.is_open()) {
-        yield acceptor.async_accept(f.socket, std::move(*this));
-        if (ec == asio::error::operation_aborted) { yield break; }
-        if (ec) {
-          std::cout << "Failed to accept the new connection!\n";
-          std::cout << ec << "\n";
-          yield break;
-        }
-```
-
-This is the core of a TCP accept loop in Asio. We accept new connections indefinitely, assuming we
-don't have some sort of an error beyond our acceptor simply being `close`'d or `cancel`'d.
-
-***
-
-```c++
-        asio::post(server_op(std::move(f.socket)));
-      }
-    }
-  }
-```
-
-We create our `server_op` and then `asio::post` it for execution. `post` is smart enough to use the
-executor hooks on our `server_op` and will run the coroutine on that executor. This is important
-for correctness.
-
-***
-
-```c++
-  auto
-  get_executor() const noexcept -> executor_type
-  {
-    return acceptor.get_executor();
-  }
-};
-
-struct server
-{
-```
-
-Finally! Our actual server class. This will be what user's interact with directly. The above
-coroutines operate as implementation details of this interface.
-
-***
-
-```c++
-  using executor_type = asio::executor;
-
-  tcp::acceptor acceptor;
-
-  server()              = delete;
-  server(server const&) = delete;
-  server(server&&)      = default;
-
-  server(executor_type executor, tcp::endpoint endpoint)
-    : acceptor(executor, endpoint)
-  {
-  }
-
-  auto
-  get_executor() -> executor_type
-  {
-    return acceptor.get_executor();
-  }
-
-  auto
-  async_accept() -> void
-  {
-    asio::post(accept_op(acceptor));
-  }
-```
-
-A note about `async_accept` is that it's UB to now modify the acceptor from outside the strand
-that's currently running. What this means is, if one is only using a single-thread to run the
-`io_context`, they're safe and nothing else needs to be worried about.
-
-But if this was a multi-threaded server, the `accept_op` could begin immediately on a new thread and
-while the accept loop would be thread-safe, touching the acceptor from the currently running thread
-may result in a race condition unless that thread is already running in the same `asio::strand` that
-was given to the server as its executor.
-
-This is a single-threaded example though so the above note doesn't apply but it is worth mentioning.
-
-***
-
-```c++
-  auto
-  shutdown() -> void
-  {
-    asio::post(get_executor(), [self = this]() mutable -> void {
-      self->acceptor.cancel();
-      self->acceptor.close();
-    });
-  }
-};
-```
-
-Shutting the server down is a thread-safe function because it copies the executor and then
-dispatches a callable that'll run in the executor. In this case, we simply call `cancel()` and
-`close()` on the TCP acceptor.
+This is how we signal to the `foxy::listener` that our server has finished doing what it needed to
+and that it should shutdown the session.
 
 ***
 
@@ -391,8 +210,8 @@ Providing this knowledge to the I/O context can enable internal optimizations.
 ***
 
 ```c++
-  auto const endpoint =
-    tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
+  auto s = foxy::listener(io.get_executor(), tcp::endpoint(asio::ip::make_address("127.0.0.1"),
+                                                           static_cast<unsigned short>(1337)));
 ```
 
 Our server is going to be accessible at: `127.0.0.1:1337`.
@@ -400,12 +219,11 @@ Our server is going to be accessible at: `127.0.0.1:1337`.
 ***
 
 ```c++
-  auto s = server(io.get_executor(), endpoint);
-  s.async_accept();
+  s.async_accept([](auto& server_session) { return request_handler(server_session); });
 ```
 
-Create the server and start the acceptance loop. We no longer touch the acceptor directly and
-instead can only call `shutdown`.
+Start the acceptance loop. We no longer touch the listener directly and instead can only call
+`shutdown`.
 
 ***
 
@@ -436,6 +254,7 @@ Our client operation will run on a stackful coroutine (aka a "fiber").
     client.stream.plain().close();
 
     s.shutdown();
+  });
   });
 ```
 

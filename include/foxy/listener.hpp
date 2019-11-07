@@ -9,6 +9,7 @@
 
 #include <foxy/server_session.hpp>
 #include <foxy/log.hpp>
+#include <foxy/code_point_view.hpp>
 
 #include <boost/asio/executor.hpp>
 #include <boost/asio/strand.hpp>
@@ -84,32 +85,7 @@ struct server_op : boost::asio::coroutine
       if (ec) { goto shutdown; }
 
     shutdown:
-      if (server.stream.is_ssl()) {
-        BOOST_ASIO_CORO_YIELD
-        server.stream.ssl().async_shutdown(std::move(*this));
-      }
-
-      {
-        auto& tcp_stream =
-          server.stream.is_ssl() ? server.stream.ssl().next_layer() : server.stream.plain();
-
-        tcp_stream.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-      }
-
-      BOOST_ASIO_CORO_YIELD
-      server.async_read(f.shutdown_parser, std::move(*this));
-
-      if (ec && ec != boost::beast::http::error::end_of_stream) {
-        foxy::log_error(ec, "foxy::proxy::tunnel::shutdown_wait_for_eof_error");
-      }
-
-      {
-        auto& tcp_stream =
-          server.stream.is_ssl() ? server.stream.ssl().next_layer() : server.stream.plain();
-
-        tcp_stream.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
-        tcp_stream.close(ec);
-      }
+      BOOST_ASIO_CORO_YIELD server.async_shutdown(std::move(*this));
     }
   }
 

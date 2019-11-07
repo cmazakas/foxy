@@ -9,7 +9,7 @@
 
 #include <foxy/code_point_iterator.hpp>
 #include <foxy/pct_encode.hpp>
-#include <foxy/uri_parts.hpp>
+#include <foxy/parse_uri.hpp>
 
 #include <boost/utility/string_view.hpp>
 

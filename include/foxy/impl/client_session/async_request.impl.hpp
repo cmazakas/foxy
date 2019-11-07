@@ -17,7 +17,7 @@ namespace foxy
 template <class DynamicBuffer>
 template <class Request, class ResponseParser, class RequestHandler>
 auto
-basic_client_session<DynamicBuffer>::async_request(Request&         request,
+basic_client_session<DynamicBuffer>::async_request(Request const&   request,
                                                    ResponseParser&  parser,
                                                    RequestHandler&& handler) & ->
   typename boost::asio::async_result<std::decay_t<RequestHandler>,

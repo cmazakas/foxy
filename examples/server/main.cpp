@@ -1,3 +1,13 @@
+//
+// Copyright (c) 2018-2019 Christian Mazakas (christian dot mazakas at gmail dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+// Official repository: https://github.com/LeonineKing1199/foxy
+//
+
+#include <foxy/listener.hpp>
 #include <foxy/client_session.hpp>
 #include <foxy/server_session.hpp>
 
@@ -22,32 +32,27 @@ using boost::asio::ip::tcp;
 
 #include <boost/asio/yield.hpp>
 
-struct server_op : asio::coroutine
+struct request_handler : asio::coroutine
 {
-  using executor_type = asio::executor;
-
   struct frame
   {
-    foxy::server_session              server;
     http::request<http::empty_body>   request;
     http::response<http::string_body> response;
-
-    frame(tcp::socket socket, foxy::session_opts opts)
-      : server(foxy::multi_stream(std::move(socket)), opts)
-    {
-    }
   };
 
+  foxy::server_session&  server;
   std::unique_ptr<frame> frame_ptr;
 
-  server_op(tcp::socket stream)
-    : frame_ptr(std::make_unique<frame>(std::move(stream),
-                                        foxy::session_opts{{}, std::chrono::seconds(30), false}))
+  request_handler(foxy::server_session& server_)
+    : server(server_)
+    , frame_ptr(std::make_unique<frame>())
   {
   }
 
-  auto operator()(boost::system::error_code ec = {}, std::size_t const bytes_transferred = 0)
-    -> void
+  template <class Self>
+  auto operator()(Self&                     self,
+                  boost::system::error_code ec                = {},
+                  std::size_t const         bytes_transferred = 0) -> void
   {
     auto& f = *frame_ptr;
     reenter(*this)
@@ -56,7 +61,7 @@ struct server_op : asio::coroutine
         f.response = {};
         f.request  = {};
 
-        yield f.server.async_read(f.request, std::move(*this));
+        yield server.async_read(f.request, std::move(self));
         if (ec) {
           std::cout << "Encountered error when reading in the request!\n" << ec << "\n";
           break;
@@ -69,7 +74,7 @@ struct server_op : asio::coroutine
         f.response.body() = "<html><p>Hello, world!</p></html>";
         f.response.prepare_payload();
 
-        yield f.server.async_write(f.response, std::move(*this));
+        yield server.async_write(f.response, std::move(self));
 
         if (ec) {
           std::cout << "Encountered error when writing the response!\n" << ec << "\n";
@@ -79,101 +84,8 @@ struct server_op : asio::coroutine
         if (!f.request.keep_alive()) { break; }
       }
 
-      f.server.stream.plain().shutdown(tcp::socket::shutdown_both, ec);
-      f.server.stream.plain().close(ec);
+      return self.complete({}, 0);
     }
-  }
-
-  auto
-  get_executor() const noexcept -> executor_type
-  {
-    return frame_ptr->server.get_executor();
-  }
-};
-
-struct accept_op : asio::coroutine
-{
-  using executor_type = asio::executor;
-
-  struct frame
-  {
-    tcp::socket socket;
-
-    frame(asio::executor executor)
-      : socket(executor)
-    {
-    }
-  };
-
-  tcp::acceptor&         acceptor;
-  std::unique_ptr<frame> frame_ptr;
-
-  accept_op(tcp::acceptor& acceptor_)
-    : acceptor(acceptor_)
-    , frame_ptr(std::make_unique<frame>(acceptor.get_executor()))
-  {
-  }
-
-  auto operator()(boost::system::error_code ec = {}) -> void
-  {
-    auto& f = *frame_ptr;
-    reenter(*this)
-    {
-      while (acceptor.is_open()) {
-        yield acceptor.async_accept(f.socket, std::move(*this));
-        if (ec == asio::error::operation_aborted) { yield break; }
-        if (ec) {
-          std::cout << "Failed to accept the new connection!\n";
-          std::cout << ec << "\n";
-          yield break;
-        }
-
-        asio::post(server_op(std::move(f.socket)));
-      }
-    }
-  }
-
-  auto
-  get_executor() const noexcept -> executor_type
-  {
-    return acceptor.get_executor();
-  }
-};
-
-struct server
-{
-  using executor_type = asio::executor;
-
-  tcp::acceptor acceptor;
-
-  server()              = delete;
-  server(server const&) = delete;
-  server(server&&)      = default;
-
-  server(executor_type executor, tcp::endpoint endpoint)
-    : acceptor(executor, endpoint)
-  {
-  }
-
-  auto
-  get_executor() -> executor_type
-  {
-    return acceptor.get_executor();
-  }
-
-  auto
-  async_accept() -> void
-  {
-    asio::post(accept_op(acceptor));
-  }
-
-  auto
-  shutdown() -> void
-  {
-    asio::post(get_executor(), [self = this]() mutable -> void {
-      self->acceptor.cancel();
-      self->acceptor.close();
-    });
   }
 };
 
@@ -184,11 +96,9 @@ main()
 {
   asio::io_context io{1};
 
-  auto const endpoint =
-    tcp::endpoint(asio::ip::make_address("127.0.0.1"), static_cast<unsigned short>(1337));
-
-  auto s = server(io.get_executor(), endpoint);
-  s.async_accept();
+  auto s = foxy::listener(io.get_executor(), tcp::endpoint(asio::ip::make_address("127.0.0.1"),
+                                                           static_cast<unsigned short>(1337)));
+  s.async_accept([](auto& server_session) { return request_handler(server_session); });
 
   asio::spawn(io.get_executor(), [&](auto yield) mutable -> void {
     auto client = foxy::client_session(io.get_executor(),

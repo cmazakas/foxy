@@ -13,7 +13,7 @@
 #include <foxy/client_session.hpp>
 #include <foxy/server_session.hpp>
 #include <foxy/type_traits.hpp>
-#include <foxy/uri_parts.hpp>
+#include <foxy/parse_uri.hpp>
 #include <foxy/detail/relay.hpp>
 
 #include <boost/beast/http/empty_body.hpp>
