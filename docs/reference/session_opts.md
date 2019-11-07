@@ -8,7 +8,7 @@
 
 ## Synopsis
 
-A small class that Foxy uses for configuring its `basic_session` class.
+A small class that Foxy uses for configuring its `basic_session` class and descendants.
 
 ## Declaration
 
