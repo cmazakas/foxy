@@ -34,8 +34,6 @@ using boost::asio::ip::tcp;
 
 struct request_handler : asio::coroutine
 {
-  using executor_type = asio::executor;
-
   struct frame
   {
     http::request<http::empty_body>   request;
