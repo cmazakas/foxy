@@ -27,7 +27,7 @@ namespace http = boost::beast::http;
 
 TEST_CASE("speak_test")
 {
-  SECTION("The speak should function as a basic HTTP client")
+  SECTION("speak should function as a basic HTTP client")
   {
     asio::io_context io{1};
 
@@ -54,6 +54,32 @@ TEST_CASE("speak_test")
           return self.complete({}, 0);
         }
       };
+    });
+
+    io.run();
+  }
+
+  SECTION("speak should let the user know when connecting to the remote peer failed")
+  {
+    asio::io_context io{1};
+
+    auto const* const host    = "www.google.com";
+    auto const* const service = "1337";
+
+    auto executor = io.get_executor();
+
+    foxy::speak(executor, host, service, [](auto& client_session) {
+      return
+        [&client_session, coro = asio::coroutine()](auto& self, boost::system::error_code ec = {},
+                                                    std::size_t bytes_transferred = 0) mutable {
+          reenter(coro)
+          {
+            CHECK(ec);
+            CHECK(bytes_transferred == 0);
+
+            return self.complete({}, 0);
+          }
+        };
     });
 
     io.run();

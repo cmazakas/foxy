@@ -15,21 +15,27 @@
 #include <boost/asio/coroutine.hpp>
 #include <boost/asio/compose.hpp>
 
+#include <boost/smart_ptr/allocate_unique.hpp>
+
+#include <functional>
 #include <string>
 #include <memory>
 
 namespace foxy
 {
-template <class RequestFactory>
+template <class RequestFactory, class Allocator = std::allocator<char>>
 auto
 speak(boost::asio::executor ex,
       std::string           host_,
       std::string           service_,
-      RequestFactory&&      request_factory_)
+      RequestFactory&&      request_factory_,
+      session_opts          opts_ = {},
+      Allocator const       alloc = {})
 {
   struct speak_op : boost::asio::coroutine
   {
-    using executor_type = boost::asio::executor;
+    using executor_type  = boost::asio::executor;
+    using allocator_type = Allocator;
 
     struct frame
     {
@@ -39,8 +45,10 @@ speak(boost::asio::executor ex,
       RequestFactory         request_factory;
     };
 
-    boost::asio::executor  executor;
-    std::unique_ptr<frame> p_;
+    executor_type  executor;
+    allocator_type allocator;
+
+    std::unique_ptr<frame, boost::alloc_deleter<frame, allocator_type>> p_;
 
     speak_op()                = delete;
     speak_op(speak_op const&) = delete;
@@ -49,11 +57,15 @@ speak(boost::asio::executor ex,
     speak_op(boost::asio::executor executor_,
              std::string           host__,
              std::string           service__,
-             RequestFactory&&      factory)
+             RequestFactory&&      factory,
+             session_opts          opts__,
+             allocator_type        alloc_)
       : executor(executor_)
-      , p_(new frame{
-          ::foxy::client_session{executor, ::foxy::session_opts{{}, std::chrono::seconds(30)}},
-          std::move(host__), std::move(service__), std::move(factory)})
+      , allocator(alloc_)
+      , p_(boost::allocate_unique<frame>(allocator,
+                                         {::foxy::client_session{executor, opts__},
+                                          std::move(host__), std::move(service__),
+                                          std::move(factory)}))
     {
     }
 
@@ -61,6 +73,12 @@ speak(boost::asio::executor ex,
     get_executor() const noexcept -> executor_type
     {
       return executor;
+    }
+
+    auto
+    get_allocator() const noexcept -> allocator_type
+    {
+      return allocator;
     }
 
     auto operator()(boost::system::error_code ec = {}, std::size_t bytes_transferred = 0)
@@ -71,17 +89,13 @@ speak(boost::asio::executor ex,
         BOOST_ASIO_CORO_YIELD s.client_session.async_connect(
           std::move(s.host), std::move(s.service), std::move(*this));
 
-        if (ec) {
-          ::foxy::log_error(ec, "speak::async_connect");
-          return;
-        }
-
         BOOST_ASIO_CORO_YIELD
         boost::asio::async_compose<speak_op, void(boost::system::error_code, std::size_t)>(
-          s.request_factory(s.client_session), *this, executor);
+          std::bind(s.request_factory(s.client_session), std::placeholders::_1,
+                    ec ? ec : boost::system::error_code{}, 0),
+          *this, executor);
 
-        BOOST_ASIO_CORO_YIELD
-        s.client_session.async_shutdown(std::move(*this));
+        BOOST_ASIO_CORO_YIELD s.client_session.async_shutdown(std::move(*this));
 
         if (ec) { ::foxy::log_error(ec, "speak::async_shutdown"); }
       }
@@ -89,6 +103,6 @@ speak(boost::asio::executor ex,
   };
 
   boost::asio::post(speak_op(ex, std::move(host_), std::move(service_),
-                             std::forward<RequestFactory>(request_factory_)));
+                             std::forward<RequestFactory>(request_factory_), opts_, alloc));
 }
 } // namespace foxy
