@@ -21,14 +21,13 @@
 #include <boost/beast/core/bind_handler.hpp>
 
 #include <boost/optional/optional.hpp>
-#include <boost/smart_ptr/make_shared.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/hof/unpack.hpp>
 
 #include <boost/system/error_code.hpp>
 
 #include <boost/assert.hpp>
 
+#include <memory>
 #include <utility>
 #include <tuple>
 #include <type_traits>
@@ -78,7 +77,7 @@ struct async_timer_initiation<Ret(Args...)>
 
       using allocator_type = boost::asio::associated_allocator_t<std::decay_t<CompletionHandler>>;
 
-      boost::shared_ptr<state>                      p_;
+      std::shared_ptr<state>                        p_;
       ::foxy::basic_session<Stream, DynamicBuffer>& session_;
 
       intermediate_completion_handler()                                       = delete;
@@ -87,9 +86,8 @@ struct async_timer_initiation<Ret(Args...)>
 
       intermediate_completion_handler(CompletionHandler&& completion_handler,
                                       ::foxy::basic_session<Stream, DynamicBuffer>& session)
-        : p_(
-            boost::allocate_shared<state>(boost::asio::get_associated_allocator(completion_handler),
-                                          std::move(completion_handler)))
+        : p_(std::allocate_shared<state>(boost::asio::get_associated_allocator(completion_handler),
+                                         std::move(completion_handler)))
         , session_(session)
       {
       }
