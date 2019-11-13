@@ -1,4 +1,4 @@
-# Foxy
+# Foxy [![Build Status](https://travis-ci.org/LeonineKing1199/foxy.svg?branch=develop)](https://travis-ci.org/LeonineKing1199/foxy)
 
 Low-level HTTP session primitives for Beast/Asio + URL parsing and pct-coding
 
