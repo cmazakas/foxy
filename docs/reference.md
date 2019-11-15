@@ -14,6 +14,8 @@
 
 #### Functions
 
+* [speak](./reference/speak.md#foxyspeak)
+
 ### URLs / Unicode Encoding
 
 #### Classes
