@@ -63,7 +63,7 @@ speak(boost::asio::executor ex,
       : executor(executor_)
       , allocator(alloc_)
       , p_(boost::allocate_unique<frame>(allocator,
-                                         {::foxy::client_session{executor, opts__},
+                                         {::foxy::client_session(executor, opts__),
                                           std::move(host__), std::move(service__),
                                           std::move(factory)}))
     {
@@ -96,8 +96,6 @@ speak(boost::asio::executor ex,
           *this, executor);
 
         BOOST_ASIO_CORO_YIELD s.client_session.async_shutdown(std::move(*this));
-
-        if (ec) { ::foxy::log_error(ec, "speak::async_shutdown"); }
       }
     }
   };
