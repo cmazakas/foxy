@@ -9,6 +9,8 @@
 
 #include <foxy/speak.hpp>
 
+#include <foxy/test/helpers/ssl_ctx.hpp>
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/executor.hpp>
@@ -68,19 +70,59 @@ TEST_CASE("speak_test")
 
     auto executor = io.get_executor();
 
-    foxy::speak(executor, host, service, [](auto& client_session) {
-      return
-        [&client_session, coro = asio::coroutine()](auto& self, boost::system::error_code ec = {},
+    foxy::speak(executor, host, service,
+                [](auto& client_session) {
+                  return [&client_session,
+                          coro = asio::coroutine()](auto& self, boost::system::error_code ec = {},
                                                     std::size_t bytes_transferred = 0) mutable {
-          reenter(coro)
-          {
-            CHECK(ec);
-            CHECK(bytes_transferred == 0);
+                    reenter(coro)
+                    {
+                      CHECK(ec);
+                      CHECK(bytes_transferred == 0);
 
-            return self.complete({}, 0);
-          }
-        };
-    });
+                      return self.complete({}, 0);
+                    }
+                  };
+                },
+                foxy::session_opts{{}, std::chrono::milliseconds{250}});
+
+    io.run();
+  }
+
+  SECTION("speak should function as a basic HTTPS client")
+  {
+    asio::io_context io{1};
+
+    auto const* const host    = "www.google.com";
+    auto const* const service = "https";
+
+    auto executor = io.get_executor();
+
+    auto client_ctx = foxy::test::make_client_ssl_ctx();
+
+    foxy::speak(executor, host, service,
+                [](auto& client_session) {
+                  auto req_ =
+                    std::make_unique<http::request<http::empty_body>>(http::verb::get, "/", 11);
+
+                  req_->set(http::field::host, "www.google.com");
+
+                  auto res_ = std::make_unique<http::response<http::string_body>>();
+
+                  return [&client_session, coro = asio::coroutine(), req = std::move(req_),
+                          res = std::move(res_)](auto& self, boost::system::error_code ec = {},
+                                                 std::size_t bytes_transferred = 0) mutable {
+                    reenter(coro)
+                    {
+                      yield client_session.async_request(*req, *res, std::move(self));
+                      CHECK(res->result() == http::status::ok);
+                      CHECK(res->body().size() > 0);
+
+                      return self.complete({}, 0);
+                    }
+                  };
+                },
+                foxy::session_opts{client_ctx, std::chrono::seconds{30}, true});
 
     io.run();
   }
