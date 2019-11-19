@@ -56,6 +56,7 @@ add_library(
   include/foxy/server_session.hpp
   include/foxy/session_opts.hpp
   include/foxy/session.hpp
+  include/foxy/speak.hpp
   include/foxy/type_traits.hpp
   include/foxy/uri_parts.hpp
   include/foxy/uri.hpp
@@ -185,6 +186,7 @@ if (BUILD_TESTING)
     test/relay_test.cpp
     test/server_session_test.cpp
     test/session_test.cpp
+    test/speak_test.cpp
     test/ssl_client_session_test.cpp
     test/timed_op_wrapper_v3.cpp
     test/unicode_uri_test.cpp

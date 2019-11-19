@@ -14,7 +14,7 @@
 
 #### Functions
 
-* [make_ssl_ctx](./reference/make_ssl_ctx.md#foxymake_ssl_ctx)
+* [speak](./reference/speak.md#foxyspeak)
 
 ### URLs / Unicode Encoding
 
