@@ -7,6 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#define CATCH_CONFIG_MAIN
+
 #include <foxy/proxy.hpp>
 #include <foxy/client_session.hpp>
 

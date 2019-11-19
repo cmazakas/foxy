@@ -7,6 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#define CATCH_CONFIG_MAIN
+
 #include <foxy/speak.hpp>
 
 #include <foxy/test/helpers/ssl_ctx.hpp>

@@ -7,6 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#define CATCH_CONFIG_MAIN
+
 #include <foxy/uri.hpp>
 #include <boost/utility/string_view.hpp>
 #include <vector>

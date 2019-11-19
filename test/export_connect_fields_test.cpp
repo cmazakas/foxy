@@ -8,6 +8,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#define CATCH_CONFIG_MAIN
+
 #include <foxy/detail/export_connect_fields.hpp>
 
 #include <boost/beast/http.hpp>

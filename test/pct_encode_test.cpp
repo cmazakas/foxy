@@ -7,6 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#define CATCH_CONFIG_MAIN
+
 #include <foxy/pct_encode.hpp>
 #include <boost/spirit/home/x3.hpp>
 

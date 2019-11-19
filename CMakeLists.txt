@@ -161,52 +161,9 @@ add_library(
 target_include_directories(test_utils PUBLIC test/include)
 target_link_libraries(test_utils PUBLIC foxy)
 
-option(BUILD_TESTING "Build Foxy Testsuite" OFF)
+include(CTest)
 if (BUILD_TESTING)
-  include(CTest)
-
-  find_package(Catch2 CONFIG REQUIRED)
-  find_package(Boost 1.71 REQUIRED coroutine thread container)
-
-  add_executable(
-    foxy_tests
-
-    test/allocator_client_test.cpp
-    test/client_session_test.cpp
-    test/code_point_view_test.cpp
-    test/export_connect_fields_test.cpp
-    test/iterator_test.cpp
-    test/listener_test.cpp
-    test/main.cpp
-    test/parse_uri_test.cpp
-    test/pct_decode_test.cpp
-    test/pct_encode_test.cpp
-    test/proxy_test.cpp
-    test/proxy_test2.cpp
-    test/relay_test.cpp
-    test/server_session_test.cpp
-    test/session_test.cpp
-    test/speak_test.cpp
-    test/ssl_client_session_test.cpp
-    test/timed_op_wrapper_v3.cpp
-    test/unicode_uri_test.cpp
-    test/uri_test.cpp
-    test/utility_test.cpp
-  )
-
-  target_link_libraries(
-    foxy_tests
-    PRIVATE
-      test_utils
-      Catch2::Catch2
-      Boost::coroutine
-      Boost::thread
-      Boost::container
-  )
-
-  file(COPY test/root-cas.pem DESTINATION ${CMAKE_BINARY_DIR})
-  include(Catch)
-  catch_discover_tests(foxy_tests)
+  add_subdirectory(test)
 endif()
 
 if (FOXY_BUILD_EXAMPLES)

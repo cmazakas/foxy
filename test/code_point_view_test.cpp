@@ -7,6 +7,8 @@
 // Official repository: https://github.com/LeonineKing1199/foxy
 //
 
+#define CATCH_CONFIG_MAIN
+
 #include <foxy/code_point_iterator.hpp>
 #include <foxy/pct_encode.hpp>
 #include <foxy/parse_uri.hpp>
