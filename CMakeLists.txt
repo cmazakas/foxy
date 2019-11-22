@@ -37,63 +37,11 @@ endif()
 
 find_package(Threads REQUIRED)
 
-add_library(
-  foxy
+add_library(foxy)
+add_subdirectory(include)
+add_subdirectory(src)
 
-  include/foxy.hpp
-
-  include/foxy/client_session.hpp
-  include/foxy/code_point_iterator.hpp
-  include/foxy/code_point_view.hpp
-  include/foxy/error.hpp
-  include/foxy/listener.hpp
-  include/foxy/log.hpp
-  include/foxy/multi_stream.hpp
-  include/foxy/parse_uri.hpp
-  include/foxy/pct_decode.hpp
-  include/foxy/pct_encode.hpp
-  include/foxy/proxy.hpp
-  include/foxy/server_session.hpp
-  include/foxy/session_opts.hpp
-  include/foxy/session.hpp
-  include/foxy/speak.hpp
-  include/foxy/type_traits.hpp
-  include/foxy/uri_parts.hpp
-  include/foxy/uri.hpp
-  include/foxy/utf8.hpp
-  include/foxy/utility.hpp
-
-  include/foxy/detail/close_stream.hpp
-  include/foxy/detail/export_connect_fields.hpp
-  include/foxy/detail/has_token.hpp
-  include/foxy/detail/relay.hpp
-  include/foxy/detail/timed_op_wrapper_v3.hpp
-  include/foxy/detail/tunnel.hpp
-
-  include/foxy/impl/session.impl.hpp
-
-  include/foxy/impl/client_session/async_connect.impl.hpp
-  include/foxy/impl/client_session/async_request.impl.hpp
-
-  include/foxy/impl/server_session/async_detect_ssl.impl.hpp
-  include/foxy/impl/server_session/async_handshake.impl.hpp
-
-  include/foxy/impl/session/async_read.impl.hpp
-  include/foxy/impl/session/async_read_header.impl.hpp
-  include/foxy/impl/session/async_write.impl.hpp
-  include/foxy/impl/session/async_write_header.impl.hpp
-
-  src/log.cpp
-  src/proxy.cpp
-  src/parse_uri.cpp
-  src/utility.cpp
-
-  # TODO: someday make this work
-  #
-  # src/uri.cpp
-)
-
-target_compile_features(foxy PUBLIC cxx_generic_lambdas)
+target_compile_features(foxy PUBLIC cxx_std_14)
 
 if (MSVC)
   # Win10
@@ -118,27 +66,6 @@ if(FOXY_QUIET)
       BOOST_BEAST_ALLOW_DEPRECATED=1
   )
 endif()
-
-set(FOXY_FAST_BUILD ON CACHE BOOL "Builds Foxy with separately compiled Beast and Asio")
-if(FOXY_FAST_BUILD)
-  target_compile_definitions(
-    foxy
-
-    PUBLIC
-      BOOST_ASIO_SEPARATE_COMPILATION=1
-      BOOST_BEAST_SEPARATE_COMPILATION=1
-  )
-
-  target_sources(foxy PRIVATE src/asio.cpp src/beast.cpp)
-endif()
-
-target_include_directories(
-  foxy
-
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
-)
 
 target_link_libraries(
   foxy
@@ -167,40 +94,11 @@ if (BUILD_TESTING)
 endif()
 
 if (FOXY_BUILD_EXAMPLES)
-  find_package(Boost 1.71 REQUIRED coroutine thread container)
-
-  add_executable(hello-world examples/hello_world/main.cpp)
-  target_link_libraries(hello-world PRIVATE foxy Boost::coroutine Boost::thread)
-
-  add_executable(ip-parser examples/uri_combinators/ip_parser.cpp)
-  target_link_libraries(ip-parser PRIVATE foxy Boost::coroutine Boost::thread)
-
-  add_executable(client examples/allocators/client.cpp)
-  target_link_libraries(client PRIVATE foxy Boost::container Boost::thread)
-
-  add_executable(server examples/server/main.cpp)
-  target_link_libraries(server PRIVATE foxy Boost::container Boost::thread Boost::coroutine)
-
-  add_executable(https-server examples/https_server/main.cpp)
-  target_link_libraries(
-    https-server
-    PRIVATE
-      foxy
-      test_utils
-      Boost::container
-      Boost::thread
-      Boost::coroutine
-  )
-
-  add_executable(listener examples/listener/main.cpp)
-  target_link_libraries(listener PRIVATE foxy test_utils Boost::thread Boost::coroutine)
+  add_subdirectory(examples)
 endif()
 
 if (FOXY_FUZZ)
-  add_executable(uri-parser fuzz/parse_uri.cpp)
-  target_link_libraries(uri-parser PRIVATE foxy)
-  target_compile_options(uri-parser PRIVATE "-fsanitize=fuzzer")
-  target_link_options(uri-parser PRIVATE "-fsanitize=fuzzer")
+  add_subdirectory(fuzz)
 endif()
 
 # installation
