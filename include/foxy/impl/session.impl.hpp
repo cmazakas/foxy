@@ -16,7 +16,7 @@ namespace foxy
 {
 template <class Stream, class DynamicBuffer>
 template <class... BufferArgs>
-foxy::basic_session<Stream, DynamicBuffer>::basic_session(boost::asio::executor executor,
+foxy::basic_session<Stream, DynamicBuffer>::basic_session(boost::asio::any_io_executor executor,
                                                           session_opts          opts_,
                                                           BufferArgs&&... bargs)
   : opts(std::move(opts_))

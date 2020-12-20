@@ -77,7 +77,7 @@ basic_session(basic_session&&)      = default;
 
 ```c++
 template <class... BufferArgs>
-basic_session(boost::asio::executor executor, session_opts opts_, BufferArgs&&... bargs);
+basic_session(boost::asio::any_io_executor executor, session_opts opts_, BufferArgs&&... bargs);
 ```
 
 Construct the session using the provided polymorphic executor. Forwards the executor to the

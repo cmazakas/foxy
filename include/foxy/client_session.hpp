@@ -58,7 +58,7 @@ public:
   basic_client_session(basic_client_session&&)      = default;
 
   template <class... BufferArgs>
-  basic_client_session(boost::asio::executor executor, session_opts opts, BufferArgs&&... bargs)
+  basic_client_session(boost::asio::any_io_executor executor, session_opts opts, BufferArgs&&... bargs)
     : basic_session<boost::asio::ip::tcp::socket, DynamicBuffer>(executor,
                                                                  std::move(opts),
                                                                  std::forward<BufferArgs>(bargs)...)

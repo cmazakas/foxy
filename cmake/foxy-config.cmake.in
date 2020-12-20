@@ -3,7 +3,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(
-  Boost 1.70
+  Boost @foxy_minimum_boost_version@
   REQUIRED
     system
     date_time

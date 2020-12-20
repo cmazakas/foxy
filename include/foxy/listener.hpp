@@ -38,7 +38,7 @@ namespace detail
 template <class RequestHandler>
 struct server_op : boost::asio::coroutine
 {
-  using executor_type = boost::asio::strand<boost::asio::executor>;
+  using executor_type = boost::asio::strand<boost::asio::any_io_executor>;
 
   struct frame
   {
@@ -99,14 +99,14 @@ struct server_op : boost::asio::coroutine
 template <class RequestHandlerFactory>
 struct accept_op : boost::asio::coroutine
 {
-  using executor_type = boost::asio::strand<boost::asio::executor>;
+  using executor_type = boost::asio::strand<boost::asio::any_io_executor>;
 
   struct frame
   {
     boost::asio::ip::tcp::socket socket;
     RequestHandlerFactory        factory;
 
-    frame(boost::asio::executor executor, RequestHandlerFactory&& factory_)
+    frame(boost::asio::any_io_executor executor, RequestHandlerFactory&& factory_)
       : socket(executor)
       , factory(std::move(factory_))
     {
@@ -182,7 +182,7 @@ struct accept_op : boost::asio::coroutine
 struct listener
 {
 public:
-  using executor_type = boost::asio::strand<boost::asio::executor>;
+  using executor_type = boost::asio::strand<boost::asio::any_io_executor>;
 
 private:
   boost::asio::ip::tcp::acceptor             acceptor_;
@@ -194,13 +194,13 @@ public:
   listener(listener const&) = delete;
   listener(listener&&)      = default;
 
-  listener(boost::asio::executor executor, boost::asio::ip::tcp::endpoint endpoint)
+  listener(boost::asio::any_io_executor executor, boost::asio::ip::tcp::endpoint endpoint)
     : acceptor_(executor, endpoint)
     , strand_(boost::asio::make_strand(executor))
   {
   }
 
-  listener(boost::asio::executor          executor,
+  listener(boost::asio::any_io_executor   executor,
            boost::asio::ip::tcp::endpoint endpoint,
            boost::asio::ssl::context      ctx)
     : acceptor_(executor, endpoint)
