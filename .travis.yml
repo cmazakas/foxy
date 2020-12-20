@@ -12,11 +12,6 @@ addons:
     - ninja-build
     - curl
     - python3
-# safelist
-branches:
-  only:
-  - master
-  - develop
 
 before_script:
   - echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main" |sudo tee -a /etc/apt/sources.list
