@@ -1,4 +1,4 @@
-set(Boost_DIR "/Users/cmaza/cpp/boost-171/lib/cmake/Boost-1.71.0")
+set(Boost_DIR "/Users/cmaza/cpp/boost-175/lib/cmake/Boost-1.75.0")
 set(FOXY_BUILD_EXAMPLES ON)
 set(BUILD_TESTING ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

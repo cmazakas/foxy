@@ -1,5 +1,5 @@
 set(CMAKE_CXX_COMPILER "g++-7")
-set(Boost_DIR "/home/chris/boost-spirit-develop/lib/cmake/Boost-1.71.0")
+set(Boost_DIR "/home/chris/boost-spirit-develop/lib/cmake/Boost-1.75.0")
 set(CMAKE_PREFIX_PATH "#{CMAKE_PREFIX_PATH};${CMAKE_CURRENT_SOURCE_DIR}/../../install/lib/cmake/foxy")
 add_compile_options("-pthread" "-no-pie" "-flto")
 add_link_options("-pthread" "-no-pie" "-flto")
