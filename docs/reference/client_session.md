@@ -68,7 +68,7 @@ client_session(client_session&&)      = default;
 
 ```c++
 template <class... BufferArgs>
-basic_client_session(boost::asio::executor executor, session_opts opts, BufferArgs&&... bargs);
+basic_client_session(boost::asio::any_io_executor executor, session_opts opts, BufferArgs&&... bargs);
 ```
 
 Forwards to the same constructor found in `foxy::basic_session`.

@@ -11,7 +11,7 @@
 ```c++
 template <class RequestFactory, class Allocator = std::allocator<char>>
 auto
-speak(boost::asio::executor ex,
+speak(boost::asio::any_io_executor ex,
       std::string           host_,
       std::string           service_,
       RequestFactory&&      request_factory_,

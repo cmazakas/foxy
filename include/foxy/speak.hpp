@@ -25,7 +25,7 @@ namespace foxy
 {
 template <class RequestFactory, class Allocator = std::allocator<char>>
 auto
-speak(boost::asio::executor ex,
+speak(boost::asio::any_io_executor ex,
       std::string           host_,
       std::string           service_,
       RequestFactory&&      request_factory_,
@@ -34,7 +34,7 @@ speak(boost::asio::executor ex,
 {
   struct speak_op : boost::asio::coroutine
   {
-    using executor_type  = boost::asio::executor;
+    using executor_type  = boost::asio::any_io_executor;
     using allocator_type = Allocator;
 
     struct frame
@@ -54,7 +54,7 @@ speak(boost::asio::executor ex,
     speak_op(speak_op const&) = delete;
     speak_op(speak_op&&)      = default;
 
-    speak_op(boost::asio::executor executor_,
+    speak_op(boost::asio::any_io_executor executor_,
              std::string           host__,
              std::string           service__,
              RequestFactory&&      factory,

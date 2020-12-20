@@ -54,7 +54,7 @@ public:
   basic_session(basic_session&&)      = default;
 
   template <class... BufferArgs>
-  basic_session(boost::asio::executor executor, session_opts opts_, BufferArgs&&... bargs);
+  basic_session(boost::asio::any_io_executor executor, session_opts opts_, BufferArgs&&... bargs);
 
   template <class... BufferArgs>
   basic_session(boost::asio::io_context& io, session_opts opts_, BufferArgs&&... bargs);

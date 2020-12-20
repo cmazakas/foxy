@@ -97,7 +97,7 @@ struct request_handler : asio::coroutine
 
 struct client_op : asio::coroutine
 {
-  using executor_type = asio::strand<asio::executor>;
+  using executor_type = asio::strand<asio::any_io_executor>;
 
   struct frame
   {
@@ -108,7 +108,7 @@ struct client_op : asio::coroutine
     int       req_count    = 0;
     int const max_requests = num_client_requests;
 
-    frame(asio::executor executor, ssl::context& ctx)
+    frame(asio::any_io_executor executor, ssl::context& ctx)
       : client(executor, foxy::session_opts{ctx, std::chrono::seconds(30), true})
     {
     }
@@ -119,7 +119,7 @@ struct client_op : asio::coroutine
   std::atomic_int&       req_count;
   foxy::listener&        l;
 
-  client_op(asio::executor   executor,
+  client_op(asio::any_io_executor   executor,
             std::atomic_int& req_count_,
             foxy::listener&  l_,
             ssl::context&    ctx)

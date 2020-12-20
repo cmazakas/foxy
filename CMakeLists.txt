@@ -9,6 +9,8 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+set(foxy_minimum_boost_version 1.75)
+
 project(
   foxy
 
@@ -23,7 +25,7 @@ project(
 )
 
 find_package(
-  Boost 1.71
+  Boost ${foxy_minimum_boost_version}
   REQUIRED
     system
     date_time
@@ -166,7 +168,7 @@ if (BUILD_TESTING)
   include(CTest)
 
   find_package(Catch2 CONFIG REQUIRED)
-  find_package(Boost 1.71 REQUIRED coroutine thread container)
+  find_package(Boost ${foxy_minimum_boost_version} REQUIRED coroutine thread container)
 
   add_executable(
     foxy_tests
@@ -210,7 +212,7 @@ if (BUILD_TESTING)
 endif()
 
 if (FOXY_BUILD_EXAMPLES)
-  find_package(Boost 1.71 REQUIRED coroutine thread container)
+  find_package(Boost ${foxy_minimum_boost_version} REQUIRED coroutine thread container)
 
   add_executable(hello-world examples/hello_world/main.cpp)
   target_link_libraries(hello-world PRIVATE foxy Boost::coroutine Boost::thread)

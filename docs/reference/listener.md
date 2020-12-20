@@ -35,7 +35,7 @@ struct foxy::listener;
 ## Member Typedefs
 
 ```c++
-using executor_type = boost::asio::strand<boost::asio::executor>;
+using executor_type = boost::asio::strand<boost::asio::any_io_executor>;
 ```
 
 ## Constructors
@@ -51,7 +51,7 @@ listener(listener&&)      = default;
 ### Parameterized
 
 ```c++
-listener(boost::asio::executor executor, boost::asio::ip::tcp::endpoint endpoint);
+listener(boost::asio::any_io_executor executor, boost::asio::ip::tcp::endpoint endpoint);
 ```
 
 Create a new `listener` which will use the supplied `executor` for its I/O objects and an `endpoint`
@@ -62,7 +62,7 @@ supplied executor in a strand for the caller. Passing in an explicit strand will
 double-strand the nested executor (not incorrect but not ideal).
 
 ```c++
-listener(boost::asio::executor          executor,
+listener(boost::asio::any_io_executor          executor,
          boost::asio::ip::tcp::endpoint endpoint,
          boost::asio::ssl::context      ctx);
 ```
