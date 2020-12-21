@@ -3,6 +3,18 @@
 Foxy has only a few non-trivial dependencies. Namely, [Boost](https://github.com/boostorg/boost) and
 OpenSSL.
 
+These dependencies can be automatically built using the 
+[tools/cmake-superbuild](../tools/cmake-superbuild/CMakelists.txt) project. This 
+project simply builds the dependencies and installs them to a local build folder 
+before building foxy. You just need to install a recent toolchain and cmake then run:
+```bash
+cmake -S tools/cmake-superbuild -B build 
+cmake --build build
+```
+
+Alternatively you can install these dependencies into you host system as 
+follows:
+
 ## OpenSSL
 
 OpenSSL is found via CMake's [FindOpenSSL](https://cmake.org/cmake/help/latest/module/FindOpenSSL.html)
