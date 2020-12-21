@@ -38,13 +38,13 @@ Prompt which will setup all paths to compilers and other tooling.
 # the Boost superproject is simply a collection of git submodules
 > git submodule update --init --recursive
 
-# currently using boost version 1.71
-> git checkout boost-1.71.0
+# currently using boost version 1.75
+> git checkout boost-1.75.0
 
 # we use the "|| echo 0" to have our foreach loop keep going even in the case of failure
 # this can happen from time to time if the submodule list contains a submodule that doesn't have
 # the appropriate tag yet
-> git submodule foreach "git checkout boost-1.71.0 || echo 0"
+> git submodule foreach "git checkout boost-1.75.0 || echo 0"
 
 # this builds b2, the Boost build tool
 Linux:~/$ ./bootstrap.sh
@@ -83,7 +83,7 @@ set(Boost_USE_STATIC_LIBS ON)
 
 # this contains the make BoostConfig.cmake file
 # users should set this appropriately for their system
-set(Boost_DIR "/home/chris/boost-spirit-develop/lib/cmake/Boost-1.71.0")
+set(Boost_DIR "/home/chris/boost-spirit-develop/lib/cmake/Boost-1.75.0")
 
 # toggle to ON build tests
 set(BUILD_TESTING OFF)

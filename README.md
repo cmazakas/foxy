@@ -8,7 +8,7 @@ Low-level HTTP session primitives for Beast/Asio + URL parsing and pct-coding
 
 * C++14 and above
 * CMake 3.13+
-* Boost 1.71+
+* Boost 1.75+
 * OpenSSL
 * Catch2 (for testing)
 
@@ -31,8 +31,8 @@ GCC 7+, Clang 6+, MSVC 2019
 ## Description
 
 Foxy is a C++14 library that aims to make idiomatic usage of
-[Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html) and
-[Boost.Asio](https://www.boost.org/doc/libs/1_71_0/doc/html/boost_asio.html)
+[Boost.Beast](https://www.boost.org/doc/libs/1_75_0/libs/beast/doc/html/index.html) and
+[Boost.Asio](https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio.html)
 easier.
 
 Foxy offers users low-level HTTP session primitives. These come in 3 forms:
@@ -44,7 +44,7 @@ The `session` class is direction-agnostic while the `client_session` and `server
 additional functionality that implementors of clients and servers may find useful.
 
 The utility of the session abstractions is that they abstract away the typical boilerplate required
-for using [Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html).
+for using [Boost.Beast](https://www.boost.org/doc/libs/1_75_0/libs/beast/doc/html/index.html).
 Sessions encapsulate sockets, buffers and timers which are all used during stream operations. They
 also reduce the API surface and enable implementors to focus solely on using Beast's `message` class
 and Asio's executor model.
@@ -55,9 +55,9 @@ along with a set of URI parsing combinators adopted from
 percent encoding and dedoding URL components.
 
 Foxy is built on top of
-[Boost.Beast](https://www.boost.org/doc/libs/1_71_0/libs/beast/doc/html/index.html)
-and [Boost.Asio](https://www.boost.org/doc/libs/1_71_0/doc/html/boost_asio.html)
-along with Boost.Spirit's library, [X3](https://www.boost.org/doc/libs/1_71_0/libs/spirit/doc/x3/html/index.html).
+[Boost.Beast](https://www.boost.org/doc/libs/1_75_0/libs/beast/doc/html/index.html)
+and [Boost.Asio](https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio.html)
+along with Boost.Spirit's library, [X3](https://www.boost.org/doc/libs/1_75_0/libs/spirit/doc/x3/html/index.html).
 Foxy does not treat these libraries as implementation details but exposes them directly. To this
 end, Foxy is as powerful as plain Beast/Asio are and anything one can do in Beast, one can do using
 Foxy.

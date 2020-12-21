@@ -1,4 +1,4 @@
-set(Boost_DIR "/home/exbigboss/boosts/71/lib/cmake/Boost-1.71.0")
+set(Boost_DIR "/home/exbigboss/boosts/75/lib/cmake/Boost-1.75.0")
 
 set(BUILD_TESTING ON)
 set(Boost_USE_STATIC_LIBS ON)
