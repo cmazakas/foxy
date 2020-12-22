@@ -1,49 +1,79 @@
-sudo: enabled
-
 language: cpp
-os: linux
-dist: xenial
+matrix:
+  include:
+    - name: "ubuntu20: gcc"
+      dist: focal
+      compiler : gcc
+    - name: "ubuntu20: clang"
+      dist: focal
+      compiler : clang 
+    - name: "ubuntu18: gcc"
+      dist: bionic 
+      compiler : gcc
+      before_script:
+        - sudo apt-get install -y wget tar 
+        - wget https://github.com/Kitware/CMake/releases/download/v3.15.5/cmake-3.15.5-Linux-x86_64.tar.gz
+        - tar xf cmake-3.15.5-Linux-x86_64.tar.gz
+        - export PATH="${PWD}/cmake-3.15.5-Linux-x86_64/bin/:${PATH}"
+    - name: "ubuntu18: clang"
+      dist: bionic 
+      compiler : clang 
+      before_script:
+        - sudo apt-get install -y wget tar 
+        - wget https://github.com/Kitware/CMake/releases/download/v3.15.5/cmake-3.15.5-Linux-x86_64.tar.gz
+        - tar xf cmake-3.15.5-Linux-x86_64.tar.gz
+        - export PATH="${PWD}/cmake-3.15.5-Linux-x86_64/bin/:${PATH}"
+    - name: "ubuntu16: clang"
+      os: linux
+      dist: xenial
+      sudo: enabled
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          packages:
+          - ninja-build
+          - curl
+          - python3
+      before_script:
+        - echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main" |sudo tee -a /etc/apt/sources.list
+        - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
+        - sudo apt-get -qq update
+        - sudo apt-get -y install clang-9 lld-9
+      script:
+        - wget https://github.com/Kitware/CMake/releases/download/v3.15.5/cmake-3.15.5-Linux-x86_64.tar.gz
+        - tar xf cmake-3.15.5-Linux-x86_64.tar.gz
+        - wget https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2
+        - tar xf boost_1_75_0.tar.bz2
+        - cd boost_1_75_0
+        - ./bootstrap.sh --prefix=./out
+        - ./b2 --stagedir=. --layout=system --with-atomic --with-date_time --with-system --with-coroutine --with-thread --with-container -j2 link=static stage
+        - cd ..
+        - wget https://github.com/catchorg/Catch2/archive/v2.10.2.tar.gz
+        - tar xf v2.10.2.tar.gz
+        - cd Catch2-2.10.2
+        - mkdir -p build
+        - cd build
+        - cmake -DCATCH_BUILD_TESTING=OFF -DCATCH_ENABLE_WERROR=OFF -DCATCH_INSTALL_DOCS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_C_COMPILER=clang-9 -DCMAKE_CXX_COMPILER=clang++-9 -G Ninja ..
+        - ninja
+        - sudo ninja install
+        - cd ../..
+        - mkdir -p build
+        - cd build
+        - ../cmake-3.15.5-Linux-x86_64/bin/cmake --version
+        - ../cmake-3.15.5-Linux-x86_64/bin/cmake -G Ninja -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=clang-9 -DCMAKE_CXX_COMPILER=clang++-9 -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DBOOST_INCLUDEDIR=$TRAVIS_BUILD_DIR/boost_1_75_0 _DBOOST_LIBRARYDIR=$TRAVIS_BUILD_DIR/boost_1_75_0/lib ..
+        - ninja
+        - ./foxy_tests
 
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - ninja-build
-    - curl
-    - python3
-
-before_script:
-  - echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main" |sudo tee -a /etc/apt/sources.list
-  - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
-  - sudo apt-get -qq update
-  - sudo apt-get -y install clang-9 lld-9
-
-script:
-  - wget https://github.com/Kitware/CMake/releases/download/v3.15.5/cmake-3.15.5-Linux-x86_64.tar.gz
-  - tar xf cmake-3.15.5-Linux-x86_64.tar.gz
-  - wget https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2
-  - tar xf boost_1_75_0.tar.bz2
-  - cd boost_1_75_0
-  - ./bootstrap.sh --prefix=./out
-  - ./b2 --stagedir=. --layout=system --with-atomic --with-date_time --with-system --with-coroutine --with-thread --with-container -j2 link=static stage
-  - cd ..
-  - wget https://github.com/catchorg/Catch2/archive/v2.10.2.tar.gz
-  - tar xf v2.10.2.tar.gz
-  - cd Catch2-2.10.2
-  - mkdir -p build
-  - cd build
-  - cmake -DCATCH_BUILD_TESTING=OFF -DCATCH_ENABLE_WERROR=OFF -DCATCH_INSTALL_DOCS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_C_COMPILER=clang-9 -DCMAKE_CXX_COMPILER=clang++-9 -G Ninja ..
-  - ninja
-  - sudo ninja install
-  - cd ../..
-  - mkdir -p build
-  - cd build
-  - ../cmake-3.15.5-Linux-x86_64/bin/cmake --version
-  - ../cmake-3.15.5-Linux-x86_64/bin/cmake -G Ninja -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=clang-9 -DCMAKE_CXX_COMPILER=clang++-9 -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DBOOST_INCLUDEDIR=$TRAVIS_BUILD_DIR/boost_1_75_0 _DBOOST_LIBRARYDIR=$TRAVIS_BUILD_DIR/boost_1_75_0/lib ..
-  - ninja
+script: 
+  - export LD_LIBRARY_PATH=$(pwd)/build/devroot/lib:${LD_LIBRARY_PATH}
+  - cmake -DBUILD_TESTING=ON -S tools/cmake-superbuild -B build 
+  - cmake --build build -j$(nproc) 
+  - cd build/foxy-prefix/src/foxy-build
   - ./foxy_tests
 
+jobs:
+  include :
 notifications:
   email:
     false
